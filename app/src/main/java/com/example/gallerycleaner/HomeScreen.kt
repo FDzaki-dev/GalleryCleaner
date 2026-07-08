@@ -1,0 +1,369 @@
+package com.example.gallerycleaner
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import kotlinx.coroutines.flow.first
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeScreen(
+    groups: List<MediaGroup>,
+    smartGroups: List<MediaGroup>,
+    groupMode: GroupMode,
+    sortOption: SortOption,
+    progressStore: ProgressStore,
+    isLoading: Boolean,
+    trashCount: Int,
+    totalLibraryBytes: Long,
+    trashReclaimableBytes: Long,
+    totalFreedBytes: Long,
+    totalDeletedCount: Int,
+    onGroupModeChange: (GroupMode) -> Unit,
+    onSortChange: (SortOption) -> Unit,
+    onGroupClick: (MediaGroup) -> Unit,
+    onTrashClick: () -> Unit
+) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = { Text("Gallery Cleaner", style = MaterialTheme.typography.titleLarge) },
+                actions = {
+                    TextButton(onClick = onTrashClick) {
+                        Text(
+                            if (trashCount > 0) "Trash ($trashCount)" else "Trash",
+                            color = if (trashCount > 0) MaterialTheme.colorScheme.secondary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        }
+    ) { padding ->
+        when {
+            isLoading -> Box(
+                Modifier.padding(padding).fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+            groups.isEmpty() && smartGroups.isEmpty() -> Box(
+                Modifier.padding(padding).fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "No photos or videos found.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            else -> LazyColumn(
+                modifier = Modifier.padding(padding).fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    StorageDashboard(
+                        totalLibraryBytes = totalLibraryBytes,
+                        trashReclaimableBytes = trashReclaimableBytes,
+                        totalFreedBytes = totalFreedBytes,
+                        totalDeletedCount = totalDeletedCount
+                    )
+                }
+
+                if (smartGroups.isNotEmpty()) {
+                    item {
+                        SectionLabel("QUICK CLEAN")
+                    }
+                    items(smartGroups, key = { "smart-${it.key}" }) { group ->
+                        SmartCategoryRow(group = group, onClick = { onGroupClick(group) })
+                    }
+                }
+
+                item {
+                    SectionLabel("ALL PHOTOS")
+                    FilterRow(
+                        groupMode = groupMode,
+                        sortOption = sortOption,
+                        onGroupModeChange = onGroupModeChange,
+                        onSortChange = onSortChange
+                    )
+                }
+
+                items(groups, key = { it.key }) { group ->
+                    GroupRow(group = group, progressStore = progressStore, onClick = { onGroupClick(group) })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(bottom = 4.dp)
+    )
+}
+
+/** Top-of-screen summary: how much space photos/videos take up, how much
+ *  sits in trash waiting to be freed, and all-time cleanup totals. */
+@Composable
+private fun StorageDashboard(
+    totalLibraryBytes: Long,
+    trashReclaimableBytes: Long,
+    totalFreedBytes: Long,
+    totalDeletedCount: Int
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Text(
+                "Library size",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                formatBytes(totalLibraryBytes),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            if (trashReclaimableBytes > 0) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "${formatBytes(trashReclaimableBytes)} waiting in Trash — empty it to reclaim space",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+            if (totalDeletedCount > 0) {
+                Spacer(Modifier.height(12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "All time: ${formatBytes(totalFreedBytes)} freed · $totalDeletedCount item(s) cleaned",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+/** A Quick Clean shortcut row — visually distinct (accent-tinted) from the
+ *  regular month/album rows below so it reads as a suggestion, not a folder. */
+@Composable
+private fun SmartCategoryRow(group: MediaGroup, onClick: () -> Unit) {
+    val totalBytes = remember(group.key) { group.items.sumOf { it.sizeBytes } }
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CoverThumbnail(items = group.items)
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(group.key, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "${group.items.size} items · ${formatBytes(totalBytes)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilterRow(
+    groupMode: GroupMode,
+    sortOption: SortOption,
+    onGroupModeChange: (GroupMode) -> Unit,
+    onSortChange: (SortOption) -> Unit
+) {
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(
+            "GROUP BY",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp, bottom = 14.dp)) {
+            GroupMode.values().forEach { mode ->
+                PillChip(
+                    label = mode.label,
+                    selected = groupMode == mode,
+                    onClick = { onGroupModeChange(mode) }
+                )
+            }
+        }
+        Text(
+            "SORT BY",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
+            SortOption.values().forEach { option ->
+                PillChip(
+                    label = option.label,
+                    selected = sortOption == option,
+                    onClick = { onSortChange(option) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PillChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val bg = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+    val fg = if (selected) Color(0xFF0F1113) else MaterialTheme.colorScheme.onSurfaceVariant
+    Surface(
+        color = bg,
+        shape = RoundedCornerShape(50),
+        modifier = Modifier.clickable(onClick = onClick)
+    ) {
+        Text(
+            label,
+            color = fg,
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp)
+        )
+    }
+}
+
+@Composable
+private fun GroupRow(group: MediaGroup, progressStore: ProgressStore, onClick: () -> Unit) {
+    var reviewed by remember(group.key) { mutableStateOf(0) }
+
+    LaunchedEffect(group.key) {
+        reviewed = progressStore.progressFlow(group.key).first().coerceAtMost(group.items.size)
+    }
+
+    val fraction = if (group.items.isEmpty()) 0f else reviewed / group.items.size.toFloat()
+    val done = fraction >= 1f && group.items.isNotEmpty()
+
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CoverThumbnail(items = group.items)
+
+            Spacer(Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    group.key,
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "${group.items.size} items",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            ProgressRing(fraction = fraction, done = done)
+        }
+    }
+}
+
+/** A single, clear cover thumbnail — replaces the earlier 3-photo overlapping
+ *  stack, which read as visually messy and tripled the image-decode work per
+ *  row for little benefit. One crisp image loads faster and looks cleaner. */
+@Composable
+private fun CoverThumbnail(items: List<MediaItem>) {
+    val cover = items.firstOrNull()
+    Box(
+        modifier = Modifier
+            .size(56.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        if (cover != null) {
+            MediaPreview(
+                item = cover,
+                contentScale = ContentScale.Crop,
+                decodeSize = 160, // small, exact decode target — keeps list scrolling smooth
+                modifier = Modifier.fillMaxSize()
+            )
+            if (cover.isVideo) {
+                Icon(
+                    Icons.Filled.PlayArrow,
+                    contentDescription = "Video",
+                    tint = Color.White,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(3.dp).size(16.dp)
+                )
+            }
+        }
+    }
+}
+
+/** Small circular progress indicator drawn by hand for a tighter, calmer look than the default. */
+@Composable
+private fun ProgressRing(fraction: Float, done: Boolean) {
+    val ringColor = if (done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+
+    Box(modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+        androidx.compose.foundation.Canvas(modifier = Modifier.size(40.dp)) {
+            val stroke = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+            drawArc(
+                color = trackColor,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                style = stroke
+            )
+            drawArc(
+                color = ringColor,
+                startAngle = -90f,
+                sweepAngle = 360f * fraction,
+                useCenter = false,
+                style = stroke
+            )
+        }
+        if (done) {
+            Text("✓", color = ringColor, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+        }
+    }
+}
