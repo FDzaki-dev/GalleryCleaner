@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -25,6 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.gallerycleaner.ui.theme.GalleryCleanerTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -60,7 +62,7 @@ private sealed class Screen {
 
 private fun requiredPermissions(): Array<String> =
     if (Build.VERSION.SDK_INT >= 33) {
-        arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
+        arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
     } else {
         arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
@@ -88,30 +90,42 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
     var selectedGroup by remember { mutableStateOf<MediaGroup?>(null) }
     var showTrash by remember { mutableStateOf(false) }
 
-    val trashedIds by trashStore.trashedIdsFlow.collectAsState(initial = emptySet())
+    val trashedItems by trashStore.trashedItemsFlow.collectAsState(initial = emptyList())
+    val trashedIds = remember(trashedItems) { trashedItems.map { it.id }.toSet() }
+    val expiredIds by trashStore.expiredItemIdsFlow.collectAsState(initial = emptySet())
 
-    // Reload media whenever permission is granted — off the main thread so a
-    // large gallery (thousands of items) never blocks the UI.
+    var isLoadingMore by remember { mutableStateOf(false) }
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
             isLoading = true
-            allMedia = withContext(Dispatchers.IO) { MediaRepository.loadAllMedia(context) }
-            isLoading = false
+            allMedia = emptyList()
+            var firstPage = true
+            withContext(Dispatchers.IO) {
+                MediaRepository.loadMediaProgressively(context).collect { page ->
+                    withContext(Dispatchers.Main) {
+                        allMedia = allMedia + page
+                        if (firstPage) {
+                            isLoading = false
+                            isLoadingMore = true
+                            firstPage = false
+                        }
+                    }
+                }
+            }
+            isLoadingMore = false
         }
     }
 
-    // Trashed items are excluded from the active gallery so they don't show
-    // up again in swipe sessions while sitting in the trash.
     val activeMedia = remember(allMedia, trashedIds) {
         allMedia.filterNot { it.id in trashedIds }
     }
     val trashItems = remember(allMedia, trashedIds) {
         allMedia.filter { it.id in trashedIds }
     }
+    val expiredTrashItems = remember(trashItems, expiredIds) {
+        trashItems.filter { it.id in expiredIds }
+    }
 
-    // Grouping/sorting a large list is also non-trivial work, so it's computed
-    // off the main thread too, and only replaces `groups` once ready — this
-    // avoids janking the UI thread on every filter change.
     var groups by remember { mutableStateOf<List<MediaGroup>>(emptyList()) }
     LaunchedEffect(activeMedia, groupMode, sortOption) {
         groups = withContext(Dispatchers.Default) {
@@ -119,22 +133,26 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
         }
     }
 
-    // "Quick Clean" shortcuts (Screenshots, Videos, Large files, possible
-    // duplicates) — same MediaGroup shape as regular groups, so they can
-    // reuse SwipeScreen with no changes.
     var smartGroups by remember { mutableStateOf<List<MediaGroup>>(emptyList()) }
     LaunchedEffect(activeMedia) {
-        smartGroups = withContext(Dispatchers.Default) {
+        val quickCategories = withContext(Dispatchers.Default) {
             MediaRepository.smartCategories(activeMedia)
+        }
+        smartGroups = quickCategories
+
+        delay(600)
+        val duplicates = withContext(Dispatchers.IO) {
+            MediaRepository.findExactDuplicates(context, activeMedia)
+        }
+        if (duplicates.isNotEmpty()) {
+            smartGroups = quickCategories + MediaGroup("Duplicate files", duplicates)
         }
     }
 
     val totalFreedBytes by statsStore.totalFreedBytesFlow.collectAsState(initial = 0L)
     val totalDeletedCount by statsStore.totalDeletedCountFlow.collectAsState(initial = 0)
 
-    // Delete-request launcher (Android 11+ batch delete confirmation) — this
-    // is only ever triggered from the Trash screen's "Delete permanently",
-    // never automatically when finishing a swipe session.
+    // Delete-request launcher yang sudah dimodifikasi dengan penanganan error/pembatalan
     var pendingDeleteRetry by remember { mutableStateOf<List<MediaItem>?>(null) }
     val deleteRequestLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
@@ -146,6 +164,9 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
                 trashStore.remove(items.map { it.id })
                 statsStore.recordDeletion(items.sumOf { it.sizeBytes }, items.size)
             }
+        } else if (items != null) {
+            // Memunculkan notifikasi Toast jika user menolak (RESULT_CANCELED) atau proses gagal
+            Toast.makeText(context, "Gagal menghapus file atau izin ditolak", Toast.LENGTH_SHORT).show()
         }
         pendingDeleteRetry = null
     }
@@ -175,11 +196,6 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
         }
     }
 
-    // Without this, the back gesture/button falls through to the system and
-    // closes the app entirely instead of navigating within it. Trash is
-    // simple state, safe to pop directly — but SwipeScreen has its own
-    // BackHandler below since a raw pop here would skip saving progress and
-    // moving pending items to trash.
     BackHandler(enabled = showTrash) { showTrash = false }
 
     val currentScreen = when {
@@ -189,10 +205,6 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
         else -> Screen.Home
     }
 
-    // Screens here are just conditional composables, not a real navigation
-    // stack — switching them instantly (the previous behavior) is what made
-    // the app feel unfinished. A short cross-fade + slide is the standard,
-    // cheap way most polished apps mask that same underlying pattern.
     androidx.compose.animation.AnimatedContent(
         targetState = currentScreen,
         transitionSpec = {
@@ -206,6 +218,8 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
             Screen.Permission -> PermissionScreen(onRequest = { permissionLauncher.launch(requiredPermissions()) })
             Screen.Trash -> TrashScreen(
                 items = trashItems,
+                trashedAtMillis = trashedItems.associate { it.id to it.trashedAtMillis },
+                expiryDays = TrashStore.EXPIRY_DAYS,
                 onBack = { showTrash = false },
                 onRestore = { ids -> scope.launch { trashStore.remove(ids) } },
                 onDeletePermanently = { ids ->
@@ -216,8 +230,6 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
                 group = screen.group,
                 progressStore = progressStore,
                 onBack = { selectedGroup = null },
-                // A "delete" swipe moves the item into the trash — nothing is
-                // removed from the device until the user empties the trash.
                 onFinishWithDeletions = { deletions ->
                     scope.launch { trashStore.addToTrash(deletions.map { it.id }) }
                 }
@@ -229,15 +241,19 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
                 sortOption = sortOption,
                 progressStore = progressStore,
                 isLoading = isLoading,
+                isLoadingMore = isLoadingMore,
                 trashCount = trashItems.size,
                 totalLibraryBytes = activeMedia.sumOf { it.sizeBytes },
                 trashReclaimableBytes = trashItems.sumOf { it.sizeBytes },
                 totalFreedBytes = totalFreedBytes,
                 totalDeletedCount = totalDeletedCount,
+                expiredTrashCount = expiredTrashItems.size,
+                expiryDays = TrashStore.EXPIRY_DAYS,
                 onGroupModeChange = { groupMode = it },
                 onSortChange = { sortOption = it },
                 onGroupClick = { selectedGroup = it },
-                onTrashClick = { showTrash = true }
+                onTrashClick = { showTrash = true },
+                onCleanExpiredTrash = { performPermanentDeletion(expiredTrashItems) }
             )
         }
     }
@@ -256,7 +272,7 @@ private fun PermissionScreen(onRequest: () -> Unit) {
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            "Gallery Cleaner needs access to your photos and videos to help you swipe through and declutter.",
+            "Gallery Cleaner needs access to your photos to help you swipe through and declutter.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

@@ -7,9 +7,12 @@ data class MediaItem(
     val uri: Uri,
     val displayName: String,
     val dateTakenMillis: Long,
+    val dateModifiedMillis: Long,
     val sizeBytes: Long,
-    val isVideo: Boolean,
-    val bucketName: String // album name
+    val bucketName: String, // album name
+    val width: Int,
+    val height: Int,
+    val relativePath: String // folder path, e.g. "DCIM/Camera/"
 )
 
 enum class SortOption(val label: String) {

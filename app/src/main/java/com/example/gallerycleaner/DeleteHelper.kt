@@ -1,7 +1,9 @@
 package com.example.gallerycleaner
 
-import android.net.Uri
 import android.content.Context
+import android.net.Uri
+import android.util.Log
+import android.widget.Toast
 
 /**
  * Wraps the platform-specific dance required to delete MediaStore items
@@ -19,11 +21,28 @@ object DeleteHelper {
         val failed = mutableListOf<Uri>()
         for (uri in uris) {
             try {
-                context.contentResolver.delete(uri, null, null)
+                // Eksekusi hapus file
+                val rowsDeleted = context.contentResolver.delete(uri, null, null)
+                // Jika rowsDeleted == 0, berarti file tidak ditemukan atau gagal dihapus
+                if (rowsDeleted == 0) {
+                    failed.add(uri)
+                }
             } catch (e: Exception) {
-                failed += uri
+                // Menangkap error agar aplikasi tidak crash (force close)
+                Log.e("DeleteHelper", "Error saat menghapus: $uri", e)
+                failed.add(uri)
             }
         }
+
+        // Memunculkan notifikasi Toast jika ada file yang gagal dihapus
+        if (failed.isNotEmpty()) {
+            Toast.makeText(
+                context,
+                "Gagal menghapus ${failed.size} file. Periksa izin akses.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
         return failed
     }
 }

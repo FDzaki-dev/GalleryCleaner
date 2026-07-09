@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,34 +32,49 @@ fun HomeScreen(
     sortOption: SortOption,
     progressStore: ProgressStore,
     isLoading: Boolean,
+    isLoadingMore: Boolean,
     trashCount: Int,
     totalLibraryBytes: Long,
     trashReclaimableBytes: Long,
     totalFreedBytes: Long,
     totalDeletedCount: Int,
+    expiredTrashCount: Int,
+    expiryDays: Int,
     onGroupModeChange: (GroupMode) -> Unit,
     onSortChange: (SortOption) -> Unit,
     onGroupClick: (MediaGroup) -> Unit,
-    onTrashClick: () -> Unit
+    onTrashClick: () -> Unit,
+    onCleanExpiredTrash: () -> Unit
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { Text("Gallery Cleaner", style = MaterialTheme.typography.titleLarge) },
-                actions = {
-                    TextButton(onClick = onTrashClick) {
-                        Text(
-                            if (trashCount > 0) "Trash ($trashCount)" else "Trash",
-                            color = if (trashCount > 0) MaterialTheme.colorScheme.secondary
-                                    else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+            Column {
+                TopAppBar(
+                    title = { Text("Gallery Cleaner", style = MaterialTheme.typography.titleLarge) },
+                    actions = {
+                        TextButton(onClick = onTrashClick) {
+                            Text(
+                                if (trashCount > 0) "Trash ($trashCount)" else "Trash",
+                                color = if (trashCount > 0) MaterialTheme.colorScheme.secondary
+                                        else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background
+                    )
                 )
-            )
+                // Thin, unobtrusive cue that the rest of a large gallery is still
+                // streaming in behind the scenes — the groups already on screen
+                // stay fully interactive while this shows.
+                if (isLoadingMore) {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
         }
     ) { padding ->
         when {
@@ -70,12 +84,12 @@ fun HomeScreen(
             ) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
-            groups.isEmpty() && smartGroups.isEmpty() -> Box(
+            groups.isEmpty() && smartGroups.isEmpty() && !isLoadingMore -> Box(
                 Modifier.padding(padding).fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "No photos or videos found.",
+                    "No photos found.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -84,6 +98,16 @@ fun HomeScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                if (expiredTrashCount > 0) {
+                    item {
+                        ExpiryBanner(
+                            count = expiredTrashCount,
+                            expiryDays = expiryDays,
+                            onClean = onCleanExpiredTrash
+                        )
+                    }
+                }
+
                 item {
                     StorageDashboard(
                         totalLibraryBytes = totalLibraryBytes,
@@ -120,6 +144,48 @@ fun HomeScreen(
     }
 }
 
+/** Surfaces items that have outlived the trash retention window and offers a
+ *  one-tap permanent delete. Android has no silent background-delete API for
+ *  scoped storage, so "auto-expiry" is this: a banner the user can dismiss
+ *  by acting on, not a delete that happens without them noticing. */
+@Composable
+private fun ExpiryBanner(count: Int, expiryDays: Int, onClean: () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "$count item(s) have been in Trash over $expiryDays days",
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "Delete them permanently to free up space",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Button(
+                onClick = onClean,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = Color(0xFF1A0E0C)
+                )
+            ) {
+                Text("Clean up")
+            }
+        }
+    }
+}
+
 @Composable
 private fun SectionLabel(text: String) {
     Text(
@@ -130,7 +196,7 @@ private fun SectionLabel(text: String) {
     )
 }
 
-/** Top-of-screen summary: how much space photos/videos take up, how much
+/** Top-of-screen summary: how much space photos take up, how much
  *  sits in trash waiting to be freed, and all-time cleanup totals. */
 @Composable
 private fun StorageDashboard(
@@ -326,14 +392,6 @@ private fun CoverThumbnail(items: List<MediaItem>) {
                 decodeSize = 160, // small, exact decode target — keeps list scrolling smooth
                 modifier = Modifier.fillMaxSize()
             )
-            if (cover.isVideo) {
-                Icon(
-                    Icons.Filled.PlayArrow,
-                    contentDescription = "Video",
-                    tint = Color.White,
-                    modifier = Modifier.align(Alignment.BottomStart).padding(3.dp).size(16.dp)
-                )
-            }
         }
     }
 }

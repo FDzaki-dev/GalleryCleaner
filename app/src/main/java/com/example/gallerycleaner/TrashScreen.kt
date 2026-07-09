@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +28,8 @@ import coil.request.ImageRequest
 @Composable
 fun TrashScreen(
     items: List<MediaItem>,
+    trashedAtMillis: Map<Long, Long>,
+    expiryDays: Int,
     onBack: () -> Unit,
     onRestore: (List<Long>) -> Unit,
     onDeletePermanently: (List<Long>) -> Unit
@@ -120,16 +121,25 @@ fun TrashScreen(
                             decodeSize = 300,
                             modifier = Modifier.fillMaxSize()
                         )
-                        if (item.isVideo) {
-                            Icon(
-                                Icons.Filled.PlayArrow,
-                                contentDescription = "Video",
-                                tint = Color.White,
-                                modifier = Modifier
-                                    .align(Alignment.BottomStart)
-                                    .padding(6.dp)
-                                    .size(18.dp)
-                            )
+                        val daysLeft = trashedAtMillis[item.id]?.let { trashedAt ->
+                            val ageDays = (System.currentTimeMillis() - trashedAt) / (24 * 60 * 60 * 1000L)
+                            (expiryDays - ageDays).coerceAtLeast(0)
+                        }
+                        // Only bother the user once it's actually close —
+                        // no need to label something that just got trashed.
+                        if (daysLeft != null && daysLeft <= 7) {
+                            Surface(
+                                color = Color.Black.copy(alpha = 0.6f),
+                                shape = RoundedCornerShape(6.dp),
+                                modifier = Modifier.align(Alignment.BottomStart).padding(5.dp)
+                            ) {
+                                Text(
+                                    if (daysLeft <= 0) "Expires today" else "${daysLeft}d left",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                )
+                            }
                         }
                         if (isSelected) {
                             Box(
