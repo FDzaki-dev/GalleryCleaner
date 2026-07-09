@@ -1,31 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Android 13+ granular media permission -->
+    <!-- Perizinan Membaca Galeri Foto (Android 12 ke bawah & Android 13 ke atas) -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <!-- Older Android versions -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
 
     <application
-        android:name=".GalleryCleanerApp"
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.GalleryCleaner">
+        android:theme="@style/Theme.GalleryCleaner"
+        tools:targetApi="31"
+        android:largeHeap="true"> <!-- Kunci Utama: Menaikkan limit RAM untuk mencegah OutOfMemoryError -->
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.GalleryCleaner.Splash">
+            android:theme="@style/Theme.GalleryCleaner">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
     </application>
+
 </manifest>
