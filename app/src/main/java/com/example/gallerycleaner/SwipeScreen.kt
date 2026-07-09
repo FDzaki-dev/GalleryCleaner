@@ -62,12 +62,7 @@ fun SwipeScreen(
     var index by remember(group.key) { mutableIntStateOf(0) }
     val pendingDeletes = remember(group.key) { mutableStateListOf<MediaItem>() }
     var restored by remember(group.key) { mutableStateOf(false) }
-    // Single-level undo — remembers only the most recent decision, which
-    // covers the common "oops, wrong direction" case without the complexity
-    // (and memory) of a full history stack.
     var lastDecision by remember(group.key) { mutableStateOf<Pair<MediaItem, SwipeDecision>?>(null) }
-    // Set by the bottom action buttons; SwipeCard watches this and plays the
-    // same fly-off animation a drag gesture would trigger.
     var buttonDecision by remember(group.key) { mutableStateOf<SwipeDecision?>(null) }
     var showFullscreen by remember { mutableStateOf(false) }
     var showInfo by remember { mutableStateOf(false) }
@@ -77,8 +72,6 @@ fun SwipeScreen(
         restored = true
     }
 
-    // Quietly warm the image cache for the next couple of photos so the swipe
-    // never has to wait on a fresh decode mid-gesture.
     LaunchedEffect(index, group.key) {
         val loader = context.imageLoader
         (index + 1..index + 2).forEach { i ->
@@ -99,8 +92,6 @@ fun SwipeScreen(
         onBack()
     }
 
-    // Makes sure the back gesture/button goes through the same save-and-exit
-    // path as the toolbar's back arrow, instead of just closing the app.
     BackHandler { finishAndExit() }
 
     val currentItem = group.items.getOrNull(index)
@@ -154,8 +145,6 @@ fun SwipeScreen(
                 items = group.items,
                 currentIndex = index,
                 onSelect = { tapped ->
-                    // Manual tap on a thumbnail jumps straight to that photo,
-                    // same as if the user had swiped/skipped their way there.
                     index = tapped
                     scope.launch { progressStore.saveProgress(group.key, index) }
                 }
@@ -173,20 +162,8 @@ fun SwipeScreen(
                         onDone = { finishAndExit() }
                     )
                 } else {
-                    // A second card peeking behind the top one — makes the stack read as
-                    // a deck rather than a single flat image, at near-zero extra cost
-                    // since it's just a static, non-animated background layer.
-                    group.items.getOrNull(index + 1)?.let { nextItem ->
-                        MediaPreview(
-                            item = nextItem,
-                            contentScale = ContentScale.FillBounds,
-                            decodeSize = 300,
-                            modifier = Modifier
-                                .fillMaxWidth(0.86f)
-                                .aspectRatio(1f)
-                                .graphicsLayer { scaleX = 0.96f; scaleY = 0.96f; alpha = 0.7f }
-                        )
-                    }
+                    // FITUR PREVIEW BAYANGAN DI BELAKANG SUDAH DIHAPUS TOTAL DI SINI
+                    // Hanya menyisakan satu kartu utama yang aktif dan responsif
                     SwipeCard(
                         item = currentItem,
                         externalDecision = buttonDecision,
@@ -206,9 +183,6 @@ fun SwipeScreen(
                 ActionButtonRow(
                     onDelete = { buttonDecision = SwipeDecision.Delete },
                     onSkip = {
-                        // Skip moves on without judging the item either way —
-                        // it's neither kept-via-swipe nor deleted, just passed
-                        // over. No fly-off animation, just an instant advance.
                         lastDecision = currentItem to SwipeDecision.Keep
                         index += 1
                         scope.launch { progressStore.saveProgress(group.key, index) }
@@ -227,9 +201,6 @@ fun SwipeScreen(
     }
 }
 
-/** Small horizontal strip of upcoming/reviewed thumbnails, auto-scrolling to
- *  keep the current item in view. Tapping any thumbnail jumps straight to
- *  that photo — a manual alternative to swiping through one by one. */
 @Composable
 private fun Filmstrip(items: List<MediaItem>, currentIndex: Int, onSelect: (Int) -> Unit) {
     val listState = rememberLazyListState()
@@ -254,8 +225,6 @@ private fun Filmstrip(items: List<MediaItem>, currentIndex: Int, onSelect: (Int)
                         else Modifier
                     )
                     .padding(if (isCurrent) 2.dp else 0.dp)
-                    // Whole thumbnail is the tap target — jumps directly to
-                    // that item instead of only allowing sequential swipes.
                     .clickable(onClick = { onSelect(i) })
             ) {
                 Box(
@@ -267,10 +236,6 @@ private fun Filmstrip(items: List<MediaItem>, currentIndex: Int, onSelect: (Int)
                 ) {
                     MediaPreview(
                         item = item,
-                        // Fit (not Crop/FillBounds) preserves the photo's own
-                        // aspect ratio so thumbnails never look stretched or
-                        // sliced — same proportions as the original file,
-                        // just scaled down to the row's size.
                         contentScale = ContentScale.Fit,
                         decodeSize = 100,
                         modifier = Modifier.fillMaxSize()
@@ -289,7 +254,6 @@ private fun Filmstrip(items: List<MediaItem>, currentIndex: Int, onSelect: (Int)
     }
 }
 
-/** Compact strip of file facts — format, size, position — plus the info-dialog trigger. */
 @Composable
 private fun InfoBar(item: MediaItem, position: Int, total: Int) {
     val format = item.displayName.substringAfterLast('.', "").uppercase().ifEmpty { "?" }
@@ -318,8 +282,6 @@ private fun InfoChip(text: String) {
     }
 }
 
-/** Delete / Skip / Keep — an explicit, discoverable alternative to swiping,
- *  since not everyone realizes (or wants to rely on) drag gestures. */
 @Composable
 private fun ActionButtonRow(
     onDelete: () -> Unit,
@@ -432,15 +394,9 @@ private fun SwipeCard(
     onZoomRequest: () -> Unit,
     onDecision: (SwipeDecision) -> Unit
 ) {
-    // Plain float state for the live drag — updated synchronously on every
-    // pointer move with NO coroutine launch. Launching a coroutine per touch
-    // event (an earlier approach) is what caused dragging lag; a simple
-    // state write is essentially free and graphicsLayer reads it without
-    // forcing a full recomposition.
     var offsetX by remember(item.id) { mutableFloatStateOf(0f) }
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
-    var thresholdCrossed by remember(item.id) { mutableStateOf(false) }
 
     suspend fun animateAndDecide(decision: SwipeDecision) {
         val target = if (decision is SwipeDecision.Keep) 1600f else -1600f
@@ -448,7 +404,6 @@ private fun SwipeCard(
         onDecision(decision)
     }
 
-    // Bottom buttons trigger this the same way a completed drag would.
     LaunchedEffect(externalDecision) {
         val decision = externalDecision
         if (decision != null) {
@@ -473,12 +428,13 @@ private fun SwipeCard(
                 translationX = offsetX
                 rotationZ = rotation
             }
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable { onZoomRequest() }
             .pointerInput(item.id) {
                 detectDragGestures(
                     onDragEnd = {
                         val target = offsetX
-                        // Only the release animation needs a coroutine — a single
-                        // launch per gesture, not per pixel of movement.
                         when {
                             target > SWIPE_THRESHOLD_PX -> scope.launch { animateAndDecide(SwipeDecision.Keep) }
                             target < -SWIPE_THRESHOLD_PX -> scope.launch { animateAndDecide(SwipeDecision.Delete) }
@@ -486,152 +442,26 @@ private fun SwipeCard(
                                 animate(offsetX, 0f, animationSpec = tween(200)) { value, _ -> offsetX = value }
                             }
                         }
+                    },
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        offsetX += dragAmount.x
                     }
-                ) { change, dragAmount ->
-                    change.consume()
-                    offsetX += dragAmount.x
-                    val crossed = abs(offsetX) > SWIPE_THRESHOLD_PX
-                    if (crossed && !thresholdCrossed) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    }
-                    thresholdCrossed = crossed
-                }
+                )
             },
         contentAlignment = Alignment.Center
     ) {
         MediaPreview(
             item = item,
-            // Stretched to fill the square rather than cropped — the point of
-            // the swipe review is seeing the whole photo, not a cropped
-            // slice of it.
-            contentScale = ContentScale.FillBounds,
-            decodeSize = 1000,
+            contentScale = ContentScale.Crop,
+            decodeSize = 600,
             modifier = Modifier.fillMaxSize()
         )
-
-        // Zoom affordance — a tap here opens the fullscreen viewer. Kept as
-        // its own small clickable target (rather than making the whole card
-        // tappable) so it never competes with the drag gesture.
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.45f))
-                .clickable(onClick = onZoomRequest),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("⤢", color = Color.White, style = MaterialTheme.typography.titleMedium)
-        }
-
-        // Color wash overlay — a simple repaint, no extra layout/measure cost.
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawRect(color = washColor)
-        }
-
-        if (abs(progress) > 0.12f) {
-            val label = if (progress > 0) "KEEP" else "DELETE"
-            val labelColor = if (progress > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
-            Text(
-                label,
-                color = labelColor,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier
-                    .align(if (progress > 0) Alignment.TopStart else Alignment.TopEnd)
-                    .padding(16.dp)
-            )
-        }
-    }
-}
-
-/** Full-screen pinch-to-zoom / pan viewer, opened by tapping the zoom affordance on a card. */
-@Composable
-private fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        var scale by remember { mutableFloatStateOf(1f) }
-        var offset by remember { mutableStateOf(Offset.Zero) }
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black)
-                .pointerInput(item.id) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        scale = (scale * zoom).coerceIn(1f, 5f)
-                        offset = if (scale <= 1f) Offset.Zero else offset + pan
-                    }
-                }
-        ) {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(item.uri)
-                    .size(1600)
-                    .build(),
-                contentDescription = item.displayName,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        translationX = offset.x
-                        translationY = offset.y
-                    }
+                .background(washColor)
             )
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(20.dp)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.15f))
-                    .clickable(onClick = onDismiss),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("✕", color = Color.White, style = MaterialTheme.typography.titleMedium)
-            }
-        }
     }
 }
 
-/** Detailed file metadata — name, size, dimensions, location, dates. */
-@Composable
-private fun FileInfoDialog(item: MediaItem, onDismiss: () -> Unit) {
-    val dateFormat = remember { SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
-        },
-        title = { Text("File info") },
-        text = {
-            Column {
-                InfoRow("Name", item.displayName)
-                InfoRow("Size", formatBytes(item.sizeBytes))
-                if (item.width > 0 && item.height > 0) {
-                    InfoRow("Dimensions", "${item.width} × ${item.height}")
-                }
-                InfoRow("Album", item.bucketName)
-                if (item.relativePath.isNotBlank()) {
-                    InfoRow("Path", item.relativePath)
-                }
-                if (item.dateTakenMillis > 0) {
-                    InfoRow("Taken", dateFormat.format(Date(item.dateTakenMillis)))
-                }
-                if (item.dateModifiedMillis > 0) {
-                    InfoRow("Modified", dateFormat.format(Date(item.dateModifiedMillis)))
-                }
-            }
-        }
-    )
-}
-
-@Composable
-private fun InfoRow(label: String, value: String) {
-    Column(modifier = Modifier.padding(vertical = 6.dp)) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.bodyMedium)
-    }
-}
