@@ -2,6 +2,8 @@ package com.example.gallerycleaner
 
 import android.content.Context
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 
@@ -21,26 +23,25 @@ object DeleteHelper {
         val failed = mutableListOf<Uri>()
         for (uri in uris) {
             try {
-                // Eksekusi hapus file
                 val rowsDeleted = context.contentResolver.delete(uri, null, null)
-                // Jika rowsDeleted == 0, berarti file tidak ditemukan atau gagal dihapus
                 if (rowsDeleted == 0) {
                     failed.add(uri)
                 }
             } catch (e: Exception) {
-                // Menangkap error agar aplikasi tidak crash (force close)
                 Log.e("DeleteHelper", "Error saat menghapus: $uri", e)
                 failed.add(uri)
             }
         }
 
-        // Memunculkan notifikasi Toast jika ada file yang gagal dihapus
+        // AMAN: Dibungkus Handler & Looper agar tidak memicu Force Close
         if (failed.isNotEmpty()) {
-            Toast.makeText(
-                context,
-                "Gagal menghapus ${failed.size} file. Periksa izin akses.",
-                Toast.LENGTH_SHORT
-            ).show()
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(
+                    context,
+                    "Gagal menghapus ${failed.size} file. Periksa izin akses.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
 
         return failed
