@@ -2,10 +2,7 @@ package com.example.gallerycleaner
 
 import android.content.Context
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 
 /**
  * Wraps the platform-specific dance required to delete MediaStore items
@@ -32,18 +29,6 @@ object DeleteHelper {
                 failed.add(uri)
             }
         }
-
-        // AMAN: Dibungkus Handler & Looper agar tidak memicu Force Close
-        if (failed.isNotEmpty()) {
-            Handler(Looper.getMainLooper()).post {
-                Toast.makeText(
-                    context,
-                    "Gagal menghapus ${failed.size} file. Periksa izin akses.",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-
         return failed
     }
 }

@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -71,6 +70,10 @@ private fun requiredPermissions(): Array<String> =
 fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: StatsStore) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
+    
+    // Inisialisasi komponen Snackbar modern Jetpack Compose
+    val snackbarHostState = remember { SnackbarHostState() }
+
     var hasPermission by remember {
         mutableStateOf(
             requiredPermissions().all {
@@ -152,7 +155,6 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
     val totalFreedBytes by statsStore.totalFreedBytesFlow.collectAsState(initial = 0L)
     val totalDeletedCount by statsStore.totalDeletedCountFlow.collectAsState(initial = 0)
 
-    // Delete-request launcher yang sudah dimodifikasi dengan penanganan error/pembatalan
     var pendingDeleteRetry by remember { mutableStateOf<List<MediaItem>?>(null) }
     val deleteRequestLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
@@ -165,8 +167,10 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
                 statsStore.recordDeletion(items.sumOf { it.sizeBytes }, items.size)
             }
         } else if (items != null) {
-            // Memunculkan notifikasi Toast jika user menolak (RESULT_CANCELED) atau proses gagal
-            Toast.makeText(context, "Gagal menghapus file atau izin ditolak", Toast.LENGTH_SHORT).show()
+            // Menampilkan modern snackbar saat batal / gagal menghapus di Android 11+
+            scope.launch {
+                snackbarHostState.showSnackbar("Gagal menghapus file atau izin ditolak")
+            }
         }
         pendingDeleteRetry = null
     }
@@ -188,6 +192,13 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
                     trashStore.remove(deletedIds)
                     statsStore.recordDeletion(deleted.sumOf { it.sizeBytes }, deleted.size)
                 }
+                
+                // Menampilkan modern snackbar jika ada file gagal di OS lama
+                if (failed.isNotEmpty()) {
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Gagal menghapus ${failed.size} file. Periksa izin.")
+                    }
+                }
             } catch (e: RecoverableSecurityException) {
                 val sender: IntentSender = e.userAction.actionIntent.intentSender
                 pendingDeleteRetry = items
@@ -205,57 +216,68 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
         else -> Screen.Home
     }
 
-    androidx.compose.animation.AnimatedContent(
-        targetState = currentScreen,
-        transitionSpec = {
-            (androidx.compose.animation.fadeIn(tween(180)) +
-                androidx.compose.animation.slideInHorizontally(tween(220)) { it / 8 })
-                .togetherWith(androidx.compose.animation.fadeOut(tween(120)))
-        },
-        label = "screen-transition"
-    ) { screen ->
-        when (screen) {
-            Screen.Permission -> PermissionScreen(onRequest = { permissionLauncher.launch(requiredPermissions()) })
-            Screen.Trash -> TrashScreen(
-                items = trashItems,
-                trashedAtMillis = trashedItems.associate { it.id to it.trashedAtMillis },
-                expiryDays = TrashStore.EXPIRY_DAYS,
-                onBack = { showTrash = false },
-                onRestore = { ids -> scope.launch { trashStore.remove(ids) } },
-                onDeletePermanently = { ids ->
-                    performPermanentDeletion(trashItems.filter { it.id in ids })
-                }
-            )
-            is Screen.Swipe -> SwipeScreen(
-                group = screen.group,
-                progressStore = progressStore,
-                onBack = { selectedGroup = null },
-                onFinishWithDeletions = { deletions ->
-                    scope.launch { trashStore.addToTrash(deletions.map { it.id }) }
-                }
-            )
-            Screen.Home -> HomeScreen(
-                groups = groups,
-                smartGroups = smartGroups,
-                groupMode = groupMode,
-                sortOption = sortOption,
-                progressStore = progressStore,
-                isLoading = isLoading,
-                isLoadingMore = isLoadingMore,
-                trashCount = trashItems.size,
-                totalLibraryBytes = activeMedia.sumOf { it.sizeBytes },
-                trashReclaimableBytes = trashItems.sumOf { it.sizeBytes },
-                totalFreedBytes = totalFreedBytes,
-                totalDeletedCount = totalDeletedCount,
-                expiredTrashCount = expiredTrashItems.size,
-                expiryDays = TrashStore.EXPIRY_DAYS,
-                onGroupModeChange = { groupMode = it },
-                onSortChange = { sortOption = it },
-                onGroupClick = { selectedGroup = it },
-                onTrashClick = { showTrash = true },
-                onCleanExpiredTrash = { performPermanentDeletion(expiredTrashItems) }
-            )
+    // Membuka container Box untuk menumpuk UI Utama dan Komponen Snackbar melayang
+    Box(modifier = Modifier.fillMaxSize()) {
+        androidx.compose.animation.AnimatedContent(
+            targetState = currentScreen,
+            transitionSpec = {
+                (androidx.compose.animation.fadeIn(tween(180)) +
+                    androidx.compose.animation.slideInHorizontally(tween(220)) { it / 8 })
+                    .togetherWith(androidx.compose.animation.fadeOut(tween(120)))
+            },
+            label = "screen-transition"
+        ) { screen ->
+            when (screen) {
+                Screen.Permission -> PermissionScreen(onRequest = { permissionLauncher.launch(requiredPermissions()) })
+                Screen.Trash -> TrashScreen(
+                    items = trashItems,
+                    trashedAtMillis = trashedItems.associate { it.id to it.trashedAtMillis },
+                    expiryDays = TrashStore.EXPIRY_DAYS,
+                    onBack = { showTrash = false },
+                    onRestore = { ids -> scope.launch { trashStore.remove(ids) } },
+                    onDeletePermanently = { ids ->
+                        performPermanentDeletion(trashItems.filter { it.id in ids })
+                    }
+                )
+                is Screen.Swipe -> SwipeScreen(
+                    group = screen.group,
+                    progressStore = progressStore,
+                    onBack = { selectedGroup = null },
+                    onFinishWithDeletions = { deletions ->
+                        scope.launch { trashStore.addToTrash(deletions.map { it.id }) }
+                    }
+                )
+                Screen.Home -> HomeScreen(
+                    groups = groups,
+                    smartGroups = smartGroups,
+                    groupMode = groupMode,
+                    sortOption = sortOption,
+                    progressStore = progressStore,
+                    isLoading = isLoading,
+                    isLoadingMore = isLoadingMore,
+                    trashCount = trashItems.size,
+                    totalLibraryBytes = activeMedia.sumOf { it.sizeBytes },
+                    trashReclaimableBytes = trashItems.sumOf { it.sizeBytes },
+                    totalFreedBytes = totalFreedBytes,
+                    totalDeletedCount = totalDeletedCount,
+                    expiredTrashCount = expiredTrashItems.size,
+                    expiryDays = TrashStore.EXPIRY_DAYS,
+                    onGroupModeChange = { groupMode = it },
+                    onSortChange = { sortOption = it },
+                    onGroupClick = { selectedGroup = it },
+                    onTrashClick = { showTrash = true },
+                    onCleanExpiredTrash = { performPermanentDeletion(expiredTrashItems) }
+                )
+            }
         }
+
+        // Rumah untuk Snackbar melayang tepat di atas area navigasi bawah layar
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp)
+        )
     }
 }
 
