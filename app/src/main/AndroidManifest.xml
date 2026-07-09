@@ -1,28 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Perizinan Membaca Galeri Foto (Android 12 ke bawah & Android 13 ke atas) -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- Android 13+ granular media permission -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Older Android versions -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
+        android:name=".GalleryCleanerApp"
         android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
+        android:roundIcon="@drawable/ic_launcher"
         android:supportsRtl="true"
-        android:theme="@style/Theme.GalleryCleaner"
-        android:largeHeap="true"> <!-- Fitur OOM killer tetap aktif -->
+        android:largeHeap="true" 
+        android:theme="@style/Theme.GalleryCleaner">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.GalleryCleaner">
+            android:theme="@style/Theme.GalleryCleaner.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
     </application>
-
 </manifest>
