@@ -464,4 +464,39 @@ private fun SwipeCard(
             )
     }
 }
+@Composable
+private fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(modifier = Modifier.fillMaxSize().background(Color.Black).clickable { onDismiss() }) {
+            AsyncImage(
+                model = item.uri,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+@Composable
+private fun FileInfoDialog(item: MediaItem, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("File Info") },
+        text = {
+            Column {
+                Text("Name: ${item.displayName}")
+                Text("Size: ${formatBytes(item.sizeBytes)}")
+                Text("ID: ${item.id}")
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("OK") }
+        }
+    )
+}
+
 
