@@ -2,6 +2,7 @@ package com.example.gallerycleaner
 
 import android.Manifest
 import android.app.RecoverableSecurityException
+import android.content.Context
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.os.Build
@@ -16,6 +17,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +31,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.PrintWriter
+import java.io.StringWriter
 
 class MainActivity : ComponentActivity() {
 
@@ -38,6 +43,29 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+
+        // [KOTAK HITAM] 1. Periksa apakah sesi sebelumnya mengalami crash
+        val prefs = getSharedPreferences("gallery_cleaner_debug", Context.MODE_PRIVATE)
+        val savedCrashLog = prefs.getString("last_crash_log", null)
+        if (savedCrashLog != null) {
+            // Hapus log setelah dibaca agar tidak muncul terus-menerus
+            prefs.edit().remove("last_crash_log").apply()
+        }
+
+        // [KOTAK HITAM] 2. Amankan sistem agar jika crash, log diselamatkan ke SharedPreferences
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            val stringWriter = StringWriter()
+            throwable.printStackTrace(PrintWriter(stringWriter))
+            val fullStackTrace = stringWriter.toString()
+
+            // Simpan paksa ke memori sebelum aplikasi menutup diri
+            prefs.edit().putString("last_crash_log", fullStackTrace).commit()
+            
+            // Biarkan aplikasi menutup diri secara normal setelah data aman
+            defaultHandler?.uncaughtException(thread, throwable)
+        }
+
         progressStore = ProgressStore(applicationContext)
         trashStore = TrashStore(applicationContext)
         statsStore = StatsStore(applicationContext)
@@ -45,7 +73,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             GalleryCleanerTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    AppRoot(progressStore = progressStore, trashStore = trashStore, statsStore = statsStore)
+                    AppRoot(
+                        progressStore = progressStore, 
+                        trashStore = trashStore, 
+                        statsStore = statsStore,
+                        initialCrashLog = savedCrashLog // Lempar data crash ke UI utama
+                    )
                 }
             }
         }
@@ -67,12 +100,18 @@ private fun requiredPermissions(): Array<String> =
     }
 
 @Composable
-fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: StatsStore) {
+fun AppRoot(
+    progressStore: ProgressStore, 
+    trashStore: TrashStore, 
+    statsStore: StatsStore,
+    initialCrashLog: String?
+) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
-    
-    // Inisialisasi komponen Snackbar modern Jetpack Compose
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // State untuk mengontrol pop-up tampilan error crash
+    var activeCrashLog by remember { mutableStateOf(initialCrashLog) }
 
     var hasPermission by remember {
         mutableStateOf(
@@ -167,7 +206,6 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
                 statsStore.recordDeletion(items.sumOf { it.sizeBytes }, items.size)
             }
         } else if (items != null) {
-            // Menampilkan modern snackbar saat batal / gagal menghapus di Android 11+
             scope.launch {
                 snackbarHostState.showSnackbar("Gagal menghapus file atau izin ditolak")
             }
@@ -192,8 +230,6 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
                     trashStore.remove(deletedIds)
                     statsStore.recordDeletion(deleted.sumOf { it.sizeBytes }, deleted.size)
                 }
-                
-                // Menampilkan modern snackbar jika ada file gagal di OS lama
                 if (failed.isNotEmpty()) {
                     scope.launch {
                         snackbarHostState.showSnackbar("Gagal menghapus ${failed.size} file. Periksa izin.")
@@ -216,7 +252,6 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
         else -> Screen.Home
     }
 
-    // Membuka container Box untuk menumpuk UI Utama dan Komponen Snackbar melayang
     Box(modifier = Modifier.fillMaxSize()) {
         androidx.compose.animation.AnimatedContent(
             targetState = currentScreen,
@@ -244,7 +279,13 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
                     progressStore = progressStore,
                     onBack = { selectedGroup = null },
                     onFinishWithDeletions = { deletions ->
-                        scope.launch { trashStore.addToTrash(deletions.map { it.id }) }
+                        scope.launch {
+                            try {
+                                trashStore.addToTrash(deletions.map { it.id })
+                            } catch (e: Exception) {
+                                snackbarHostState.showSnackbar("Gagal memproses data swipe")
+                            }
+                        }
                     }
                 )
                 Screen.Home -> HomeScreen(
@@ -271,13 +312,38 @@ fun AppRoot(progressStore: ProgressStore, trashStore: TrashStore, statsStore: St
             }
         }
 
-        // Rumah untuk Snackbar melayang tepat di atas area navigasi bawah layar
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 24.dp)
         )
+
+        // [KOTAK HITAM] UI Dialog Pop-up pemicu informasi error koding
+        if (activeCrashLog != null) {
+            AlertDialog(
+                onDismissRequest = { activeCrashLog = null },
+                title = { Text("Laporan Deteksi Crash 🛠️") },
+                text = {
+                    Box(
+                        modifier = Modifier
+                            .heightIn(max = 350.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Text(
+                            text = activeCrashLog!!,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = { activeCrashLog = null }) {
+                        Text("Saya Mengerti")
+                    }
+                }
+            )
+        }
     }
 }
 
