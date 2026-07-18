@@ -49,10 +49,16 @@ import java.util.Locale
 private const val SWIPE_THRESHOLD_PX = 380f
 private const val MAX_ROTATION_DEG = 12f
 
+// Shared between the prefetch pass above and SwipeCard's own MediaPreview
+// call below — both MUST request the same decode size, since Coil's cache
+// key includes it. A mismatch here means prefetching does nothing useful.
+private const val SWIPE_CARD_DECODE_SIZE = 600
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeScreen(
     group: MediaGroup,
+    displayName: String,
     progressStore: ProgressStore,
     onBack: () -> Unit,
     onFinishWithDeletions: (List<MediaItem>) -> Unit
@@ -66,12 +72,31 @@ fun SwipeScreen(
     var buttonDecision by remember(group.key) { mutableStateOf<SwipeDecision?>(null) }
     var showFullscreen by remember { mutableStateOf(false) }
     var showInfo by remember { mutableStateOf(false) }
+    // Blocks a NEW decision from starting until the current one has fully
+    // resolved (animation finished, index advanced, progress saved). Without
+    // this, spamming Delete/Keep rapidly could change `buttonDecision`
+    // again while SwipeCard's animate-then-decide coroutine for the
+    // PREVIOUS tap was still mid-flight — Compose cancels that coroutine
+    // when its key changes, so `onDecision` (the index++ / pendingDeletes
+    // update) could be skipped entirely for the cancelled tap, leaving
+    // `index` and `pendingDeletes` out of sync with what actually got
+    // reviewed. Enough of that compounding under sustained spam is what was
+    // showing up as the app going unresponsive.
+    var isTransitioning by remember(group.key) { mutableStateOf(false) }
 
     LaunchedEffect(group.key) {
         index = progressStore.progressFlow(group.key).first().coerceIn(0, group.items.size)
         restored = true
     }
 
+    // Quietly warm the image cache for the next couple of photos so the swipe
+    // never has to wait on a fresh decode mid-gesture. This size MUST match
+    // SwipeCard's own request size (see MediaPreview call below) — Coil's
+    // cache key includes the requested size, so a mismatched prefetch size
+    // creates a second, never-reused cache entry for the same photo instead
+    // of warming the one the card will actually ask for. That used to be
+    // 900 here vs 600 on the card: every prefetch was pure waste, decoding
+    // and caching a bitmap nothing ever displayed.
     LaunchedEffect(index, group.key) {
         val loader = context.imageLoader
         (index + 1..index + 2).forEach { i ->
@@ -79,7 +104,7 @@ fun SwipeScreen(
                 loader.enqueue(
                     ImageRequest.Builder(context)
                         .data(item.uri)
-                        .size(900)
+                        .size(SWIPE_CARD_DECODE_SIZE)
                         .build()
                 )
             }
@@ -99,7 +124,7 @@ fun SwipeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(group.key) },
+                title = { Text(displayName) },
                 navigationIcon = {
                     IconButton(onClick = { finishAndExit() }) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
@@ -112,13 +137,16 @@ fun SwipeScreen(
                         }
                     }
                     if (lastDecision != null) {
-                        IconButton(onClick = {
-                            val (item, decision) = lastDecision!!
-                            if (decision is SwipeDecision.Delete) pendingDeletes.remove(item)
-                            index = (index - 1).coerceAtLeast(0)
-                            lastDecision = null
-                            scope.launch { progressStore.saveProgress(group.key, index) }
-                        }) {
+                        IconButton(
+                            enabled = !isTransitioning,
+                            onClick = {
+                                val (item, decision) = lastDecision!!
+                                if (decision is SwipeDecision.Delete) pendingDeletes.remove(item)
+                                index = (index - 1).coerceAtLeast(0)
+                                lastDecision = null
+                                scope.launch { progressStore.saveProgress(group.key, index) }
+                            }
+                        ) {
                             Icon(Icons.Filled.Undo, contentDescription = "Undo last swipe")
                         }
                     }
@@ -166,6 +194,7 @@ fun SwipeScreen(
                     // Hanya menyisakan satu kartu utama yang aktif dan responsif
                     SwipeCard(
                         item = currentItem,
+                        enabled = !isTransitioning,
                         externalDecision = buttonDecision,
                         onExternalDecisionHandled = { buttonDecision = null },
                         onZoomRequest = { showFullscreen = true },
@@ -174,6 +203,7 @@ fun SwipeScreen(
                             lastDecision = currentItem to decision
                             index += 1
                             scope.launch { progressStore.saveProgress(group.key, index) }
+                            isTransitioning = false
                         }
                     )
                 }
@@ -181,13 +211,32 @@ fun SwipeScreen(
 
             if (currentItem != null) {
                 ActionButtonRow(
-                    onDelete = { buttonDecision = SwipeDecision.Delete },
-                    onSkip = {
-                        lastDecision = currentItem to SwipeDecision.Keep
-                        index += 1
-                        scope.launch { progressStore.saveProgress(group.key, index) }
+                    enabled = !isTransitioning,
+                    onDelete = {
+                        if (!isTransitioning) {
+                            isTransitioning = true
+                            buttonDecision = SwipeDecision.Delete
+                        }
                     },
-                    onKeep = { buttonDecision = SwipeDecision.Keep }
+                    onSkip = {
+                        if (!isTransitioning) {
+                            isTransitioning = true
+                            lastDecision = currentItem to SwipeDecision.Keep
+                            index += 1
+                            scope.launch { progressStore.saveProgress(group.key, index) }
+                            // Skip has no animation to wait on, but still goes
+                            // through the same gate so a burst of rapid taps
+                            // advances one item per tap instead of racing
+                            // ahead of Compose's own recomposition.
+                            isTransitioning = false
+                        }
+                    },
+                    onKeep = {
+                        if (!isTransitioning) {
+                            isTransitioning = true
+                            buttonDecision = SwipeDecision.Keep
+                        }
+                    }
                 )
             }
         }
@@ -238,6 +287,7 @@ private fun Filmstrip(items: List<MediaItem>, currentIndex: Int, onSelect: (Int)
                         item = item,
                         contentScale = ContentScale.Fit,
                         decodeSize = 100,
+                        lowMemory = true, // the whole strip can be scrolled through rapidly
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -284,6 +334,7 @@ private fun InfoChip(text: String) {
 
 @Composable
 private fun ActionButtonRow(
+    enabled: Boolean,
     onDelete: () -> Unit,
     onSkip: () -> Unit,
     onKeep: () -> Unit
@@ -298,6 +349,7 @@ private fun ActionButtonRow(
             background = MaterialTheme.colorScheme.secondary,
             symbolColor = Color(0xFF1A0E0C),
             size = 64.dp,
+            enabled = enabled,
             onClick = onDelete
         )
         RoundActionButton(
@@ -305,6 +357,7 @@ private fun ActionButtonRow(
             background = MaterialTheme.colorScheme.surfaceVariant,
             symbolColor = MaterialTheme.colorScheme.onSurfaceVariant,
             size = 48.dp,
+            enabled = enabled,
             onClick = onSkip
         )
         RoundActionButton(
@@ -312,6 +365,7 @@ private fun ActionButtonRow(
             background = MaterialTheme.colorScheme.primary,
             symbolColor = Color(0xFF0F1113),
             size = 64.dp,
+            enabled = enabled,
             onClick = onKeep
         )
     }
@@ -323,14 +377,18 @@ private fun RoundActionButton(
     background: Color,
     symbolColor: Color,
     size: androidx.compose.ui.unit.Dp,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .size(size)
+            // Dimmed while disabled — a clear, immediate signal that the tap
+            // during a spam burst was seen but intentionally ignored, rather
+            // than the button just silently doing nothing.
+            .background(if (enabled) background else background.copy(alpha = 0.4f), CircleShape)
             .clip(CircleShape)
-            .background(background)
-            .clickable(onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(symbol, color = symbolColor, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -389,6 +447,7 @@ private fun StatColumn(label: String, value: String) {
 @Composable
 private fun SwipeCard(
     item: MediaItem,
+    enabled: Boolean,
     externalDecision: SwipeDecision?,
     onExternalDecisionHandled: () -> Unit,
     onZoomRequest: () -> Unit,
@@ -430,31 +489,41 @@ private fun SwipeCard(
             }
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .clickable { onZoomRequest() }
-            .pointerInput(item.id) {
-                detectDragGestures(
-                    onDragEnd = {
-                        val target = offsetX
-                        when {
-                            target > SWIPE_THRESHOLD_PX -> scope.launch { animateAndDecide(SwipeDecision.Keep) }
-                            target < -SWIPE_THRESHOLD_PX -> scope.launch { animateAndDecide(SwipeDecision.Delete) }
-                            else -> scope.launch {
-                                animate(offsetX, 0f, animationSpec = tween(200)) { value, _ -> offsetX = value }
+            .clickable(enabled = enabled) { onZoomRequest() }
+            // Skipped entirely while disabled — otherwise a physical swipe
+            // could kick off a second animateAndDecide() concurrently with
+            // one already in flight from a button tap, racing on the same
+            // offsetX and potentially double-triggering onDecision.
+            .then(
+                if (enabled) {
+                    Modifier.pointerInput(item.id) {
+                        detectDragGestures(
+                            onDragEnd = {
+                                val target = offsetX
+                                when {
+                                    target > SWIPE_THRESHOLD_PX -> scope.launch { animateAndDecide(SwipeDecision.Keep) }
+                                    target < -SWIPE_THRESHOLD_PX -> scope.launch { animateAndDecide(SwipeDecision.Delete) }
+                                    else -> scope.launch {
+                                        animate(offsetX, 0f, animationSpec = tween(200)) { value, _ -> offsetX = value }
+                                    }
+                                }
+                            },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                offsetX += dragAmount.x
                             }
-                        }
-                    },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        offsetX += dragAmount.x
+                        )
                     }
-                )
-            },
+                } else {
+                    Modifier
+                }
+            ),
         contentAlignment = Alignment.Center
     ) {
         MediaPreview(
             item = item,
             contentScale = ContentScale.Crop,
-            decodeSize = 600,
+            decodeSize = SWIPE_CARD_DECODE_SIZE,
             modifier = Modifier.fillMaxSize()
         )
         Box(
@@ -472,7 +541,18 @@ private fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
     ) {
         Box(modifier = Modifier.fillMaxSize().background(Color.Black).clickable { onDismiss() }) {
             AsyncImage(
-                model = item.uri,
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(item.uri)
+                    // Explicit cap instead of leaving size to be inferred from
+                    // layout constraints — Coil normally reads the constraints
+                    // of the composable it's measured in, but that inference
+                    // can fall through to the source's original resolution in
+                    // edge cases (e.g. certain Dialog/window-size combos).
+                    // 2400px covers every phone display with headroom; nothing
+                    // is gained decoding a 12,000px sensor photo past that,
+                    // it's just wasted heap.
+                    .size(2400)
+                    .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize()

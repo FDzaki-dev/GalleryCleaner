@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="view_trash"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_trash_short"
+        android:shortcutLongLabel="@string/shortcut_trash_long">
+        <intent
+            android:action="com.example.gallerycleaner.ACTION_VIEW_TRASH"
+            android:targetPackage="com.example.gallerycleaner"
+            android:targetClass="com.example.gallerycleaner.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="open_settings"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_settings_short"
+        android:shortcutLongLabel="@string/shortcut_settings_long">
+        <intent
+            android:action="com.example.gallerycleaner.ACTION_OPEN_SETTINGS"
+            android:targetPackage="com.example.gallerycleaner"
+            android:targetClass="com.example.gallerycleaner.MainActivity" />
+    </shortcut>
+</shortcuts>

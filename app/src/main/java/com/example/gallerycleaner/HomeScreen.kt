@@ -7,6 +7,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,10 +43,14 @@ fun HomeScreen(
     totalDeletedCount: Int,
     expiredTrashCount: Int,
     expiryDays: Int,
+    folderLabels: Map<String, String>,
+    onRenameFolder: (String, String) -> Unit,
     onGroupModeChange: (GroupMode) -> Unit,
     onSortChange: (SortOption) -> Unit,
     onGroupClick: (MediaGroup) -> Unit,
     onTrashClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onRefresh: () -> Unit,
     onCleanExpiredTrash: () -> Unit
 ) {
     Scaffold(
@@ -53,6 +60,20 @@ fun HomeScreen(
                 TopAppBar(
                     title = { Text("Gallery Cleaner", style = MaterialTheme.typography.titleLarge) },
                     actions = {
+                        IconButton(onClick = onRefresh) {
+                            Icon(
+                                Icons.Filled.Refresh,
+                                contentDescription = "Refresh library",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = onSettingsClick) {
+                            Icon(
+                                Icons.Filled.Settings,
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         TextButton(onClick = onTrashClick) {
                             Text(
                                 if (trashCount > 0) "Trash ($trashCount)" else "Trash",
@@ -137,7 +158,13 @@ fun HomeScreen(
                 }
 
                 items(groups, key = { it.key }) { group ->
-                    GroupRow(group = group, progressStore = progressStore, onClick = { onGroupClick(group) })
+                    GroupRow(
+                        group = group,
+                        progressStore = progressStore,
+                        label = folderLabels[group.key],
+                        onClick = { onGroupClick(group) },
+                        onRename = { newLabel -> onRenameFolder(group.key, newLabel) }
+                    )
                 }
             }
         }
@@ -330,8 +357,15 @@ private fun PillChip(label: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun GroupRow(group: MediaGroup, progressStore: ProgressStore, onClick: () -> Unit) {
+private fun GroupRow(
+    group: MediaGroup,
+    progressStore: ProgressStore,
+    label: String?,
+    onClick: () -> Unit,
+    onRename: (String) -> Unit
+) {
     var reviewed by remember(group.key) { mutableStateOf(0) }
+    var showRenameDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(group.key) {
         reviewed = progressStore.progressFlow(group.key).first().coerceAtMost(group.items.size)
@@ -339,6 +373,7 @@ private fun GroupRow(group: MediaGroup, progressStore: ProgressStore, onClick: (
 
     val fraction = if (group.items.isEmpty()) 0f else reviewed / group.items.size.toFloat()
     val done = fraction >= 1f && group.items.isNotEmpty()
+    val displayName = label ?: group.key
 
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -355,7 +390,7 @@ private fun GroupRow(group: MediaGroup, progressStore: ProgressStore, onClick: (
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    group.key,
+                    displayName,
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
@@ -368,9 +403,83 @@ private fun GroupRow(group: MediaGroup, progressStore: ProgressStore, onClick: (
                 )
             }
 
+            // Custom in-app name, independent of whatever the device's own
+            // Gallery app calls this folder — see FolderLabelStore for why
+            // that's necessary rather than just reading the OS name.
+            IconButton(onClick = { showRenameDialog = true }) {
+                Icon(
+                    Icons.Filled.Edit,
+                    contentDescription = "Rename folder",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
             ProgressRing(fraction = fraction, done = done)
         }
     }
+
+    if (showRenameDialog) {
+        RenameFolderDialog(
+            currentName = displayName,
+            hasCustomLabel = label != null,
+            onDismiss = { showRenameDialog = false },
+            onConfirm = { newName ->
+                onRename(newName)
+                showRenameDialog = false
+            },
+            onResetToOriginal = {
+                onRename("")
+                showRenameDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun RenameFolderDialog(
+    currentName: String,
+    hasCustomLabel: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+    onResetToOriginal: () -> Unit
+) {
+    var text by remember { mutableStateOf(currentName) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Rename Folder") },
+        text = {
+            Column {
+                Text(
+                    "This only changes the name shown in this app — it won't " +
+                        "rename the actual folder or affect your device's Gallery app.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(text) },
+                enabled = text.isNotBlank()
+            ) { Text("Save") }
+        },
+        dismissButton = {
+            Row {
+                if (hasCustomLabel) {
+                    TextButton(onClick = onResetToOriginal) { Text("Reset") }
+                }
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        }
+    )
 }
 
 /** A single, clear cover thumbnail — replaces the earlier 3-photo overlapping
@@ -390,6 +499,7 @@ private fun CoverThumbnail(items: List<MediaItem>) {
                 item = cover,
                 contentScale = ContentScale.Crop,
                 decodeSize = 160, // small, exact decode target — keeps list scrolling smooth
+                lowMemory = true, // dozens of these can be alive on screen at once
                 modifier = Modifier.fillMaxSize()
             )
         }
