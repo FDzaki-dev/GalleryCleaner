@@ -35,6 +35,7 @@ fun TrashScreen(
     onDeletePermanently: (List<Long>) -> Unit
 ) {
     val selected = remember { mutableStateListOf<Long>() }
+    var showEmptyTrashConfirm by remember { mutableStateOf(false) }
 
     // Selection resets cleanly whenever the trash contents change (e.g. after
     // a permanent delete completes and items disappear from the list).
@@ -53,11 +54,25 @@ fun TrashScreen(
                 },
                 actions = {
                     if (items.isNotEmpty()) {
-                        TextButton(onClick = {
-                            if (selected.size == items.size) selected.clear()
-                            else { selected.clear(); selected.addAll(items.map { it.id }) }
-                        }) {
-                            Text(if (selected.size == items.size) "Deselect all" else "Select all")
+                        if (selected.isEmpty()) {
+                            // One tap to clear everything at once — no need to
+                            // Select all -> Delete permanently for the common
+                            // "just empty the whole trash" case.
+                            TextButton(
+                                onClick = { showEmptyTrashConfirm = true },
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.secondary
+                                )
+                            ) {
+                                Text("Empty Trash")
+                            }
+                        } else {
+                            TextButton(onClick = {
+                                if (selected.size == items.size) selected.clear()
+                                else { selected.clear(); selected.addAll(items.map { it.id }) }
+                            }) {
+                                Text(if (selected.size == items.size) "Deselect all" else "Select all")
+                            }
                         }
                     }
                 },
@@ -119,6 +134,7 @@ fun TrashScreen(
                             item = item,
                             contentScale = ContentScale.Crop,
                             decodeSize = 300,
+                            lowMemory = true, // a full grid of these can be alive at once
                             modifier = Modifier.fillMaxSize()
                         )
                         val daysLeft = trashedAtMillis[item.id]?.let { trashedAt ->
@@ -166,6 +182,30 @@ fun TrashScreen(
                 }
             }
         }
+    }
+
+    if (showEmptyTrashConfirm) {
+        AlertDialog(
+            onDismissRequest = { showEmptyTrashConfirm = false },
+            title = { Text("Empty Trash?") },
+            text = {
+                Text(
+                    "This will permanently delete all ${items.size} item(s) in Trash. " +
+                        "This can't be undone."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showEmptyTrashConfirm = false
+                    onDeletePermanently(items.map { it.id })
+                }) {
+                    Text("Delete All", color = MaterialTheme.colorScheme.secondary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEmptyTrashConfirm = false }) { Text("Cancel") }
+            }
+        )
     }
 }
 

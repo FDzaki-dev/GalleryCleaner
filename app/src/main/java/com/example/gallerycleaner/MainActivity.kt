@@ -3,6 +3,7 @@ package com.example.gallerycleaner
 import android.Manifest
 import android.app.RecoverableSecurityException
 import android.content.Context
+import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.os.Build
@@ -16,6 +17,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -34,15 +36,38 @@ import kotlinx.coroutines.withContext
 import java.io.PrintWriter
 import java.io.StringWriter
 
+// Matches the <intent android:action="..."> values declared in
+// res/xml/shortcuts.xml — these are what tell MainActivity which screen a
+// long-press launcher shortcut was meant to open.
+private const val ACTION_VIEW_TRASH = "com.example.gallerycleaner.ACTION_VIEW_TRASH"
+private const val ACTION_OPEN_SETTINGS = "com.example.gallerycleaner.ACTION_OPEN_SETTINGS"
+
 class MainActivity : ComponentActivity() {
 
     private lateinit var progressStore: ProgressStore
     private lateinit var trashStore: TrashStore
     private lateinit var statsStore: StatsStore
+    private lateinit var folderLabelStore: FolderLabelStore
+    private lateinit var settingsStore: SettingsStore
+
+    // A plain Compose MutableState read directly by AppRoot. Because
+    // launchMode="singleTask" is set in the manifest, tapping a shortcut
+    // while the app is already running reuses this same Activity instance
+    // via onNewIntent() rather than creating a new one — mutating this here
+    // is enough to trigger recomposition and navigate, no separate event bus
+    // needed.
+    private var pendingShortcutAction by mutableStateOf<String?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingShortcutAction = intent.action
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        pendingShortcutAction = intent?.action
 
         // [KOTAK HITAM] 1. Periksa apakah sesi sebelumnya mengalami crash
         val prefs = getSharedPreferences("gallery_cleaner_debug", Context.MODE_PRIVATE)
@@ -69,14 +94,26 @@ class MainActivity : ComponentActivity() {
         progressStore = ProgressStore(applicationContext)
         trashStore = TrashStore(applicationContext)
         statsStore = StatsStore(applicationContext)
+        folderLabelStore = FolderLabelStore(applicationContext)
+        settingsStore = SettingsStore(applicationContext)
 
         setContent {
-            GalleryCleanerTheme {
+            val themeMode by settingsStore.themeModeFlow.collectAsState(initial = ThemeMode.DARK)
+            val darkTheme = when (themeMode) {
+                ThemeMode.DARK -> true
+                ThemeMode.LIGHT -> false
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+            GalleryCleanerTheme(darkTheme = darkTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     AppRoot(
                         progressStore = progressStore, 
                         trashStore = trashStore, 
                         statsStore = statsStore,
+                        folderLabelStore = folderLabelStore,
+                        settingsStore = settingsStore,
+                        pendingShortcutAction = pendingShortcutAction,
+                        onShortcutActionConsumed = { pendingShortcutAction = null },
                         initialCrashLog = savedCrashLog // Lempar data crash ke UI utama
                     )
                 }
@@ -87,10 +124,23 @@ class MainActivity : ComponentActivity() {
 
 private sealed class Screen {
     object Permission : Screen()
+    object Onboarding : Screen()
     object Trash : Screen()
+    object Settings : Screen()
     data class Swipe(val group: MediaGroup) : Screen()
     object Home : Screen()
 }
+
+/** Bundles every value derived from (allMedia, trashedIds, expiredIds) that
+ *  used to be computed synchronously in composition. Computed together in
+ *  one background pass instead — see the LaunchedEffect in AppRoot. */
+private data class DerivedMediaState(
+    val activeMedia: List<MediaItem> = emptyList(),
+    val trashItems: List<MediaItem> = emptyList(),
+    val expiredTrashItems: List<MediaItem> = emptyList(),
+    val totalLibraryBytes: Long = 0L,
+    val trashReclaimableBytes: Long = 0L
+)
 
 private fun requiredPermissions(): Array<String> =
     if (Build.VERSION.SDK_INT >= 33) {
@@ -104,11 +154,27 @@ fun AppRoot(
     progressStore: ProgressStore, 
     trashStore: TrashStore, 
     statsStore: StatsStore,
+    folderLabelStore: FolderLabelStore,
+    settingsStore: SettingsStore,
+    pendingShortcutAction: String?,
+    onShortcutActionConsumed: () -> Unit,
     initialCrashLog: String?
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val folderLabels by folderLabelStore.allLabelsFlow.collectAsState(initial = emptyMap())
+    val trashRetentionDays by settingsStore.trashRetentionDaysFlow.collectAsState(
+        initial = SettingsStore.DEFAULT_TRASH_RETENTION_DAYS
+    )
+    // Defaults to true (not false) for the brief window before DataStore's
+    // real persisted value loads — this only matters for a split second,
+    // but which way it's wrong matters: defaulting true means a genuinely
+    // new install might flash Home before flipping to Onboarding once, a
+    // one-time event. Defaulting false would instead flash Onboarding in
+    // front of every returning user on every single app open, which is far
+    // more disruptive for the common case.
+    val hasSeenOnboarding by settingsStore.hasSeenOnboardingFlow.collectAsState(initial = true)
 
     // State untuk mengontrol pop-up tampilan error crash
     var activeCrashLog by remember { mutableStateOf(initialCrashLog) }
@@ -131,13 +197,42 @@ fun AppRoot(
     var sortOption by remember { mutableStateOf(SortOption.DATE) }
     var selectedGroup by remember { mutableStateOf<MediaGroup?>(null) }
     var showTrash by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
+
+    // Handles both cold start (pendingShortcutAction set from the launch
+    // Intent in onCreate) and the app already running (updated via
+    // onNewIntent since MainActivity is launchMode="singleTask"). Consuming
+    // the action by resetting it to null (below) is what makes repeat taps
+    // of the same shortcut keep working — each tap is a null -> action
+    // transition, which LaunchedEffect always sees as a real key change,
+    // rather than the action value just staying the same between taps.
+    LaunchedEffect(pendingShortcutAction) {
+        when (pendingShortcutAction) {
+            ACTION_VIEW_TRASH -> {
+                showSettings = false
+                showTrash = true
+            }
+            ACTION_OPEN_SETTINGS -> {
+                showTrash = false
+                showSettings = true
+            }
+            else -> return@LaunchedEffect
+        }
+        onShortcutActionConsumed()
+    }
 
     val trashedItems by trashStore.trashedItemsFlow.collectAsState(initial = emptyList())
     val trashedIds = remember(trashedItems) { trashedItems.map { it.id }.toSet() }
-    val expiredIds by trashStore.expiredItemIdsFlow.collectAsState(initial = emptySet())
+    val expiredIds by remember(trashRetentionDays) { trashStore.expiredItemIdsFlow(trashRetentionDays) }
+        .collectAsState(initial = emptySet())
 
     var isLoadingMore by remember { mutableStateOf(false) }
-    LaunchedEffect(hasPermission) {
+    // Bumping this re-runs the effect below even though `hasPermission`
+    // hasn't changed — the one way to force a completely fresh MediaStore
+    // query on demand (e.g. after renaming a folder in another gallery app,
+    // in case its own index was stale rather than ours).
+    var refreshTrigger by remember { mutableIntStateOf(0) }
+    LaunchedEffect(hasPermission, refreshTrigger) {
         if (hasPermission) {
             isLoading = true
             allMedia = emptyList()
@@ -158,15 +253,32 @@ fun AppRoot(
         }
     }
 
-    val activeMedia = remember(allMedia, trashedIds) {
-        allMedia.filterNot { it.id in trashedIds }
+    // All of this used to be `remember(allMedia, trashedIds) { ... }` — which
+    // avoids recomputing when the keys are unchanged, but still runs the
+    // filter/sum synchronously ON the main/composition thread whenever they
+    // DO change. During progressive gallery loading, allMedia changes on
+    // every single page (every few hundred ms for a large library), so this
+    // was doing repeated O(n) work on the UI thread exactly while the user
+    // is scrolling — the actual cause of scroll stutter reappearing.
+    // Computing it in a background coroutine instead means composition only
+    // ever reads an already-computed value; the list never blocks on this.
+    var derivedMedia by remember { mutableStateOf(DerivedMediaState()) }
+    LaunchedEffect(allMedia, trashedIds, expiredIds) {
+        derivedMedia = withContext(Dispatchers.Default) {
+            val active = allMedia.filterNot { it.id in trashedIds }
+            val trash = allMedia.filter { it.id in trashedIds }
+            DerivedMediaState(
+                activeMedia = active,
+                trashItems = trash,
+                expiredTrashItems = trash.filter { it.id in expiredIds },
+                totalLibraryBytes = active.sumOf { it.sizeBytes },
+                trashReclaimableBytes = trash.sumOf { it.sizeBytes }
+            )
+        }
     }
-    val trashItems = remember(allMedia, trashedIds) {
-        allMedia.filter { it.id in trashedIds }
-    }
-    val expiredTrashItems = remember(trashItems, expiredIds) {
-        trashItems.filter { it.id in expiredIds }
-    }
+    val activeMedia = derivedMedia.activeMedia
+    val trashItems = derivedMedia.trashItems
+    val expiredTrashItems = derivedMedia.expiredTrashItems
 
     var groups by remember { mutableStateOf<List<MediaGroup>>(emptyList()) }
     LaunchedEffect(activeMedia, groupMode, sortOption) {
@@ -244,10 +356,13 @@ fun AppRoot(
     }
 
     BackHandler(enabled = showTrash) { showTrash = false }
+    BackHandler(enabled = showSettings) { showSettings = false }
 
     val currentScreen = when {
         !hasPermission -> Screen.Permission
+        !hasSeenOnboarding -> Screen.Onboarding
         showTrash -> Screen.Trash
+        showSettings -> Screen.Settings
         selectedGroup != null -> Screen.Swipe(selectedGroup!!)
         else -> Screen.Home
     }
@@ -264,18 +379,29 @@ fun AppRoot(
         ) { screen ->
             when (screen) {
                 Screen.Permission -> PermissionScreen(onRequest = { permissionLauncher.launch(requiredPermissions()) })
+                Screen.Onboarding -> OnboardingScreen(
+                    onDone = { scope.launch { settingsStore.setHasSeenOnboarding(true) } }
+                )
                 Screen.Trash -> TrashScreen(
                     items = trashItems,
                     trashedAtMillis = trashedItems.associate { it.id to it.trashedAtMillis },
-                    expiryDays = TrashStore.EXPIRY_DAYS,
+                    expiryDays = trashRetentionDays,
                     onBack = { showTrash = false },
                     onRestore = { ids -> scope.launch { trashStore.remove(ids) } },
                     onDeletePermanently = { ids ->
                         performPermanentDeletion(trashItems.filter { it.id in ids })
                     }
                 )
+                Screen.Settings -> SettingsScreen(
+                    settingsStore = settingsStore,
+                    onBack = { showSettings = false }
+                )
                 is Screen.Swipe -> SwipeScreen(
                     group = screen.group,
+                    // Custom in-app label takes priority over the raw
+                    // folder name — the whole point of it is to stand in
+                    // for a device Gallery's own naming that we can't read.
+                    displayName = folderLabels[screen.group.key] ?: screen.group.key,
                     progressStore = progressStore,
                     onBack = { selectedGroup = null },
                     onFinishWithDeletions = { deletions ->
@@ -297,16 +423,22 @@ fun AppRoot(
                     isLoading = isLoading,
                     isLoadingMore = isLoadingMore,
                     trashCount = trashItems.size,
-                    totalLibraryBytes = activeMedia.sumOf { it.sizeBytes },
-                    trashReclaimableBytes = trashItems.sumOf { it.sizeBytes },
+                    totalLibraryBytes = derivedMedia.totalLibraryBytes,
+                    trashReclaimableBytes = derivedMedia.trashReclaimableBytes,
                     totalFreedBytes = totalFreedBytes,
                     totalDeletedCount = totalDeletedCount,
                     expiredTrashCount = expiredTrashItems.size,
-                    expiryDays = TrashStore.EXPIRY_DAYS,
+                    expiryDays = trashRetentionDays,
+                    folderLabels = folderLabels,
+                    onRenameFolder = { groupKey, newLabel ->
+                        scope.launch { folderLabelStore.setLabel(groupKey, newLabel) }
+                    },
                     onGroupModeChange = { groupMode = it },
                     onSortChange = { sortOption = it },
                     onGroupClick = { selectedGroup = it },
                     onTrashClick = { showTrash = true },
+                    onSettingsClick = { showSettings = true },
+                    onRefresh = { refreshTrigger++ },
                     onCleanExpiredTrash = { performPermanentDeletion(expiredTrashItems) }
                 )
             }

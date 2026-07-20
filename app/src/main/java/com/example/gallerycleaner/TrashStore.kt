@@ -37,11 +37,12 @@ data class TrashedItem(val id: Long, val trashedAtMillis: Long)
 class TrashStore(private val context: Context) {
 
     companion object {
-        /** Matches the common "auto-empty after a month" convention other
-         *  gallery cleaners use — long enough that an accidental swipe is
-         *  easy to catch, short enough that trash doesn't just quietly grow
-         *  forever if the user never opens it. */
-        const val EXPIRY_DAYS = 30
+        /** Default before the user has ever opened Settings, and the
+         *  fallback value if SettingsStore's Flow hasn't emitted yet. Matches
+         *  the common "auto-empty after a month" convention other gallery
+         *  cleaners use. The actual retention length is user-configurable
+         *  now — see SettingsStore.trashRetentionDaysFlow. */
+        const val EXPIRY_DAYS = SettingsStore.DEFAULT_TRASH_RETENTION_DAYS
     }
 
     val trashedItemsFlow: Flow<List<TrashedItem>> =
@@ -50,10 +51,10 @@ class TrashStore(private val context: Context) {
     val trashedIdsFlow: Flow<Set<Long>> =
         trashedItemsFlow.map { items -> items.map { it.id }.toSet() }
 
-    /** Items that have been sitting in the trash longer than [EXPIRY_DAYS]. */
-    val expiredItemIdsFlow: Flow<Set<Long>> =
+    /** Items that have been sitting in the trash longer than [retentionDays]. */
+    fun expiredItemIdsFlow(retentionDays: Int): Flow<Set<Long>> =
         trashedItemsFlow.map { items ->
-            val cutoff = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(EXPIRY_DAYS.toLong())
+            val cutoff = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(retentionDays.toLong())
             items.filter { it.trashedAtMillis < cutoff }.map { it.id }.toSet()
         }
 
@@ -79,9 +80,9 @@ class TrashStore(private val context: Context) {
 
     /** How many whole days remain before an item trashed at [trashedAtMillis]
      *  is flagged for auto-cleanup — for display in the UI (e.g. "3d left"). */
-    fun daysUntilExpiry(trashedAtMillis: Long): Int {
+    fun daysUntilExpiry(trashedAtMillis: Long, retentionDays: Int): Int {
         val ageDays = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - trashedAtMillis).toInt()
-        return (EXPIRY_DAYS - ageDays).coerceAtLeast(0)
+        return (retentionDays - ageDays).coerceAtLeast(0)
     }
 
     /** Reads current entries, transparently migrating the old id-only format
