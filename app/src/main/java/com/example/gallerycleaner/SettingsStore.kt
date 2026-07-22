@@ -13,7 +13,14 @@ private val Context.settingsDataStore by preferencesDataStore(name = "gallery_cl
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/** A curated color style, independent of light/dark — ThemeMode decides
+ *  brightness, AppTheme decides *character*. Kept as a separate axis
+ *  instead of folding into ThemeMode so the two can be combined freely
+ *  (e.g. Amber Reserve + Light) without a combinatorial enum explosion. */
+enum class AppTheme { SIGNATURE, AMBER_RESERVE, INDIGO_NOIR }
+
 private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
+private val APP_THEME_KEY = stringPreferencesKey("app_theme")
 private val TRASH_RETENTION_DAYS_KEY = intPreferencesKey("trash_retention_days")
 private val CLEANING_REMINDER_ENABLED_KEY = booleanPreferencesKey("cleaning_reminder_enabled")
 private val HAS_SEEN_ONBOARDING_KEY = booleanPreferencesKey("has_seen_onboarding")
@@ -35,6 +42,19 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setThemeMode(mode: ThemeMode) {
         context.settingsDataStore.edit { prefs -> prefs[THEME_MODE_KEY] = mode.name }
+    }
+
+    /** Defaults to SIGNATURE — the app's original sage/coral look — so
+     *  nothing changes visually for anyone until they deliberately opt into
+     *  one of the other styles in Settings. */
+    val appThemeFlow: Flow<AppTheme> = context.settingsDataStore.data.map { prefs ->
+        prefs[APP_THEME_KEY]?.let { raw ->
+            runCatching { AppTheme.valueOf(raw) }.getOrNull()
+        } ?: AppTheme.SIGNATURE
+    }
+
+    suspend fun setAppTheme(theme: AppTheme) {
+        context.settingsDataStore.edit { prefs -> prefs[APP_THEME_KEY] = theme.name }
     }
 
     /** How many days an item sits in Trash before it's flagged for

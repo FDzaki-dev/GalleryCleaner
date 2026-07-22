@@ -151,10 +151,20 @@ object MediaRepository {
             GroupMode.MONTH -> sorted.groupBy { monthKey(it.dateTakenMillis) }
             GroupMode.ALBUM -> sorted.groupBy { it.bucketName }
         }
-        // Preserve a stable, recency-first ordering of group keys
+        // Preserve a stable, recency-first ordering of group keys.
+        //
+        // MONTH used to re-scan the *entire* sorted list once per key just
+        // to find a representative dateTakenMillis for that key
+        // (`sorted.first { monthKey(it) == key }`) — O(keys × items). On a
+        // large library (tens of thousands of photos across a couple years
+        // of months) that's a lot of redundant passes over data already in
+        // hand. `grouped` already has every item bucketed by key, so taking
+        // the max dateTakenMillis per bucket is the same O(items) pass this
+        // function is already doing, just reading from the map instead of
+        // re-scanning the source list.
         val orderedKeys = when (mode) {
             GroupMode.MONTH -> grouped.keys.sortedByDescending { key ->
-                sorted.first { monthKey(it.dateTakenMillis) == key }.dateTakenMillis
+                grouped.getValue(key).maxOf { it.dateTakenMillis }
             }
             GroupMode.ALBUM -> grouped.keys.sorted()
         }
@@ -165,7 +175,14 @@ object MediaRepository {
         return when (sort) {
             SortOption.DATE -> items.sortedByDescending { it.dateTakenMillis }
             SortOption.SIZE -> items.sortedByDescending { it.sizeBytes }
-            SortOption.NAME -> items.sortedBy { it.displayName.lowercase(Locale.getDefault()) }
+            // Locale.getDefault() hoisted out of the lambda — sortedBy calls
+            // its selector once per element, so leaving the call inline
+            // meant re-resolving the default locale on every single item
+            // instead of once for the whole sort.
+            SortOption.NAME -> {
+                val locale = Locale.getDefault()
+                items.sortedBy { it.displayName.lowercase(locale) }
+            }
         }
     }
 
@@ -253,9 +270,24 @@ object MediaRepository {
         null
     }
 
-    private val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).apply {
-        timeZone = TimeZone.getDefault()
+    // SimpleDateFormat is stateful and explicitly NOT thread-safe (it mutates
+    // an internal Calendar while formatting) — a plain shared instance here
+    // was a real hazard, not just a style nit: `group()` runs on
+    // Dispatchers.Default (a thread pool), and MainActivity's LaunchedEffect
+    // re-invokes it on every single page emitted during progressive gallery
+    // loading. When a new page arrives before the previous group() call's
+    // coroutine has actually stopped running (cancellation is cooperative —
+    // it doesn't preempt code mid-execution), two invocations calling
+    // monthFormat.format(...) concurrently on different pool threads could
+    // corrupt each other's in-flight formatting, producing garbled month
+    // labels or occasionally throwing. ThreadLocal gives each pool thread
+    // its own SimpleDateFormat instance instead of sharing one — no
+    // synchronization needed, and no risk of threads stepping on each other.
+    private val monthFormat = ThreadLocal.withInitial {
+        SimpleDateFormat("MMMM yyyy", Locale.getDefault()).apply {
+            timeZone = TimeZone.getDefault()
+        }
     }
 
-    private fun monthKey(millis: Long): String = monthFormat.format(millis)
+    private fun monthKey(millis: Long): String = monthFormat.get().format(millis)
 }

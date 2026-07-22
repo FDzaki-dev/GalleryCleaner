@@ -47,9 +47,6 @@ import coil.request.ImageRequest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.abs
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 private const val SWIPE_THRESHOLD_PX = 380f
 private const val MAX_ROTATION_DEG = 12f

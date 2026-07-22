@@ -99,12 +99,13 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val themeMode by settingsStore.themeModeFlow.collectAsState(initial = ThemeMode.DARK)
+            val appTheme by settingsStore.appThemeFlow.collectAsState(initial = AppTheme.SIGNATURE)
             val darkTheme = when (themeMode) {
                 ThemeMode.DARK -> true
                 ThemeMode.LIGHT -> false
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
-            GalleryCleanerTheme(darkTheme = darkTheme) {
+            GalleryCleanerTheme(darkTheme = darkTheme, appTheme = appTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     AppRoot(
                         progressStore = progressStore, 
@@ -289,6 +290,20 @@ fun AppRoot(
 
     var smartGroups by remember { mutableStateOf<List<MediaGroup>>(emptyList()) }
     LaunchedEffect(activeMedia) {
+        // Debounced, not immediate. MediaRepository.loadMediaProgressively
+        // emits a new page roughly every few hundred ms while a large
+        // gallery streams in, and `activeMedia` (this effect's key) changes
+        // on every single one of those emissions — restarting this effect
+        // each time. Running smartCategories() synchronously on every
+        // restart meant rescanning the *entire* active list (screenshot +
+        // large-file filters) again and again as it grew, for a section the
+        // user isn't even looking at yet (Quick Clean sits below the
+        // dashboard, off-screen during initial load). A short debounce here
+        // means only the "settled" state after a burst of pages actually
+        // pays for a scan — cheap, and zero UX cost since this section was
+        // never part of the "instant first paint" the progressive loader is
+        // optimizing for in the first place (see MediaRepository.kt).
+        delay(200)
         val quickCategories = withContext(Dispatchers.Default) {
             MediaRepository.smartCategories(activeMedia)
         }
