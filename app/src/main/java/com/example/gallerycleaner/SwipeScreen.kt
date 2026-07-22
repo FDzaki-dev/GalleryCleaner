@@ -1,7 +1,9 @@
 package com.example.gallerycleaner
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -440,7 +442,7 @@ private fun Filmstrip(items: List<MediaItem>, currentIndex: Int, onSelect: (Int)
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        items(items.size) { i ->
+        items(items.size, key = { i -> items[i].id }) { i ->
             val item = items[i]
             val isCurrent = i == currentIndex
             val isReviewed = i < currentIndex
@@ -683,7 +685,25 @@ private fun SwipeCard(
                                     target > SWIPE_THRESHOLD_PX -> scope.launch { animateAndDecide(SwipeDecision.Keep) }
                                     target < -SWIPE_THRESHOLD_PX -> scope.launch { animateAndDecide(SwipeDecision.Delete) }
                                     else -> scope.launch {
-                                        animate(offsetX, 0f, animationSpec = tween(200)) { value, _ -> offsetX = value }
+                                        // Spring instead of a flat tween: a
+                                        // fixed 200ms slide-back feels the
+                                        // same whether the card was dragged
+                                        // 10px or 300px, which reads as
+                                        // mechanical. A spring settles
+                                        // proportionally to how far it has
+                                        // to travel — small releases snap
+                                        // back quick and light, bigger ones
+                                        // get a touch more travel/bounce —
+                                        // which is what a physically
+                                        // "let go" card should feel like.
+                                        animate(
+                                            initialValue = offsetX,
+                                            targetValue = 0f,
+                                            animationSpec = spring(
+                                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                stiffness = Spring.StiffnessMedium
+                                            )
+                                        ) { value, _ -> offsetX = value }
                                     }
                                 }
                             },

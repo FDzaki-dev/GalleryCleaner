@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,16 +69,30 @@ fun HomeScreen(
     // needing to thread a second, parallel copy of the same data down.
     val allActiveItems = remember(groups) { groups.flatMap { it.items } }
 
-    val matchingFolders = remember(groups, searchQuery, folderLabels) {
-        if (searchQuery.isBlank()) emptyList()
+    // debouncedQuery lags searchQuery by 150ms of no typing. The TextField
+    // below is still bound directly to searchQuery, so every keystroke
+    // appears instantly — only the expensive part (filtering allActiveItems,
+    // which can be tens of thousands of items) waits for typing to pause,
+    // instead of re-scanning the whole active list on every single
+    // keystroke. Without this, fast typing on a large library reruns a full
+    // O(n) filter per character — a classic, easy-to-miss cause of laggy-
+    // feeling search input once a library is big enough for it to matter.
+    var debouncedQuery by remember { mutableStateOf("") }
+    LaunchedEffect(searchQuery) {
+        delay(150)
+        debouncedQuery = searchQuery
+    }
+
+    val matchingFolders = remember(groups, debouncedQuery, folderLabels) {
+        if (debouncedQuery.isBlank()) emptyList()
         else groups.filter { group ->
-            (folderLabels[group.key] ?: group.key).contains(searchQuery, ignoreCase = true)
+            (folderLabels[group.key] ?: group.key).contains(debouncedQuery, ignoreCase = true)
         }
     }
-    val matchingPhotos = remember(allActiveItems, searchQuery) {
-        if (searchQuery.isBlank()) emptyList()
+    val matchingPhotos = remember(allActiveItems, debouncedQuery) {
+        if (debouncedQuery.isBlank()) emptyList()
         else allActiveItems
-            .filter { it.displayName.contains(searchQuery, ignoreCase = true) }
+            .filter { it.displayName.contains(debouncedQuery, ignoreCase = true) }
             .take(60) // cap — this is a quick-jump aid, not a full results browser
     }
 
