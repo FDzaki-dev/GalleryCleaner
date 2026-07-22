@@ -11,13 +11,18 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -54,6 +59,11 @@ private const val MAX_ROTATION_DEG = 12f
 // key includes it. A mismatch here means prefetching does nothing useful.
 private const val SWIPE_CARD_DECODE_SIZE = 600
 
+/** Two ways to review the same folder: one photo at a time (Swipe), or
+ *  several at once via checkboxes in a grid (Grid) — see the view-mode
+ *  toggle in SwipeScreen's top bar. */
+private enum class SwipeViewMode { Swipe, Grid }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeScreen(
@@ -83,6 +93,9 @@ fun SwipeScreen(
     // reviewed. Enough of that compounding under sustained spam is what was
     // showing up as the app going unresponsive.
     var isTransitioning by remember(group.key) { mutableStateOf(false) }
+
+    var viewMode by remember(group.key) { mutableStateOf(SwipeViewMode.Swipe) }
+    val gridSelected = remember(group.key) { mutableStateListOf<Long>() }
 
     LaunchedEffect(group.key) {
         index = progressStore.progressFlow(group.key).first().coerceIn(0, group.items.size)
@@ -119,7 +132,25 @@ fun SwipeScreen(
 
     BackHandler { finishAndExit() }
 
-    val currentItem = group.items.getOrNull(index)
+    // Grid multi-select (below) can mark items for deletion out of sequence,
+    // ahead of wherever `index` currently points. Without skipping past
+    // those here, continuing to swipe afterward could show the user a photo
+    // they already decided to delete via grid — plain `group.items.getOrNull(index)`
+    // has no way to know that happened. Recomputed fresh every recomposition
+    // rather than memoized, since pendingDeletes is small (one folder's worth)
+    // and this keeps it trivially correct with no stale-cache risk.
+    val pendingDeleteIds = pendingDeletes.map { it.id }.toSet()
+    val currentItem = run {
+        var i = index
+        while (i < group.items.size && group.items[i].id in pendingDeleteIds) i++
+        group.items.getOrNull(i)
+    }
+    // The raw `index` can undercount once items ahead of it have been
+    // grid-deleted — find currentItem's real position for an accurate
+    // "N of Total" label instead of just showing the stale pointer.
+    val currentPosition = currentItem?.let { item ->
+        group.items.indexOfFirst { it.id == item.id } + 1
+    } ?: (index + 1)
 
     Scaffold(
         topBar = {
@@ -131,24 +162,41 @@ fun SwipeScreen(
                     }
                 },
                 actions = {
-                    if (currentItem != null) {
-                        IconButton(onClick = { showInfo = true }) {
-                            Text("ⓘ", style = MaterialTheme.typography.titleMedium)
+                    if (viewMode == SwipeViewMode.Swipe) {
+                        if (currentItem != null) {
+                            IconButton(onClick = { showInfo = true }) {
+                                Text("ⓘ", style = MaterialTheme.typography.titleMedium)
+                            }
+                        }
+                        if (lastDecision != null) {
+                            IconButton(
+                                enabled = !isTransitioning,
+                                onClick = {
+                                    val (item, decision) = lastDecision!!
+                                    if (decision is SwipeDecision.Delete) pendingDeletes.remove(item)
+                                    index = (index - 1).coerceAtLeast(0)
+                                    lastDecision = null
+                                    scope.launch { progressStore.saveProgress(group.key, index) }
+                                }
+                            ) {
+                                Icon(Icons.Filled.Undo, contentDescription = "Undo last swipe")
+                            }
                         }
                     }
-                    if (lastDecision != null) {
-                        IconButton(
-                            enabled = !isTransitioning,
-                            onClick = {
-                                val (item, decision) = lastDecision!!
-                                if (decision is SwipeDecision.Delete) pendingDeletes.remove(item)
-                                index = (index - 1).coerceAtLeast(0)
-                                lastDecision = null
-                                scope.launch { progressStore.saveProgress(group.key, index) }
-                            }
-                        ) {
-                            Icon(Icons.Filled.Undo, contentDescription = "Undo last swipe")
-                        }
+                    // Grid mode is an alternative to swiping one at a time —
+                    // multi-select several photos and bulk-delete them.
+                    // Deliberately independent of isTransitioning: grid
+                    // actions are synchronous list mutations, not animated,
+                    // so there's no analogous in-flight-animation race to
+                    // guard against here.
+                    IconButton(onClick = {
+                        viewMode = if (viewMode == SwipeViewMode.Swipe) SwipeViewMode.Grid else SwipeViewMode.Swipe
+                        gridSelected.clear()
+                    }) {
+                        Icon(
+                            if (viewMode == SwipeViewMode.Swipe) Icons.Filled.GridView else Icons.Filled.ViewCarousel,
+                            contentDescription = if (viewMode == SwipeViewMode.Swipe) "Switch to grid view" else "Switch to swipe view"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -169,75 +217,92 @@ fun SwipeScreen(
                 return@Column
             }
 
-            Filmstrip(
-                items = group.items,
-                currentIndex = index,
-                onSelect = { tapped ->
-                    index = tapped
-                    scope.launch { progressStore.saveProgress(group.key, index) }
-                }
-            )
-
-            if (currentItem != null) {
-                InfoBar(item = currentItem, position = index + 1, total = group.items.size)
-            }
-
-            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                if (currentItem == null) {
-                    FinishedPanel(
-                        deletedCount = pendingDeletes.size,
-                        reviewedCount = group.items.size,
-                        onDone = { finishAndExit() }
-                    )
-                } else {
-                    // FITUR PREVIEW BAYANGAN DI BELAKANG SUDAH DIHAPUS TOTAL DI SINI
-                    // Hanya menyisakan satu kartu utama yang aktif dan responsif
-                    SwipeCard(
-                        item = currentItem,
-                        enabled = !isTransitioning,
-                        externalDecision = buttonDecision,
-                        onExternalDecisionHandled = { buttonDecision = null },
-                        onZoomRequest = { showFullscreen = true },
-                        onDecision = { decision ->
-                            if (decision is SwipeDecision.Delete) pendingDeletes.add(currentItem)
-                            lastDecision = currentItem to decision
-                            index += 1
-                            scope.launch { progressStore.saveProgress(group.key, index) }
-                            isTransitioning = false
-                        }
-                    )
-                }
-            }
-
-            if (currentItem != null) {
-                ActionButtonRow(
-                    enabled = !isTransitioning,
-                    onDelete = {
-                        if (!isTransitioning) {
-                            isTransitioning = true
-                            buttonDecision = SwipeDecision.Delete
-                        }
+            if (viewMode == SwipeViewMode.Grid) {
+                GridSelectContent(
+                    items = group.items,
+                    pendingDeleteIds = pendingDeleteIds,
+                    selected = gridSelected,
+                    onToggleSelect = { id ->
+                        if (id in gridSelected) gridSelected.remove(id) else gridSelected.add(id)
                     },
-                    onSkip = {
-                        if (!isTransitioning) {
-                            isTransitioning = true
-                            lastDecision = currentItem to SwipeDecision.Keep
-                            index += 1
-                            scope.launch { progressStore.saveProgress(group.key, index) }
-                            // Skip has no animation to wait on, but still goes
-                            // through the same gate so a burst of rapid taps
-                            // advances one item per tap instead of racing
-                            // ahead of Compose's own recomposition.
-                            isTransitioning = false
-                        }
-                    },
-                    onKeep = {
-                        if (!isTransitioning) {
-                            isTransitioning = true
-                            buttonDecision = SwipeDecision.Keep
-                        }
+                    onDeleteSelected = {
+                        group.items
+                            .filter { it.id in gridSelected && it.id !in pendingDeleteIds }
+                            .forEach { pendingDeletes.add(it) }
+                        gridSelected.clear()
                     }
                 )
+            } else {
+                Filmstrip(
+                    items = group.items,
+                    currentIndex = index,
+                    onSelect = { tapped ->
+                        index = tapped
+                        scope.launch { progressStore.saveProgress(group.key, index) }
+                    }
+                )
+
+                if (currentItem != null) {
+                    InfoBar(item = currentItem, position = currentPosition, total = group.items.size)
+                }
+
+                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    if (currentItem == null) {
+                        FinishedPanel(
+                            deletedCount = pendingDeletes.size,
+                            reviewedCount = group.items.size,
+                            onDone = { finishAndExit() }
+                        )
+                    } else {
+                        // FITUR PREVIEW BAYANGAN DI BELAKANG SUDAH DIHAPUS TOTAL DI SINI
+                        // Hanya menyisakan satu kartu utama yang aktif dan responsif
+                        SwipeCard(
+                            item = currentItem,
+                            enabled = !isTransitioning,
+                            externalDecision = buttonDecision,
+                            onExternalDecisionHandled = { buttonDecision = null },
+                            onZoomRequest = { showFullscreen = true },
+                            onDecision = { decision ->
+                                if (decision is SwipeDecision.Delete) pendingDeletes.add(currentItem)
+                                lastDecision = currentItem to decision
+                                index += 1
+                                scope.launch { progressStore.saveProgress(group.key, index) }
+                                isTransitioning = false
+                            }
+                        )
+                    }
+                }
+
+                if (currentItem != null) {
+                    ActionButtonRow(
+                        enabled = !isTransitioning,
+                        onDelete = {
+                            if (!isTransitioning) {
+                                isTransitioning = true
+                                buttonDecision = SwipeDecision.Delete
+                            }
+                        },
+                        onSkip = {
+                            if (!isTransitioning) {
+                                isTransitioning = true
+                                lastDecision = currentItem to SwipeDecision.Keep
+                                index += 1
+                                scope.launch { progressStore.saveProgress(group.key, index) }
+                                // Skip has no animation to wait on, but still goes
+                                // through the same gate so a burst of rapid taps
+                                // advances one item per tap instead of racing
+                                // ahead of Compose's own recomposition.
+                                isTransitioning = false
+                            }
+                        },
+                        onKeep = {
+                            if (!isTransitioning) {
+                                isTransitioning = true
+                                buttonDecision = SwipeDecision.Keep
+                            }
+                        }
+                    )
+                }
             }
         }
     }
@@ -247,6 +312,123 @@ fun SwipeScreen(
     }
     if (showInfo && currentItem != null) {
         FileInfoDialog(item = currentItem, onDismiss = { showInfo = false })
+    }
+}
+
+/** Multi-select alternative to swiping one photo at a time: tap thumbnails
+ *  to select several, then bulk-delete them in one action. Selected items
+ *  are handed off through [onDeleteSelected] into the same `pendingDeletes`
+ *  list the swipe flow uses — nothing is permanently removed until the
+ *  screen is exited (see finishAndExit in SwipeScreen), so this is exactly
+ *  as safe/reversible as a normal swipe session, just faster for clearing
+ *  out many photos at once. */
+@Composable
+private fun GridSelectContent(
+    items: List<MediaItem>,
+    pendingDeleteIds: Set<Long>,
+    selected: List<Long>,
+    onToggleSelect: (Long) -> Unit,
+    onDeleteSelected: () -> Unit
+) {
+    // Items already handled (via this grid or a prior swipe decision) drop
+    // out of view immediately — visible, immediate confirmation that a
+    // bulk-delete action actually took effect.
+    val visibleItems = remember(items, pendingDeleteIds) {
+        items.filterNot { it.id in pendingDeleteIds }
+    }
+    val allSelected = visibleItems.isNotEmpty() && selected.size == visibleItems.size
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                if (selected.isEmpty()) "${visibleItems.size} photos" else "${selected.size} selected",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            TextButton(onClick = {
+                if (allSelected) {
+                    // `selected` is owned by the caller (SwipeScreen) as a
+                    // SnapshotStateList; toggle each one off individually
+                    // through the same callback rather than assuming direct
+                    // mutation access to it here.
+                    selected.toList().forEach(onToggleSelect)
+                } else {
+                    visibleItems.map { it.id }.filterNot { it in selected }.forEach(onToggleSelect)
+                }
+            }) {
+                Text(if (allSelected) "Deselect all" else "Select all")
+            }
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentPadding = PaddingValues(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            items(visibleItems, key = { it.id }) { item ->
+                val isSelected = item.id in selected
+                Box(
+                    modifier = Modifier
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onToggleSelect(item.id) }
+                ) {
+                    MediaPreview(
+                        item = item,
+                        contentScale = ContentScale.Crop,
+                        decodeSize = 200,
+                        lowMemory = true,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    if (isSelected) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.45f))
+                        )
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = "Selected",
+                            tint = Color.White,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(4.dp)
+                                .size(20.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                                .padding(2.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        if (selected.isNotEmpty()) {
+            Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        onClick = onDeleteSelected,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary,
+                            contentColor = Color(0xFF1A0E0C)
+                        )
+                    ) {
+                        Text("Delete ${selected.size} selected")
+                    }
+                }
+            }
+        }
     }
 }
 

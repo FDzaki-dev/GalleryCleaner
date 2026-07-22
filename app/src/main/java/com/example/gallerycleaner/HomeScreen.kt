@@ -4,17 +4,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -53,33 +58,114 @@ fun HomeScreen(
     onRefresh: () -> Unit,
     onCleanExpiredTrash: () -> Unit
 ) {
+    var isSearchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val searchFocusRequester = remember { FocusRequester() }
+
+    // Reconstructed from `groups` rather than passed in separately — every
+    // active photo is already in there once, grouped by month/album, so
+    // flattening gives the full searchable set for free without MainActivity
+    // needing to thread a second, parallel copy of the same data down.
+    val allActiveItems = remember(groups) { groups.flatMap { it.items } }
+
+    val matchingFolders = remember(groups, searchQuery, folderLabels) {
+        if (searchQuery.isBlank()) emptyList()
+        else groups.filter { group ->
+            (folderLabels[group.key] ?: group.key).contains(searchQuery, ignoreCase = true)
+        }
+    }
+    val matchingPhotos = remember(allActiveItems, searchQuery) {
+        if (searchQuery.isBlank()) emptyList()
+        else allActiveItems
+            .filter { it.displayName.contains(searchQuery, ignoreCase = true) }
+            .take(60) // cap — this is a quick-jump aid, not a full results browser
+    }
+
+    LaunchedEffect(isSearchActive) {
+        if (isSearchActive) searchFocusRequester.requestFocus()
+    }
+
+    fun closeSearch() {
+        isSearchActive = false
+        searchQuery = ""
+    }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Column {
                 TopAppBar(
-                    title = { Text("Gallery Cleaner", style = MaterialTheme.typography.titleLarge) },
+                    title = {
+                        if (isSearchActive) {
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(searchFocusRequester),
+                                singleLine = true,
+                                placeholder = { Text("Search folders or photos") },
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent
+                                )
+                            )
+                        } else {
+                            Text("Gallery Cleaner", style = MaterialTheme.typography.titleLarge)
+                        }
+                    },
+                    navigationIcon = {
+                        if (isSearchActive) {
+                            IconButton(onClick = { closeSearch() }) {
+                                Icon(
+                                    Icons.Filled.Close,
+                                    contentDescription = "Close search",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    },
                     actions = {
-                        IconButton(onClick = onRefresh) {
-                            Icon(
-                                Icons.Filled.Refresh,
-                                contentDescription = "Refresh library",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        IconButton(onClick = onSettingsClick) {
-                            Icon(
-                                Icons.Filled.Settings,
-                                contentDescription = "Settings",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        TextButton(onClick = onTrashClick) {
-                            Text(
-                                if (trashCount > 0) "Trash ($trashCount)" else "Trash",
-                                color = if (trashCount > 0) MaterialTheme.colorScheme.secondary
-                                        else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        if (isSearchActive) {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(
+                                        Icons.Filled.Close,
+                                        contentDescription = "Clear search text",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        } else {
+                            IconButton(onClick = { isSearchActive = true }) {
+                                Icon(
+                                    Icons.Filled.Search,
+                                    contentDescription = "Search",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            IconButton(onClick = onRefresh) {
+                                Icon(
+                                    Icons.Filled.Refresh,
+                                    contentDescription = "Refresh library",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            IconButton(onClick = onSettingsClick) {
+                                Icon(
+                                    Icons.Filled.Settings,
+                                    contentDescription = "Settings",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            TextButton(onClick = onTrashClick) {
+                                Text(
+                                    if (trashCount > 0) "Trash ($trashCount)" else "Trash",
+                                    color = if (trashCount > 0) MaterialTheme.colorScheme.secondary
+                                            else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -98,6 +184,24 @@ fun HomeScreen(
             }
         }
     ) { padding ->
+        if (isSearchActive) {
+            SearchResultsContent(
+                padding = padding,
+                query = searchQuery,
+                matchingFolders = matchingFolders,
+                matchingPhotos = matchingPhotos,
+                folderLabels = folderLabels,
+                onFolderClick = onGroupClick,
+                onPhotoClick = { tapped ->
+                    onGroupClick(
+                        MediaGroup(
+                            key = "Search results",
+                            items = matchingPhotos.sortedBy { it.id != tapped.id }
+                        )
+                    )
+                }
+            )
+        } else {
         when {
             isLoading -> Box(
                 Modifier.padding(padding).fillMaxSize(),
@@ -166,6 +270,98 @@ fun HomeScreen(
                         onRename = { newLabel -> onRenameFolder(group.key, newLabel) }
                     )
                 }
+            }
+        }
+        }
+    }
+}
+
+/** What the home screen shows in place of the normal folder list while
+ *  search is active: folders whose name matches, and individual photos
+ *  whose filename matches, each independently tappable. */
+@Composable
+private fun SearchResultsContent(
+    padding: PaddingValues,
+    query: String,
+    matchingFolders: List<MediaGroup>,
+    matchingPhotos: List<MediaItem>,
+    folderLabels: Map<String, String>,
+    onFolderClick: (MediaGroup) -> Unit,
+    onPhotoClick: (MediaItem) -> Unit
+) {
+    if (query.isBlank()) {
+        Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                "Search for a folder or photo by name",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        return
+    }
+    if (matchingFolders.isEmpty() && matchingPhotos.isEmpty()) {
+        Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No results for \"$query\"", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
+    }
+    LazyColumn(
+        modifier = Modifier.padding(padding).fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (matchingFolders.isNotEmpty()) {
+            item { SectionLabel("FOLDERS") }
+            items(matchingFolders, key = { "search-folder-${it.key}" }) { group ->
+                GroupRow(
+                    group = group,
+                    progressStore = null,
+                    label = folderLabels[group.key],
+                    onClick = { onFolderClick(group) },
+                    onRename = null
+                )
+            }
+        }
+        if (matchingPhotos.isNotEmpty()) {
+            item { Spacer(Modifier.height(4.dp)) }
+            item { SectionLabel("PHOTOS") }
+            item {
+                SearchPhotoGrid(items = matchingPhotos, onClick = onPhotoClick)
+            }
+        }
+    }
+}
+
+/** Simple wrapping grid of thumbnails for photo-name search matches — not a
+ *  LazyVerticalGrid since this sits inside an outer LazyColumn already
+ *  (nesting two lazy-scrolling containers vertically is the usual Compose
+ *  footgun); the result count is capped at the call site specifically so a
+ *  plain non-lazy grid here stays cheap. */
+@Composable
+private fun SearchPhotoGrid(items: List<MediaItem>, onClick: (MediaItem) -> Unit) {
+    val columns = 4
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        items.chunked(columns).forEach { rowItems ->
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                rowItems.forEach { item ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { onClick(item) }
+                    ) {
+                        MediaPreview(
+                            item = item,
+                            contentScale = ContentScale.Crop,
+                            decodeSize = 200,
+                            lowMemory = true,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+                // Pad the last row so it doesn't stretch to fill the row
+                // width when it has fewer than `columns` items.
+                repeat(columns - rowItems.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
@@ -359,19 +555,32 @@ private fun PillChip(label: String, selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun GroupRow(
     group: MediaGroup,
-    progressStore: ProgressStore,
+    progressStore: ProgressStore?,
     label: String?,
     onClick: () -> Unit,
-    onRename: (String) -> Unit
+    onRename: ((String) -> Unit)?
 ) {
     var reviewed by remember(group.key) { mutableStateOf(0) }
     var showRenameDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(group.key) {
-        reviewed = progressStore.progressFlow(group.key).first().coerceAtMost(group.items.size)
+    LaunchedEffect(group.key, progressStore) {
+        if (progressStore != null) {
+            reviewed = progressStore.progressFlow(group.key).first()
+        }
     }
 
-    val fraction = if (group.items.isEmpty()) 0f else reviewed / group.items.size.toFloat()
+    // Clamped here, on every recomposition, rather than only once inside the
+    // LaunchedEffect above. `group.items.size` can shrink after the effect
+    // already cached `reviewed` — e.g. the user swipes 4 of 10 photos
+    // (progress saved as 4), one of those 4 lands in Trash, and Home's
+    // LazyColumn keeps this same GroupRow alive (same `group.key`) instead
+    // of remounting it. The effect never reruns since its keys didn't
+    // change, so a stale, un-clamped `reviewed` against the now-smaller item
+    // count could push the fraction past 1.0 — showing a still-partial
+    // folder as "done" (full ring + checkmark) even though photos in it
+    // haven't actually all been swiped.
+    val clampedReviewed = reviewed.coerceIn(0, group.items.size)
+    val fraction = if (group.items.isEmpty()) 0f else clampedReviewed / group.items.size.toFloat()
     val done = fraction >= 1f && group.items.isNotEmpty()
     val displayName = label ?: group.key
 
@@ -405,21 +614,28 @@ private fun GroupRow(
 
             // Custom in-app name, independent of whatever the device's own
             // Gallery app calls this folder — see FolderLabelStore for why
-            // that's necessary rather than just reading the OS name.
-            IconButton(onClick = { showRenameDialog = true }) {
-                Icon(
-                    Icons.Filled.Edit,
-                    contentDescription = "Rename folder",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
+            // that's necessary rather than just reading the OS name. Not
+            // offered for search-result rows (onRename == null) — renaming
+            // from a filtered, possibly-partial view of a folder's contents
+            // would be a confusing place to do it.
+            if (onRename != null) {
+                IconButton(onClick = { showRenameDialog = true }) {
+                    Icon(
+                        Icons.Filled.Edit,
+                        contentDescription = "Rename folder",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
 
-            ProgressRing(fraction = fraction, done = done)
+            if (progressStore != null) {
+                ProgressRing(fraction = fraction, done = done)
+            }
         }
     }
 
-    if (showRenameDialog) {
+    if (showRenameDialog && onRename != null) {
         RenameFolderDialog(
             currentName = displayName,
             hasCustomLabel = label != null,

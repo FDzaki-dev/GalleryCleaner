@@ -16,6 +16,7 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
 private val TRASH_RETENTION_DAYS_KEY = intPreferencesKey("trash_retention_days")
 private val CLEANING_REMINDER_ENABLED_KEY = booleanPreferencesKey("cleaning_reminder_enabled")
+private val HAS_SEEN_ONBOARDING_KEY = booleanPreferencesKey("has_seen_onboarding")
 
 /** Everything the user can configure about how the app behaves, kept in one
  *  place the way a Settings screen in any polished app would. */
@@ -56,5 +57,15 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setCleaningReminderEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[CLEANING_REMINDER_ENABLED_KEY] = enabled }
+    }
+
+    /** Whether the first-launch onboarding/tutorial has already been shown.
+     *  Defaults to false so a fresh install always sees it once. */
+    val hasSeenOnboardingFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[HAS_SEEN_ONBOARDING_KEY] ?: false
+    }
+
+    suspend fun setHasSeenOnboarding(seen: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[HAS_SEEN_ONBOARDING_KEY] = seen }
     }
 }

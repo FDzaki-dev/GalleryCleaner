@@ -124,6 +124,7 @@ class MainActivity : ComponentActivity() {
 
 private sealed class Screen {
     object Permission : Screen()
+    object Onboarding : Screen()
     object Trash : Screen()
     object Settings : Screen()
     data class Swipe(val group: MediaGroup) : Screen()
@@ -166,6 +167,14 @@ fun AppRoot(
     val trashRetentionDays by settingsStore.trashRetentionDaysFlow.collectAsState(
         initial = SettingsStore.DEFAULT_TRASH_RETENTION_DAYS
     )
+    // Defaults to true (not false) for the brief window before DataStore's
+    // real persisted value loads — this only matters for a split second,
+    // but which way it's wrong matters: defaulting true means a genuinely
+    // new install might flash Home before flipping to Onboarding once, a
+    // one-time event. Defaulting false would instead flash Onboarding in
+    // front of every returning user on every single app open, which is far
+    // more disruptive for the common case.
+    val hasSeenOnboarding by settingsStore.hasSeenOnboardingFlow.collectAsState(initial = true)
 
     // State untuk mengontrol pop-up tampilan error crash
     var activeCrashLog by remember { mutableStateOf(initialCrashLog) }
@@ -351,6 +360,7 @@ fun AppRoot(
 
     val currentScreen = when {
         !hasPermission -> Screen.Permission
+        !hasSeenOnboarding -> Screen.Onboarding
         showTrash -> Screen.Trash
         showSettings -> Screen.Settings
         selectedGroup != null -> Screen.Swipe(selectedGroup!!)
@@ -369,6 +379,9 @@ fun AppRoot(
         ) { screen ->
             when (screen) {
                 Screen.Permission -> PermissionScreen(onRequest = { permissionLauncher.launch(requiredPermissions()) })
+                Screen.Onboarding -> OnboardingScreen(
+                    onDone = { scope.launch { settingsStore.setHasSeenOnboarding(true) } }
+                )
                 Screen.Trash -> TrashScreen(
                     items = trashItems,
                     trashedAtMillis = trashedItems.associate { it.id to it.trashedAtMillis },

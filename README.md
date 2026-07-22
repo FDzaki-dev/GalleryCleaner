@@ -69,7 +69,9 @@ Android Studio or a computer — GitHub's servers do the compiling.
 6. On github.com, open your repo → **Actions** tab. You'll see "Build APK"
    running (takes ~3-6 minutes).
 7. When it finishes, tap into the run → scroll to **Artifacts** →
-   download `app-debug-apk`. It's a zip containing `app-debug.apk`.
+   download the artifact (named like `GalleryCleaner-v1.0.42-a1b2c3d.apk`,
+   matching this build's version and commit). It's a zip containing one
+   `.apk` with that same name.
 8. Unzip it on your phone and tap the `.apk` to install (allow "install
    from unknown sources" if asked).
 
