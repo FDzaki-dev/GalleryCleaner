@@ -129,7 +129,7 @@ fun SettingsScreen(
                     "Applies to both Light and Dark above.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 4.dp, bottom = 8.dp)
+                    modifier = Modifier.padding(start = 4.dp, top = 0.dp, end = 4.dp, bottom = 8.dp)
                 )
             }
             item {
