@@ -41,8 +41,23 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: gradle assembleRelease --stacktrace
 
+      # Gradle always names the raw output file app-release.apk regardless
+      # of versionCode/versionName — a generic name is a problem the moment
+      # you have more than one build on your phone: nothing on disk says
+      # which commit it came from. versionName here is computed the exact
+      # same way build.gradle.kts computes it (git commit count), so the
+      # file name on disk always matches what Settings/About would show
+      # once installed.
+      - name: Rename APK to match this commit's version
+        run: |
+          VERSION_NAME="1.0.$(git rev-list --count HEAD)"
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          OUT_NAME="GalleryCleaner-v${VERSION_NAME}-${SHORT_SHA}.apk"
+          echo "OUT_NAME=$OUT_NAME" >> "$GITHUB_ENV"
+          mv app/build/outputs/apk/release/app-release.apk "app/build/outputs/apk/release/$OUT_NAME"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GalleryCleaner-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          name: ${{ env.OUT_NAME }}
+          path: app/build/outputs/apk/release/${{ env.OUT_NAME }}
