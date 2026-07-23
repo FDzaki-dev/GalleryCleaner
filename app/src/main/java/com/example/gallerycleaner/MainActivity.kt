@@ -168,6 +168,7 @@ fun AppRoot(
     val trashRetentionDays by settingsStore.trashRetentionDaysFlow.collectAsState(
         initial = SettingsStore.DEFAULT_TRASH_RETENTION_DAYS
     )
+    val hapticsEnabled by settingsStore.hapticFeedbackEnabledFlow.collectAsState(initial = true)
     // Defaults to true (not false) for the brief window before DataStore's
     // real persisted value loads — this only matters for a split second,
     // but which way it's wrong matters: defaulting true means a genuinely
@@ -289,6 +290,7 @@ fun AppRoot(
     }
 
     var smartGroups by remember { mutableStateOf<List<MediaGroup>>(emptyList()) }
+    var onThisDayItems by remember { mutableStateOf<List<MediaItem>>(emptyList()) }
     LaunchedEffect(activeMedia) {
         // Debounced, not immediate. MediaRepository.loadMediaProgressively
         // emits a new page roughly every few hundred ms while a large
@@ -308,6 +310,12 @@ fun AppRoot(
             MediaRepository.smartCategories(activeMedia)
         }
         smartGroups = quickCategories
+        // Same in-memory pass, same debounce window — onThisDay() is just as
+        // cheap as smartCategories() (a single filter over data already
+        // loaded), so it doesn't need a dispatcher hop or delay of its own.
+        onThisDayItems = withContext(Dispatchers.Default) {
+            MediaRepository.onThisDay(activeMedia)
+        }
 
         delay(600)
         val duplicates = withContext(Dispatchers.IO) {
@@ -418,6 +426,7 @@ fun AppRoot(
                     // for a device Gallery's own naming that we can't read.
                     displayName = folderLabels[screen.group.key] ?: screen.group.key,
                     progressStore = progressStore,
+                    hapticsEnabled = hapticsEnabled,
                     onBack = { selectedGroup = null },
                     onFinishWithDeletions = { deletions ->
                         scope.launch {
@@ -432,6 +441,7 @@ fun AppRoot(
                 Screen.Home -> HomeScreen(
                     groups = groups,
                     smartGroups = smartGroups,
+                    onThisDayItems = onThisDayItems,
                     groupMode = groupMode,
                     sortOption = sortOption,
                     progressStore = progressStore,

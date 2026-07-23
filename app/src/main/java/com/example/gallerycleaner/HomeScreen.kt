@@ -31,12 +31,14 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     groups: List<MediaGroup>,
     smartGroups: List<MediaGroup>,
+    onThisDayItems: List<MediaItem> = emptyList(),
     groupMode: GroupMode,
     sortOption: SortOption,
     progressStore: ProgressStore,
@@ -257,6 +259,18 @@ fun HomeScreen(
                     )
                 }
 
+                if (onThisDayItems.isNotEmpty()) {
+                    item {
+                        SectionLabel("ON THIS DAY")
+                        OnThisDayRow(
+                            photos = onThisDayItems,
+                            onClick = {
+                                onGroupClick(MediaGroup("On this day", onThisDayItems))
+                            }
+                        )
+                    }
+                }
+
                 if (smartGroups.isNotEmpty()) {
                     item {
                         SectionLabel("QUICK CLEAN")
@@ -475,6 +489,60 @@ private fun StorageDashboard(
                     "All time: ${formatBytes(totalFreedBytes)} freed · $totalDeletedCount item(s) cleaned",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+/** A horizontally-scrolling "memories" strip — deliberately distinct from
+ *  SmartCategoryRow below. That one reads as a chore ("here's junk to
+ *  clear"); this one is a nudge to look back, so it's a filmstrip of actual
+ *  thumbnails rather than another summary list row. Tapping any thumbnail
+ *  opens the full set through the same MediaGroup-browsing flow every other
+ *  entry point on this screen already uses (search results, Quick Clean,
+ *  folders) — no new navigation path to reason about. */
+@Composable
+private fun OnThisDayRow(photos: List<MediaItem>, onClick: () -> Unit) {
+    val caption = remember(photos) {
+        val thisYear = Calendar.getInstance().get(Calendar.YEAR)
+        val cal = Calendar.getInstance()
+        val yearsAgo = photos.map { item ->
+            cal.timeInMillis = item.dateTakenMillis
+            thisYear - cal.get(Calendar.YEAR)
+        }.distinct().sorted()
+        when {
+            yearsAgo.isEmpty() -> ""
+            yearsAgo.size == 1 -> "${yearsAgo.first()} year${if (yearsAgo.first() != 1) "s" else ""} ago"
+            else -> "${yearsAgo.first()}\u2013${yearsAgo.last()} years ago"
+        }
+    }
+    Column(Modifier.fillMaxWidth()) {
+        if (caption.isNotEmpty()) {
+            Text(
+                caption,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+            )
+        }
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Capped for the strip itself — this is a highlight reel, not an
+            // exhaustive browser. The tap target isn't capped: onClick still
+            // opens every matching photo via the full `photos` list above.
+            items(photos.take(20), key = { it.id }) { item ->
+                MediaPreview(
+                    item = item,
+                    contentScale = ContentScale.Crop,
+                    decodeSize = 240,
+                    lowMemory = true,
+                    modifier = Modifier
+                        .size(84.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .clickable(onClick = onClick)
                 )
             }
         }

@@ -69,6 +69,7 @@ fun SwipeScreen(
     group: MediaGroup,
     displayName: String,
     progressStore: ProgressStore,
+    hapticsEnabled: Boolean = true,
     onBack: () -> Unit,
     onFinishWithDeletions: (List<MediaItem>) -> Unit
 ) {
@@ -259,6 +260,7 @@ fun SwipeScreen(
                             item = currentItem,
                             enabled = !isTransitioning,
                             externalDecision = buttonDecision,
+                            hapticsEnabled = hapticsEnabled,
                             onExternalDecisionHandled = { buttonDecision = null },
                             onZoomRequest = { showFullscreen = true },
                             onDecision = { decision ->
@@ -630,6 +632,7 @@ private fun SwipeCard(
     item: MediaItem,
     enabled: Boolean,
     externalDecision: SwipeDecision?,
+    hapticsEnabled: Boolean,
     onExternalDecisionHandled: () -> Unit,
     onZoomRequest: () -> Unit,
     onDecision: (SwipeDecision) -> Unit
@@ -639,6 +642,15 @@ private fun SwipeCard(
     val haptic = LocalHapticFeedback.current
 
     suspend fun animateAndDecide(decision: SwipeDecision) {
+        // Fired right as the fling starts, not after it finishes — the tick
+        // should land with the flick of the wrist that caused it, not with
+        // the animation settling ~180ms later.
+        if (hapticsEnabled) {
+            haptic.performHapticFeedback(
+                if (decision is SwipeDecision.Keep) HapticFeedbackType.TextHandleMove
+                else HapticFeedbackType.LongPress
+            )
+        }
         val target = if (decision is SwipeDecision.Keep) 1600f else -1600f
         animate(offsetX, target, animationSpec = tween(180)) { value, _ -> offsetX = value }
         onDecision(decision)

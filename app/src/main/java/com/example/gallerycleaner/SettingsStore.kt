@@ -23,6 +23,7 @@ private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
 private val APP_THEME_KEY = stringPreferencesKey("app_theme")
 private val TRASH_RETENTION_DAYS_KEY = intPreferencesKey("trash_retention_days")
 private val CLEANING_REMINDER_ENABLED_KEY = booleanPreferencesKey("cleaning_reminder_enabled")
+private val HAPTIC_FEEDBACK_ENABLED_KEY = booleanPreferencesKey("haptic_feedback_enabled")
 private val HAS_SEEN_ONBOARDING_KEY = booleanPreferencesKey("has_seen_onboarding")
 
 /** Everything the user can configure about how the app behaves, kept in one
@@ -77,6 +78,19 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setCleaningReminderEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[CLEANING_REMINDER_ENABLED_KEY] = enabled }
+    }
+
+    /** Whether swipe decisions (Keep/Delete) give a short haptic tick.
+     *  Defaults to true — unlike the cleaning reminder notification (which
+     *  is genuinely intrusive if unwanted), this is a subtle per-gesture
+     *  touch most people expect from a swipe-card interaction and would
+     *  likely never discover if it defaulted off. */
+    val hapticFeedbackEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[HAPTIC_FEEDBACK_ENABLED_KEY] ?: true
+    }
+
+    suspend fun setHapticFeedbackEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[HAPTIC_FEEDBACK_ENABLED_KEY] = enabled }
     }
 
     /** Whether the first-launch onboarding/tutorial has already been shown.

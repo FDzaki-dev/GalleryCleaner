@@ -10,6 +10,7 @@ import android.provider.MediaStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 
@@ -209,6 +210,35 @@ object MediaRepository {
         // result in alongside this list (see MainActivity).
 
         return result
+    }
+
+    /** Photos taken on today's month+day in a past year — a fully-offline
+     *  "memories" nudge, no network/API needed since dateTakenMillis is
+     *  already in hand for every item. Cheap, synchronous, in-memory —
+     *  rides along with smartCategories() rather than needing its own
+     *  dispatcher hop or debounce.
+     *
+     *  The scratch `cal` below is a *local* variable — a fresh one on every
+     *  call's own stack, never shared across calls or threads — which is
+     *  what makes reusing it across the loop safe. That's a different
+     *  situation from the old `monthFormat` bug elsewhere in this file:
+     *  that one was a single instance stored as a class-level field and
+     *  reused across *concurrent* calls, which is what made it unsafe.
+     *  Reusing a local inside one function's own execution has no such
+     *  hazard — nothing else can ever be holding a reference to it. */
+    fun onThisDay(items: List<MediaItem>): List<MediaItem> {
+        val now = Calendar.getInstance()
+        val todayMonth = now.get(Calendar.MONTH)
+        val todayDay = now.get(Calendar.DAY_OF_MONTH)
+        val todayYear = now.get(Calendar.YEAR)
+
+        val cal = Calendar.getInstance()
+        return items.filter { item ->
+            cal.timeInMillis = item.dateTakenMillis
+            cal.get(Calendar.MONTH) == todayMonth &&
+                cal.get(Calendar.DAY_OF_MONTH) == todayDay &&
+                cal.get(Calendar.YEAR) < todayYear
+        }.sortedByDescending { it.dateTakenMillis }
     }
 
     /**

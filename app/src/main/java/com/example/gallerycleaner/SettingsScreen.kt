@@ -52,6 +52,7 @@ fun SettingsScreen(
         initial = SettingsStore.DEFAULT_TRASH_RETENTION_DAYS
     )
     val reminderEnabled by settingsStore.cleaningReminderEnabledFlow.collectAsState(initial = false)
+    val hapticsEnabled by settingsStore.hapticFeedbackEnabledFlow.collectAsState(initial = true)
 
     // Only reached on API 33+ when the toggle is turned on and permission
     // isn't already granted. On denial we deliberately do nothing — the
@@ -193,6 +194,31 @@ fun SettingsScreen(
                         )
                     }
                     Switch(checked = reminderEnabled, onCheckedChange = ::onReminderToggle)
+                }
+            }
+
+            item { Spacer(Modifier.height(24.dp)) }
+            item { SettingsSectionLabel("Feedback") }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Swipe haptics", style = MaterialTheme.typography.bodyLarge)
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            "A short vibration when you keep or delete a photo.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = hapticsEnabled,
+                        onCheckedChange = { scope.launch { settingsStore.setHapticFeedbackEnabled(it) } }
+                    )
                 }
             }
         }
