@@ -1,0 +1,16 @@
+<resources>
+    <style name="Theme.GalleryCleaner" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#14171A</item>
+        <item name="android:statusBarColor">#14171A</item>
+        <item name="android:navigationBarColor">#14171A</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- Shown for the brief moment between tapping the icon and Compose taking
+         over — without this, that gap is a jarring flash of white/black. -->
+    <style name="Theme.GalleryCleaner.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#14171A</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.GalleryCleaner</item>
+    </style>
+</resources>
