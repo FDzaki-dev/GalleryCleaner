@@ -95,3 +95,10 @@ Every time you push a change, GitHub automatically rebuilds the APK for you.
 
 The release workflow now verifies the generated APK with `apksigner` before uploading it. R8/resource shrinking is disabled temporarily to eliminate release-only stripping issues while the app is being validated. For consistent updates across different machines, configure one persistent release keystore through GitHub Actions secrets.
 
+
+## v1.1.0 user-facing update
+
+### Biggest space hogs
+The Home dashboard now immediately surfaces the five largest active media files. A tap opens them for review through the existing cleaning flow, so users can identify what is consuming storage without manually searching through albums.
+
+Release signing configuration remains external to the repository and continues to use the permanent GitHub Actions release keystore secrets.

@@ -458,6 +458,13 @@ fun AppRoot(
     val totalFreedBytes by statsStore.totalFreedBytesFlow.collectAsState(initial = 0L)
     val totalDeletedCount by statsStore.totalDeletedCountFlow.collectAsState(initial = 0)
 
+    // Surface the biggest space hogs directly on the dashboard. This turns
+    // storage pressure into an immediately actionable list instead of making
+    // the user hunt through folders or the generic Large Files category.
+    val largestItems = remember(activeMedia) {
+        activeMedia.sortedByDescending { it.sizeBytes }.take(5)
+    }
+
     var pendingDeleteRetry by remember { mutableStateOf<List<MediaItem>?>(null) }
     val deleteRequestLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
@@ -664,6 +671,7 @@ fun AppRoot(
                     trashCount = trashItems.size,
                     totalLibraryBytes = derivedMedia.totalLibraryBytes,
                     trashReclaimableBytes = derivedMedia.trashReclaimableBytes,
+                    largestItems = largestItems,
                     totalFreedBytes = totalFreedBytes,
                     totalDeletedCount = totalDeletedCount,
                     expiredTrashCount = expiredTrashItems.size,

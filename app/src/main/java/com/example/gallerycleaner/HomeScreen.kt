@@ -51,6 +51,7 @@ fun HomeScreen(
     trashCount: Int,
     totalLibraryBytes: Long,
     trashReclaimableBytes: Long,
+    largestItems: List<MediaItem> = emptyList(),
     totalFreedBytes: Long,
     totalDeletedCount: Int,
     expiredTrashCount: Int,
@@ -261,6 +262,17 @@ fun HomeScreen(
                         totalFreedBytes = totalFreedBytes,
                         totalDeletedCount = totalDeletedCount
                     )
+                }
+
+                if (largestItems.isNotEmpty()) {
+                    item {
+                        LargestFilesCard(
+                            items = largestItems,
+                            onClick = {
+                                onGroupClick(MediaGroup("Largest files", largestItems))
+                            }
+                        )
+                    }
                 }
 
                 if (onThisDayItems.isNotEmpty()) {
@@ -494,9 +506,88 @@ private fun SectionLabel(text: String) {
 /** Top-of-screen summary: how much space photos take up, how much
  *  sits in trash waiting to be freed, and all-time cleanup totals. */
 @Composable
+private fun LargestFilesCard(items: List<MediaItem>, onClick: () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Biggest space hogs", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "The 5 files using the most storage",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    "Review",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            items.forEachIndexed { index, item ->
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    MediaPreview(
+                        item = item,
+                        contentScale = ContentScale.Crop,
+                        decodeSize = 96,
+                        lowMemory = true,
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            item.displayName,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            item.bucketName,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        formatBytes(item.sizeBytes),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                if (index < items.lastIndex) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 52.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun StorageDashboard(
     totalLibraryBytes: Long,
     trashReclaimableBytes: Long,
+    largestItems: List<MediaItem> = emptyList(),
     totalFreedBytes: Long,
     totalDeletedCount: Int
 ) {

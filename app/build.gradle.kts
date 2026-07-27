@@ -3,14 +3,6 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-// A matching signing certificate (see signingConfigs below) is only half of
-// what makes an update install in place — Android separately refuses to
-// install an APK whose versionCode isn't strictly greater than the one
-// already installed, treating it as a downgrade/duplicate rather than an
-// update. A hardcoded `versionCode = 1` would fail that check on literally
-// every build after the first one, no matter how the signing is set up.
-// Counting git commits gives a versionCode that's guaranteed to increase
-// with every push, with no manual bump-the-number step to forget.
 fun gitCommitCount(): Int = try {
     val process = ProcessBuilder("git", "rev-list", "--count", "HEAD")
         .redirectErrorStream(true)
@@ -18,7 +10,7 @@ fun gitCommitCount(): Int = try {
     process.waitFor()
     process.inputStream.bufferedReader().readText().trim().toIntOrNull() ?: 1
 } catch (e: Exception) {
-    1 // local build outside a git checkout, or git unavailable — never fail the build over this
+    1
 }
 
 val appVersionCode = gitCommitCount()
@@ -36,38 +28,42 @@ android {
     }
 
     signingConfigs {
-        // Reuses Android's auto-generated debug key for LOCAL builds where
-        // no release secrets are present (e.g. building outside CI), so
-        // `assembleRelease` still produces an installable APK without
-        // needing the real keystore on every machine.
         getByName("debug") {}
 
-        // The real signing identity for CI-built release APKs. Populated
-        // from environment variables that GitHub Actions injects from repo
-        // secrets (see .github/workflows/build.yml) — the actual keystore
-        // and passwords are never committed to this repo.
-        //
-        // This is the fix for "every update forces an uninstall first":
-        // that happens when consecutive release APKs are signed with
-        // DIFFERENT certificates, which is exactly what was happening
-        // before — signingConfig was pointed at the "debug" key, and
-        // Android's debug keystore is auto-generated per-machine/per-CI-run
-        // if one doesn't already exist. Every GitHub Actions run starts on
-        // a fresh runner with no prior debug.keystore, so every build was
-        // silently getting a brand new, different signing key. A real,
-        // persistent release key — generated once, stored only as a
-        // GitHub secret, reused every build — is what makes signatures
-        // match release over release, which is what lets Android treat a
-        // new APK as an update to the existing app instead of a conflicting
-        // unknown one.
         create("release") {
             val keystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
-            if (!keystorePath.isNullOrBlank()) {
-                storeFile = file(keystorePath)
-                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
-                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            val keystorePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+            val keyAliasValue = System.getenv("RELEASE_KEY_ALIAS")
+            val keyPasswordValue = System.getenv("RELEASE_KEY_PASSWORD")
+
+            if (keystorePath.isNullOrBlank()) {
+                throw GradleException(
+                    "RELEASE_KEYSTORE_PATH is missing. " +
+                    "Release APK signing is mandatory."
+                )
             }
+
+            if (keystorePassword.isNullOrBlank()) {
+                throw GradleException(
+                    "RELEASE_KEYSTORE_PASSWORD is missing."
+                )
+            }
+
+            if (keyAliasValue.isNullOrBlank()) {
+                throw GradleException(
+                    "RELEASE_KEY_ALIAS is missing."
+                )
+            }
+
+            if (keyPasswordValue.isNullOrBlank()) {
+                throw GradleException(
+                    "RELEASE_KEY_PASSWORD is missing."
+                )
+
+            storeFile = file(keystorePath)
+            storePassword = keystorePassword
+            keyAlias = keyAliasValue
+            keyPassword = keyPasswordValue
         }
     }
 
@@ -75,16 +71,13 @@ android {
         release {
             isMinifyEnabled = false
             isShrinkResources = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Only falls back to the debug key when the real release
-            // secrets genuinely aren't available. In CI, RELEASE_KEYSTORE_PATH
-            // is always set (see workflow), so every APK GitHub Actions
-            // produces is signed with the same real, persistent key.
-            signingConfig = if (System.getenv("RELEASE_KEYSTORE_PATH").isNullOrBlank()) {
-                signingConfigs.getByName("debug")
-            } else {
-                signingConfigs.getByName("release")
-            }
+
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -92,6 +85,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     kotlinOptions {
         jvmTarget = "17"
     }
@@ -99,6 +93,7 @@ android {
     buildFeatures {
         compose = true
     }
+
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
     }
