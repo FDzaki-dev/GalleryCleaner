@@ -1,0 +1,18 @@
+# Build outputs
+*.apk
+*.aab
+/build/
+/app/build/
+.gradle/
+local.properties
+
+# Never commit signing material — the release keystore lives only as a
+# GitHub Actions secret (RELEASE_KEYSTORE_BASE64), decoded at build time.
+*.keystore
+*.jks
+keystore.properties
+
+# IDE
+.idea/
+*.iml
+.DS_Store
