@@ -36,6 +36,14 @@ import coil.memory.MemoryCache
  * transient allocation churn during fast swiping was coming from.
  */
 class GalleryCleanerApp : Application(), ImageLoaderFactory {
+
+    override fun onCreate() {
+        super.onCreate()
+        // Built-in crash logger — installed first so it captures crashes
+        // from anything that initializes after this point too.
+        CrashLogger.install(this)
+    }
+
     override fun newImageLoader(): ImageLoader =
         ImageLoader.Builder(this)
             .components {

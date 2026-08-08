@@ -1,16 +1,19 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v3 — Batch3 (Fix compile error dari Batch2: wrong CompositionLocalProvider import + experimental Slider API)
+v4 — Batch4 (Crash Logger bawaan — sebelumnya terlewat)
+
+## Crash Logger Bawaan (baru dipasang, Batch4)
+- File baru: `CrashLogger.kt` — `Thread.setDefaultUncaughtExceptionHandler`, fail-safe (try-catch, tidak pernah menelan crash asli — previous handler selalu tetap dipanggil).
+- API 29+: tulis via MediaStore ke `Documents/GalleryCleaner/logs/crash_<yyyyMMdd_HHmmss>_<UUID>.txt`, tanpa legacy permission.
+- API 24-28 (minSdk aplikasi = 24): fallback `java.io.File` ke path yang sama (pakai `WRITE_EXTERNAL_STORAGE` yang sudah ada di manifest).
+- FIFO retention max 50 log — MediaStore query (29+) / file listing sorted by lastModified (24-28).
+- Metadata: Version, OS, Model, Timestamp, Thread, StackTrace.
+- Hook: `GalleryCleanerApp.onCreate()` (protected asset, edit parsial — hanya tambah `override fun onCreate()`, logic ImageLoader existing tidak disentuh).
+- Debug priority: analisa crash log ini WAJIB didahulukan sebelum minta Logcat/ADB user.
 
 ## Status Build Terakhir
-Batch1: FAILED (2026-07-27) → syntax error `app/build.gradle.kts:123`. DIPERBAIKI.
-Batch2: FAILED (attempt 1, branch main) → 3 error kompilasi Kotlin di komponen baru (lihat `test-result-main-attempt-1.log` dari GitHub Actions artifact — mekanisme log-capture otomatis Batch1 berfungsi sesuai desain: nama file dinamis `test-result-<branch>-attempt-<run_attempt>.log`, terkonfirmasi terisi `main`/`1` sesuai kondisi run yang sebenarnya).
-Batch3 (batch ini): fix 3 error kompilasi tsb, belum di-run ulang di CI.
-
-## Root Cause Batch2 Build Failure (dari test-result-main-attempt-1.log)
-1. `TactileButton.kt` & `GlassNavigation.kt` — import salah: `androidx.compose.material3.CompositionLocalProvider` (tidak ada). Fungsi ini ada di `androidx.compose.runtime.CompositionLocalProvider`. DIPERBAIKI.
-2. `TactileSlider.kt:37` — parameter `thumb` pada M3 `Slider` masih experimental di compose-bom 2024.06.00, perlu `@OptIn(ExperimentalMaterial3Api::class)`. DIPERBAIKI.
+Batch1: FAILED → fixed. Batch2: FAILED (compile error) → fixed di Batch3. Batch3: belum di-run ulang di CI. Batch4 (ini): belum di-run.
 
 ## Theme System — AMOLED Hybrid Glassmorphism (compose-amoled-hybrid-glass-final.md)
 - Sumber: spec markdown yang diupload user (793 baris, 25 section). Diimplementasikan sebagai arsitektur §23:

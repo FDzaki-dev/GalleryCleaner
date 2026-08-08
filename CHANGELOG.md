@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v4_Batch4 — 2026-08-09
+- Add: `CrashLogger.kt` — crash logger bawaan (fitur preferensi yang sebelumnya terlewat). MediaStore (API29+) + legacy File fallback (API24-28), FIFO 50 log, metadata Version/OS/Model/Timestamp/Thread/StackTrace.
+- Update: `GalleryCleanerApp.kt` (protected, parsial) — hook `CrashLogger.install()` di `onCreate()`.
+
 ## v3_Batch3 — 2026-08-09
 - Fix: `ui/components/TactileButton.kt`, `ui/components/GlassNavigation.kt` — `CompositionLocalProvider` diimport dari package salah (`material3` → `runtime`), penyebab "Unresolved reference" di CI (lihat `test-result-main-attempt-1.log`).
 - Fix: `ui/components/TactileSlider.kt` — tambah `@OptIn(ExperimentalMaterial3Api::class)` untuk parameter `thumb` pada M3 `Slider` (experimental API).
