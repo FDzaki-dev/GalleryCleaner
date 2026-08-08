@@ -59,6 +59,7 @@ android {
                 throw GradleException(
                     "RELEASE_KEY_PASSWORD is missing."
                 )
+            }
 
             storeFile = file(keystorePath)
             storePassword = keystorePassword

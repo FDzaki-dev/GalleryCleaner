@@ -77,7 +77,22 @@ jobs:
             exit 1
           }
 
-          gradle --no-daemon --stacktrace assembleRelease
+          LOG_FILE="test-result-${GITHUB_REF_NAME}-attempt-${GITHUB_RUN_ATTEMPT}.log"
+          echo "LOG_FILE=$LOG_FILE" >> "$GITHUB_ENV"
+
+          set +e
+          gradle --no-daemon --stacktrace assembleRelease 2>&1 | tee "$LOG_FILE"
+          BUILD_STATUS=${PIPESTATUS[0]}
+          set -e
+          exit "$BUILD_STATUS"
+
+      - name: Upload build failure log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.LOG_FILE }}
+          path: ${{ env.LOG_FILE }}
+          if-no-files-found: warn
 
       - name: Verify APK exists and is signed
         run: |
