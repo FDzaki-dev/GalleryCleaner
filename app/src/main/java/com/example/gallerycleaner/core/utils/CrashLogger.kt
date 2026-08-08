@@ -37,7 +37,7 @@ object CrashLogger {
                 // Intentionally swallowed — logging must never block the
                 // real crash from reaching the previous/default handler.
             }
-            previousHandler?.onUncaughtException(thread, throwable)
+            previousHandler?.uncaughtException(thread, throwable)
         }
     }
 

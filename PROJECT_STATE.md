@@ -1,19 +1,27 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v4 — Batch4 (Crash Logger bawaan — sebelumnya terlewat)
+v5 — Batch5 (Fix crash logger + Phase-1 package restructure: directory reorg)
 
-## Crash Logger Bawaan (baru dipasang, Batch4)
-- File baru: `CrashLogger.kt` — `Thread.setDefaultUncaughtExceptionHandler`, fail-safe (try-catch, tidak pernah menelan crash asli — previous handler selalu tetap dipanggil).
-- API 29+: tulis via MediaStore ke `Documents/GalleryCleaner/logs/crash_<yyyyMMdd_HHmmss>_<UUID>.txt`, tanpa legacy permission.
-- API 24-28 (minSdk aplikasi = 24): fallback `java.io.File` ke path yang sama (pakai `WRITE_EXTERNAL_STORAGE` yang sudah ada di manifest).
-- FIFO retention max 50 log — MediaStore query (29+) / file listing sorted by lastModified (24-28).
-- Metadata: Version, OS, Model, Timestamp, Thread, StackTrace.
-- Hook: `GalleryCleanerApp.onCreate()` (protected asset, edit parsial — hanya tambah `override fun onCreate()`, logic ImageLoader existing tidak disentuh).
-- Debug priority: analisa crash log ini WAJIB didahulukan sebelum minta Logcat/ADB user.
+## Fix Batch4 Build Failure (dari test-result-main-attempt-1.log kedua)
+`CrashLogger.kt:40` — `Unresolved reference: onUncaughtException`. Nama method salah; interface `Thread.UncaughtExceptionHandler` method-nya `uncaughtException`, bukan `onUncaughtException`. DIPERBAIKI.
+
+## Phase-1 (Atomic Change) — Package Restructure per Structure Audit
+- Scope batch ini: **reorganisasi direktori fisik saja**, package declaration TIDAK diubah (tetap `com.example.gallerycleaner` flat untuk file lama, `ui.theme`/`ui.components` tetap seperti semula). Kotlin tidak mewajibkan folder = package (beda dari Java) — jadi ini 0% risiko broken import, semua referensi antar-file tetap valid tanpa perlu tambah `import` di mana pun.
+- Layout baru:
+  - `data/model/` — MediaModels.kt
+  - `data/media/` — MediaRepository.kt, DeleteHelper.kt, ImageCompressor.kt
+  - `data/local/datastore/` — SettingsStore, StatsStore, TrashStore, ProgressStore, FolderLabelStore
+  - `presentation/screen/` — HomeScreen, SwipeScreen, TrashScreen, SettingsScreen, OnboardingScreen, MediaPreview
+  - `worker/` — CleaningReminderWorker
+  - `core/utils/` — Utils, HapticFeedback, CrashLogger
+  - Root (tetap, entry point Android): MainActivity.kt, GalleryCleanerApp.kt — AndroidManifest pakai referensi relatif `.MainActivity`/`.GalleryCleanerApp`, dipindah akan butuh edit manifest (protected asset) tanpa manfaat nyata, jadi sengaja dipertahankan di root.
+  - `ui/theme/`, `ui/components/` — TIDAK disentuh, sudah punya package sendiri sejak Batch2/3, sudah sesuai prinsip audit.
+- **Phase-1b (belum dikerjakan, next batch)**: split flat package → real sub-package (`com.example.gallerycleaner.data.media`, dst) + tambah `import` di semua pemanggil. Ini butuh compiler nyata untuk validasi tiap langkah (tidak tersedia di environment ini) — akan dikerjakan bertahap per-layer dengan checkpoint CI hijau di antaranya, bukan sekaligus.
+- File besar (HomeScreen/SwipeScreen/MediaRepository → Screen/ViewModel/State/Event) BELUM dipecah — itu audit item #3, technically Phase-1 juga tapi butuh perubahan logic nyata (bukan mechanical move), risiko tinggi tanpa compiler → next batch terpisah, bukan bagian atomic move ini.
 
 ## Status Build Terakhir
-Batch1: FAILED → fixed. Batch2: FAILED (compile error) → fixed di Batch3. Batch3: belum di-run ulang di CI. Batch4 (ini): belum di-run.
+Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED (`onUncaughtException` typo)→fixed Batch5 (ini). Batch5: belum di-run ulang di CI.
 
 ## Theme System — AMOLED Hybrid Glassmorphism (compose-amoled-hybrid-glass-final.md)
 - Sumber: spec markdown yang diupload user (793 baris, 25 section). Diimplementasikan sebagai arsitektur §23:
