@@ -1,10 +1,33 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v1 — Batch1 (Bugfix build.gradle.kts + CI log capture)
+v2 — Batch2 (GitHub Release publish + AMOLED Hybrid Glassmorphism theme override)
 
 ## Status Build Terakhir
-FAILED (run 2026-07-27T02:39:12Z) → root cause: syntax error `app/build.gradle.kts:123` (missing `}` pada blok `if (keyPasswordValue.isNullOrBlank())`). DIPERBAIKI di batch ini.
+Batch1: FAILED (run 2026-07-27T02:39:12Z) → root cause: syntax error `app/build.gradle.kts:123` (missing `}`). DIPERBAIKI di Batch1.
+Batch2: belum di-run di CI — perlu verifikasi via push.
+
+## Theme System — AMOLED Hybrid Glassmorphism (compose-amoled-hybrid-glass-final.md)
+- Sumber: spec markdown yang diupload user (793 baris, 25 section). Diimplementasikan sebagai arsitektur §23:
+  `ui/theme/{Color,Shape,Typography,GlassTokens,TactileTokens,Theme}.kt` + `ui/components/{GlassSurface,GlassCard,TactileButton,TactileSwitch,TactileSlider,GlassNavigation}.kt`.
+- `AppTheme.SIGNATURE` (default aplikasi, tidak berubah — tetap default) di-override total: background=AmoledBlack(#030508), surface=GlassBase(#0A0F16), surfaceVariant=GlassElevated(#101722), outline=GlassBorder(alpha 3.5%), tertiary=AccentBlue(#6670FF) untuk selection/focus/progress (§17).
+- Primary(SageKeep)/Secondary(CoralDelete) TIDAK diubah — semantik Keep/Delete swipe adalah app-critical UX, di luar cakupan spec (spec generik, tidak tahu soal keep/delete). Diperlakukan sebagai lapisan terpisah dari AMOLED/Glass/Midnight-Blue/Accent yang murni tentang materi permukaan & functional accent.
+- Midnight Blue (§6) diimplementasikan sebagai `midnightAmbientGradient()` brush helper (bukan warna solid ColorScheme) — dipakai opsional lewat `GlassSurface(ambient = true)`, TIDAK dipasang otomatis ke background global (sesuai §6 "Incorrect use": jangan solid background).
+- `SignatureLight` (mode terang): spec ini AMOLED-only by definition, tidak mendefinisikan light mode. Diberi tertiary=AccentBlue (darker variant) untuk konsistensi lintas mode, sisanya dipertahankan dari sebelumnya. Catatan: ini adaptasi di luar cakupan literal spec.
+- Cascading: HomeScreen/SwipeScreen/TrashScreen/SettingsScreen/MainActivity semua sudah pakai `MaterialTheme.colorScheme` (bukan warna hardcoded) → override Theme.kt otomatis merambat ke seluruh app tanpa perlu edit tiap layar.
+- Komponen baru (`GlassSurface`, `GlassCard`, `TactileButton`, `TactileSwitch`, `TactileSlider`, `GlassNavigation`) SUDAH DIBUAT tapi BELUM dipasang menggantikan Box/Card/Button/Switch bawaan Material3 di layar existing — itu §11-15 (tactile buttons/switch/slider per-komponen) masih pakai default M3 look. Batch berikutnya: migrasi pemakaian di HomeScreen/SwipeScreen/SettingsScreen ke komponen baru ini bila ingin 100% tactile-glass look di setiap kontrol (saat ini baru level ColorScheme yang 100% sesuai spec, bukan level component).
+- Dead tokens (belum dihapus, nunggu izin): `GraphiteSurface`, `GraphiteSurfaceRaised`, `GraphiteOutline`, `TextSecondary`, `TextMuted` di `Color.kt` sudah tidak direferensikan setelah override ini.
+
+## GitHub Release
+- Workflow sekarang publish ke GitHub Release (`softprops/action-gh-release@v2`), bukan cuma Actions Artifact — APK signed akan muncul di sidebar repo (tag `v1.0.<run_number>`).
+- `permissions.contents` dinaikkan dari `read` → `write` (wajib untuk membuat Release).
+
+## Protected Assets (jangan hapus/replace penuh)
+- app/build.gradle.kts, build.gradle.kts, settings.gradle.kts
+- app/src/main/AndroidManifest.xml
+- .github/workflows/build.yml
+- .gitignore
+- release.keystore (tidak disertakan di repo, via secrets)
 
 ## Protected Assets (jangan hapus/replace penuh)
 - app/build.gradle.kts, build.gradle.kts, settings.gradle.kts
@@ -18,5 +41,6 @@ FAILED (run 2026-07-27T02:39:12Z) → root cause: syntax error `app/build.gradle
 2. Update `.github/workflows/build.yml` — step build sekarang tee output ke `test-result-<branch>-attempt-<run_attempt>.log` dan upload sebagai artifact HANYA jika job gagal (`if: failure()`), agar log kegagalan berikutnya tinggal diambil dari GitHub Actions Artifacts tanpa perlu re-run.
 
 ## Belum Dikerjakan / Catatan
-- Workflow saat ini hanya publish ke Actions Artifact, BELUM publish ke GitHub Release (APK belum muncul di sidebar repo). Perlu ditambahkan step `softprops/action-gh-release` pada batch berikutnya bila diinginkan.
-- 4 GradleException guard clause (keystore path/password/alias/key password) sudah benar strukturnya setelah fix — perlu verifikasi ulang via CI run berikutnya.
+- 4 GradleException guard clause (keystore path/password/alias/key password) sudah benar strukturnya setelah fix Batch1 — perlu verifikasi ulang via CI run berikutnya.
+- Migrasi screen-level ke komponen tactile/glass baru (§11-15 per-component look) — lihat catatan Theme System di atas.
+- Approval dibutuhkan untuk hapus dead color tokens di Color.kt (lihat daftar di atas).

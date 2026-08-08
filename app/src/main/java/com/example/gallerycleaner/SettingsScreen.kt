@@ -35,7 +35,7 @@ import com.example.gallerycleaner.ui.theme.OxbloodDelete
 import com.example.gallerycleaner.ui.theme.PeriwinkleKeep
 import com.example.gallerycleaner.ui.theme.SageKeep
 import com.example.gallerycleaner.ui.theme.CoralDelete
-import com.example.gallerycleaner.ui.theme.GraphiteBg
+import com.example.gallerycleaner.ui.theme.AmoledBlack
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -303,8 +303,8 @@ private val THEME_STYLES = listOf(
     ThemeStyle(
         appTheme = AppTheme.SIGNATURE,
         label = "Signature",
-        description = "Graphite, sage & coral — the original look.",
-        previewBg = GraphiteBg,
+        description = "AMOLED black, frosted glass & midnight-blue accent.",
+        previewBg = AmoledBlack,
         swatchKeep = SageKeep,
         swatchDelete = CoralDelete
     ),
