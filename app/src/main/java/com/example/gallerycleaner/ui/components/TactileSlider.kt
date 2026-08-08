@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import com.example.gallerycleaner.ui.theme.SliderKnobElevation
  * from-scratch gesture implementation, per §22 "prefer native Compose
  * primitives."
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TactileSlider(
     value: Float,

@@ -1,11 +1,16 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v2 — Batch2 (GitHub Release publish + AMOLED Hybrid Glassmorphism theme override)
+v3 — Batch3 (Fix compile error dari Batch2: wrong CompositionLocalProvider import + experimental Slider API)
 
 ## Status Build Terakhir
-Batch1: FAILED (run 2026-07-27T02:39:12Z) → root cause: syntax error `app/build.gradle.kts:123` (missing `}`). DIPERBAIKI di Batch1.
-Batch2: belum di-run di CI — perlu verifikasi via push.
+Batch1: FAILED (2026-07-27) → syntax error `app/build.gradle.kts:123`. DIPERBAIKI.
+Batch2: FAILED (attempt 1, branch main) → 3 error kompilasi Kotlin di komponen baru (lihat `test-result-main-attempt-1.log` dari GitHub Actions artifact — mekanisme log-capture otomatis Batch1 berfungsi sesuai desain: nama file dinamis `test-result-<branch>-attempt-<run_attempt>.log`, terkonfirmasi terisi `main`/`1` sesuai kondisi run yang sebenarnya).
+Batch3 (batch ini): fix 3 error kompilasi tsb, belum di-run ulang di CI.
+
+## Root Cause Batch2 Build Failure (dari test-result-main-attempt-1.log)
+1. `TactileButton.kt` & `GlassNavigation.kt` — import salah: `androidx.compose.material3.CompositionLocalProvider` (tidak ada). Fungsi ini ada di `androidx.compose.runtime.CompositionLocalProvider`. DIPERBAIKI.
+2. `TactileSlider.kt:37` — parameter `thumb` pada M3 `Slider` masih experimental di compose-bom 2024.06.00, perlu `@OptIn(ExperimentalMaterial3Api::class)`. DIPERBAIKI.
 
 ## Theme System — AMOLED Hybrid Glassmorphism (compose-amoled-hybrid-glass-final.md)
 - Sumber: spec markdown yang diupload user (793 baris, 25 section). Diimplementasikan sebagai arsitektur §23:

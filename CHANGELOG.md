@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v3_Batch3 — 2026-08-09
+- Fix: `ui/components/TactileButton.kt`, `ui/components/GlassNavigation.kt` — `CompositionLocalProvider` diimport dari package salah (`material3` → `runtime`), penyebab "Unresolved reference" di CI (lihat `test-result-main-attempt-1.log`).
+- Fix: `ui/components/TactileSlider.kt` — tambah `@OptIn(ExperimentalMaterial3Api::class)` untuk parameter `thumb` pada M3 `Slider` (experimental API).
+
 ## v2_Batch2 — 2026-08-09
 - Add: `.github/workflows/build.yml` — publish signed APK ke **GitHub Release** (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`), bukan hanya Actions Artifact. `permissions.contents: read → write`.
 - Override: `AppTheme.SIGNATURE` (tema default) — implementasi penuh spec "Premium AMOLED Hybrid Glassmorphism + Subtle Midnight Blue + Micro-Skeuomorphism" (`compose-amoled-hybrid-glass-final.md`, 25 section).
