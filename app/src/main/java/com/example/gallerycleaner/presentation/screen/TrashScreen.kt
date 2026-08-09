@@ -84,7 +84,9 @@ fun TrashScreen(
             )
         },
         // Transparent (Batch22) — see matching comment in HomeScreen.kt.
+        // contentColor (Batch24 fix) — see matching comment in HomeScreen.kt.
         containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onBackground,
         bottomBar = {
             if (selected.isNotEmpty()) {
                 GlassCard(

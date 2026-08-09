@@ -248,7 +248,9 @@ fun SwipeScreen(
             )
         },
         // Transparent (Batch22) — see matching comment in HomeScreen.kt.
-        containerColor = Color.Transparent
+        // contentColor (Batch24 fix) — see matching comment in HomeScreen.kt.
+        containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onBackground
     ) { padding ->
         Column(
             modifier = Modifier.padding(padding).fillMaxSize(),

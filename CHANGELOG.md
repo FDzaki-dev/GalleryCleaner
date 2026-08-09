@@ -118,3 +118,6 @@
 
 ## v23 — Batch23
 - Fix: `GlassCard` teks judul (Blurry photos, Similar photos, nama bulan/album, dsb) tampil hitam/tak terbaca di atas panel kaca gelap — `Box` internal tidak pernah menyediakan `LocalContentColor` (beda dari M3 `Surface`), jadi `Text()` tanpa `color=` eksplisit jatuh ke default keras Compose (Color.Black). Diperbaiki 1 titik pusat: `CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface)` di `GlassCard.kt`. Semua Text() yang sudah set warna eksplisit (subtitle onSurfaceVariant, "Scan" primary, dll) tidak terpengaruh — 0 regresi.
+
+## v24 — Batch24
+- Fix: teks hitam tak terbaca di Settings (radio "Match system"/Light/Dark, judul color-style Signature/Amber/Indigo, judul toggle Cleaning reminders/Random clean mode/Swipe haptics/App lock) — root cause: Scaffold `containerColor = Color.Transparent` (Batch22) membuat `contentColor` default M3 jadi Unspecified→hitam. Fix: `contentColor = MaterialTheme.colorScheme.onBackground` eksplisit di 5 Scaffold (Settings/Home/Onboarding/Swipe/Trash).

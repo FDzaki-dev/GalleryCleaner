@@ -93,7 +93,16 @@ fun SettingsScreen(
 
     Scaffold(
         // Transparent (Batch22) — see matching comment in HomeScreen.kt.
+        // contentColor (Batch24 fix): M3 Scaffold derives its default
+        // contentColor from containerColor via contentColorFor(); a
+        // transparent container isn't a themed color so that lookup
+        // returns Unspecified, which Text() resolves to hard-default
+        // black instead of the theme's text color. Every Text()/label in
+        // this screen without its own explicit color= (radio row labels,
+        // color-style card titles, toggle titles) was rendering black on
+        // the dark glass background. Set explicitly to onBackground.
         containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onBackground,
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },

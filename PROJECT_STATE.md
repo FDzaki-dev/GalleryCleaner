@@ -1,7 +1,7 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v23 — Batch23 (Fix: GlassCard text readability — black-on-dark title bug)
+v24 — Batch24 (Fix: Scaffold contentColor — black text across Settings/Home/Onboarding/Swipe/Trash)
 
 ## Glassmorphism Component Cascade (Batch22, Atomic Change — 9 file)
 Permintaan user: 1 batch atomic change berisi SEMUA bagian yang belum
@@ -466,3 +466,24 @@ Tidak menyentuh file layar manapun — semua GlassCard call site (HomeScreen,
 TrashScreen, SwipeScreen, SettingsScreen) otomatis ikut fix tanpa edit
 per-lokasi. `GlassButton`/`InfoChip` tidak disentuh (sudah set warna eksplisit
 sejak awal, tidak terpengaruh bug ini).
+
+## Batch24 — Scaffold contentColor Fix (5 file)
+Perluasan dari Batch23. Root cause sebenarnya lebih luas dari GlassCard:
+Batch22 mengubah SEMUA Scaffold jadi `containerColor = Color.Transparent`
+supaya ambient gradient tembus, tapi M3 Scaffold menurunkan `contentColor`
+default-nya dari `contentColorFor(containerColor)` — dan warna transparan
+bukan warna bertema, jadi hasilnya `Color.Unspecified`, yang pada akhirnya
+di-resolve `Text()` sebagai HITAM (bukan warna teks tema). Ini kena semua
+`Text()` di 5 layar yang TIDAK set `color=` eksplisit dan TIDAK dibungkus
+GlassCard: radio row label ("Match system"/"Light"/"Dark"), judul kartu
+color-style ("Signature"/"Amber Reserve"/"Indigo Noir" — `ThemeStyleCard`
+pakai `Modifier.background()` manual, bukan `Surface`, jadi juga tidak
+dapat contentColor sendiri), dan judul toggle Settings ("Cleaning
+reminders"/"Random clean mode"/"Swipe haptics"/"App lock").
+Fix: tambah `contentColor = MaterialTheme.colorScheme.onBackground` di
+tiap Scaffold (SettingsScreen, HomeScreen, OnboardingScreen, SwipeScreen,
+TrashScreen) berdampingan dengan `containerColor = Color.Transparent` yang
+sudah ada. Text yang sudah set warna eksplisit (subtitle onSurfaceVariant,
+dll) tidak terpengaruh. GlassCard.kt (Batch23) tetap diperlukan terpisah
+karena `Box` internalnya tidak mewarisi contentColor otomatis dari Scaffold
+manapun — dua fix independen, saling melengkapi, 0 tumpang tindih.

@@ -128,7 +128,12 @@ fun HomeScreen(
         // missing component. For Amber Reserve/Indigo Noir (no gradient
         // painted at the root, root Surface uses colorScheme.background
         // directly instead) this renders identically to before.
+        // contentColor (Batch24 fix): a transparent containerColor makes
+        // Scaffold's derived contentColorFor() return Unspecified, so any
+        // Text() without its own explicit color= falls back to hard-default
+        // black instead of the theme's text color — set explicitly.
         containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onBackground,
         topBar = {
             Column {
                 TopAppBar(

@@ -97,7 +97,9 @@ fun OnboardingScreen(onDone: () -> Unit) {
 
     Scaffold(
         // Transparent (Batch22) — see matching comment in HomeScreen.kt.
+        // contentColor (Batch24 fix) — see matching comment in HomeScreen.kt.
         containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onBackground,
         bottomBar = {
             Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
                 PageIndicator(pagerState = pagerState, pageCount = ONBOARDING_PAGES.size)
