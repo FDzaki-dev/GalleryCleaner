@@ -1,7 +1,7 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v22 — Batch22 (Atomic Change: Glassmorphism component cascade — Card+Button, seluruh app)
+v23 — Batch23 (Fix: GlassCard text readability — black-on-dark title bug)
 
 ## Glassmorphism Component Cascade (Batch22, Atomic Change — 9 file)
 Permintaan user: 1 batch atomic change berisi SEMUA bagian yang belum
@@ -449,3 +449,20 @@ Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`
 - 4 GradleException guard clause (keystore path/password/alias/key password) — diverifikasi struktur benar sejak fix Batch1; masih perlu 1x CI run hijau sebagai bukti final.
 
 (Lihat "Belum Dikerjakan" di bagian atas file ini untuk daftar pending terkini — item lama di sini sudah diproses/superseded.)
+
+## Batch23 — GlassCard Readability Fix (1 file)
+Root cause: `GlassCard.kt` membungkus content dengan `Box` polos (bukan M3
+`Surface`), sehingga tidak pernah menyediakan `LocalContentColor` ke children.
+Semua `Text()` di dalam GlassCard yang TIDAK set `color=` eksplisit (judul
+"Blurry photos"/"Similar photos"/nama bulan "Agustus 2026" dst.) jatuh ke
+default keras Compose Material3 `LocalContentColor = Color.Black` — hitam di
+atas panel kaca gelap, persis bug readability di screenshot user. Text yang
+SUDAH set warna eksplisit (subtitle `onSurfaceVariant`, label "Scan"
+`primary`) sudah benar sejak awal — itu sebabnya sebagian teks di kartu yang
+sama terlihat OK sementara judulnya hilang.
+Fix: satu titik pusat di `GlassCard.kt`, bungkus `content()` dengan
+`CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface)`.
+Tidak menyentuh file layar manapun — semua GlassCard call site (HomeScreen,
+TrashScreen, SwipeScreen, SettingsScreen) otomatis ikut fix tanpa edit
+per-lokasi. `GlassButton`/`InfoChip` tidak disentuh (sudah set warna eksplisit
+sejak awal, tidak terpengaruh bug ini).

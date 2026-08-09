@@ -5,7 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
@@ -40,7 +43,19 @@ fun GlassCard(
         modifier = modifier
             .glassPanel(shape = shape, elevation = elevation)
             .let { if (onClick != null) it.clickable(enabled = enabled, onClick = onClick) else it }
-            .padding(contentPadding),
-        content = content
-    )
+            .padding(contentPadding)
+    ) {
+        // Batch23 readability fix: Box (unlike M3 Surface) never provided
+        // LocalContentColor, so any Text() inside GlassCard without an
+        // explicit color= fell back to Compose's hard default (Color.Black)
+        // — invisible on dark glass panels. This is why titles ("Blurry
+        // photos", "Agustus 2026", etc.) rendered black while subtitles
+        // stayed readable (those Text() calls already passed an explicit
+        // onSurfaceVariant color). Providing onSurface here fixes every
+        // GlassCard call site centrally; any Text() that already sets an
+        // explicit color is unaffected (explicit color always wins).
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+            content()
+        }
+    }
 }
