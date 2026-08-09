@@ -1,6 +1,14 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
+v15 — Batch15 (Roadmap: ROADMAP.md baru — gap analysis vs Sponge, goals menuju parity/superiority)
+
+## Roadmap Baru (Batch15)
+- File baru: `ROADMAP.md` (root) — riset kompetitif "Sponge - Gallery Cleaner" (web search real, bukan asumsi) + audit jujur fitur project ini yang sudah setara/lebih unggul vs yang masih gap.
+- 4 Fase: (A) tutup gap fungsional inti — random mode, 3rd swipe action "organize" (backend `moveTo` sudah ada, tinggal expose UI), cleanup goal (window peluang: Sponge sendiri baru rencanakan ini per Juli 2026); (B) diferensiasi AI on-device — duplicate detection, blur detection, backup-before-delete; (C) lanjutan kerja existing — keputusan MidnightSkeuoButton cascade, Phase-1b, CI hijau; (D) jangkauan pasar — multi-bahasa, monetisasi one-time-purchase, Play Store readiness.
+- Lihat `ROADMAP.md` untuk detail lengkap + sumber riset.
+
+## Versi Saat Ini (historis)
 v14 — Batch14 (Cleanup: hapus 10 dead color token yang disetujui user, verifikasi 0 referensi)
 
 ## Dead Token Cleanup — Color.kt (Batch14)

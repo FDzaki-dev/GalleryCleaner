@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## v15_Batch15 — 2026-08-09
+- Add: `ROADMAP.md` — roadmap strategis vs kompetitor "Sponge - Gallery Cleaner" (riset web search real per tanggal batch). Gap analysis jujur: fitur kita yang sudah unggul (app lock, crash logger, 3 gaya tema, smart category/on-this-day/largest-files card) vs gap nyata (random mode, 3rd swipe action organize, cleanup goal, multi-bahasa, duplicate detection). 4 fase roadmap + definisi "sukses" yang terukur, bukan checklist kosong.
+
 ## v14_Batch14 — 2026-08-09
 - Cleanup (approved pending item dari Batch12): hapus 10 dead color token di `Color.kt` (`GraphiteBg`, `GraphiteSurface`, `GraphiteSurfaceRaised`, `GraphiteOutline`, `TextPrimary`, `TextSecondary`, `TextMuted`-lama, `AccentGold`, `SageKeepDim`, `CoralDeleteDim`) — 0 referensi nyata setelah diverifikasi grep lintas seluruh project. `SageKeep`/`CoralDelete` dipertahankan (masih dipakai `Theme.kt` primary/secondary + swatch picker).
 - Audit (bukan eksekusi): 17 titik `Button`/`TextButton`/`OutlinedButton` M3 di 8 file diperiksa untuk kandidat cascade `MidnightSkeuoButton` — ditemukan tidak aman untuk swap langsung tanpa extend API (lihat PROJECT_STATE "Belum Dikerjakan"), jadi TIDAK dieksekusi batch ini, menunggu keputusan user.
