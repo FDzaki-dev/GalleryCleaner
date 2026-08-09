@@ -28,6 +28,9 @@ import com.example.gallerycleaner.ui.theme.midnightAmbientGradient
  * @param ambient when true, blends in the §6 Midnight Blue atmospheric
  *   gradient instead of a flat glass fill. Use sparingly — large screen
  *   backgrounds or focused surfaces only, not every card.
+ * @param borderWidth override for selection/emphasis states (e.g. a
+ *   thicker accented border on a selected item). Defaults to the
+ *   standard 1dp hairline (§8) — don't widen it for ordinary surfaces.
  */
 @Composable
 fun GlassSurface(
@@ -36,6 +39,7 @@ fun GlassSurface(
     shape: Shape = ShapeCard,
     ambient: Boolean = false,
     borderColor: Color = GlassBorder,
+    borderWidth: androidx.compose.ui.unit.Dp = 1.dp,
     content: @Composable () -> Unit
 ) {
     val fill: Brush = if (ambient) {
@@ -52,7 +56,7 @@ fun GlassSurface(
         modifier = modifier
             .clip(shape)
             .background(fill)
-            .border(width = 1.dp, color = borderColor, shape = shape)
+            .border(width = borderWidth, color = borderColor, shape = shape)
     ) {
         content()
     }

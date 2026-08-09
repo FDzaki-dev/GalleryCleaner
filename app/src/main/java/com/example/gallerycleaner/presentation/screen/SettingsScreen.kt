@@ -7,7 +7,6 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -36,6 +35,8 @@ import com.example.gallerycleaner.ui.theme.PeriwinkleKeep
 import com.example.gallerycleaner.ui.theme.SageKeep
 import com.example.gallerycleaner.ui.theme.CoralDelete
 import com.example.gallerycleaner.ui.theme.AmoledBlack
+import com.example.gallerycleaner.ui.theme.GlassBorder
+import com.example.gallerycleaner.ui.components.GlassCard
 import com.example.gallerycleaner.ui.components.TactileSwitch
 import kotlinx.coroutines.launch
 
@@ -329,20 +330,16 @@ private val THEME_STYLES = listOf(
 
 @Composable
 private fun ThemeStyleCard(style: ThemeStyle, selected: Boolean, onClick: () -> Unit) {
-    Row(
+    GlassCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            .border(
-                width = if (selected) 2.dp else 1.dp,
-                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                shape = RoundedCornerShape(14.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(14.dp),
+        borderColor = if (selected) MaterialTheme.colorScheme.primary else GlassBorder,
+        borderWidth = if (selected) 2.dp else 1.dp,
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
     ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
         // Small preview swatch: the style's actual background with its two
         // accent dots overlapping on top — a miniature of what the app will
         // actually look like, not just a color name.
@@ -386,6 +383,7 @@ private fun ThemeStyleCard(style: ThemeStyle, selected: Boolean, onClick: () -> 
                 contentDescription = "Selected",
                 tint = MaterialTheme.colorScheme.primary
             )
+        }
         }
     }
 }

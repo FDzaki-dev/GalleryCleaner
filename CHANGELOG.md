@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## v11_Batch11 — 2026-08-09
+- Refactor (GlassSurface API extension, scope: `GlassSurface.kt`+`GlassCard.kt`+`SettingsScreen.kt`): tambah param `borderWidth` ke `GlassSurface`, tambah `shape`/`borderColor`/`borderWidth` ke `GlassCard` (semua default identik behavior lama → 0 breaking change). `ThemeStyleCard` di SettingsScreen dikonversi dari Row manual → `GlassCard`, radius dipertahankan 14dp (bukan default 18dp) untuk 0 regresi visual, selection border (2dp primary vs 1dp GlassBorder) tetap sama persis. Background sekarang pakai token Glass resmi menggantikan `surfaceVariant` hardcode.
+
 ## v10_Batch10 — 2026-08-09
 - Refactor (Tactile Component Migration, scope: SettingsScreen.kt saja): 3 pemakaian M3 `Switch(...)` → `TactileSwitch(...)` (§12). API drop-in identik (checked/onCheckedChange/modifier/enabled), 0 perubahan logic, +1 import. Dikonfirmasi `Switch(` sudah 0 pemakaian di seluruh project. `ThemeStyleCard`/`IconButton`/`RadioButton`/`FilterChip` di file yang sama sengaja belum disentuh (butuh perluasan API komponen dulu — lihat PROJECT_STATE).
 
