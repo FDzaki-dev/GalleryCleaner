@@ -15,6 +15,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.gallerycleaner.ui.components.GlassButton
+import com.example.gallerycleaner.ui.components.GlassCard
+import com.example.gallerycleaner.ui.components.glassPanel
 
 @Composable
 internal fun InfoBar(item: MediaItem, position: Int, total: Int) {
@@ -31,9 +34,15 @@ internal fun InfoBar(item: MediaItem, position: Int, total: Int) {
 
 @Composable
 private fun InfoChip(text: String) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(8.dp)
+    // Small glass pill (Batch22, was Surface(surfaceVariant)) — thinner
+    // border/lower elevation than GlassCard's defaults since this sits
+    // directly over the photo preview, not as a standalone panel.
+    Box(
+        modifier = Modifier.glassPanel(
+            shape = RoundedCornerShape(8.dp),
+            elevation = 3.dp,
+            borderWidth = 0.5.dp
+        )
     ) {
         Text(
             text,
@@ -145,10 +154,7 @@ internal fun FinishedPanel(deletedCount: Int, reviewedCount: Int, onDone: () -> 
         Spacer(Modifier.height(20.dp))
         Text("Mission accomplished!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(20.dp))
-        Surface(
-            color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(16.dp)
-        ) {
+        GlassCard(contentPadding = 0.dp) {
             Row(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
                 StatColumn("Items reviewed", "$reviewedCount")
                 Spacer(Modifier.width(32.dp))
@@ -156,13 +162,7 @@ internal fun FinishedPanel(deletedCount: Int, reviewedCount: Int, onDone: () -> 
             }
         }
         Spacer(Modifier.height(28.dp))
-        Button(
-            onClick = onDone,
-            modifier = Modifier.height(52.dp),
-            shape = RoundedCornerShape(26.dp)
-        ) {
-            Text("Continue", modifier = Modifier.padding(horizontal = 16.dp))
-        }
+        GlassButton(text = "Continue", onClick = onDone)
     }
 }
 

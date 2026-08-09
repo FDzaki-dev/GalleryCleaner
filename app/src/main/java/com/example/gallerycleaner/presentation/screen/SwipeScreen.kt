@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import coil.imageLoader
 import coil.request.ImageRequest
@@ -242,11 +243,12 @@ fun SwipeScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.72f)
                 )
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        // Transparent (Batch22) — see matching comment in HomeScreen.kt.
+        containerColor = Color.Transparent
     ) { padding ->
         Column(
             modifier = Modifier.padding(padding).fillMaxSize(),

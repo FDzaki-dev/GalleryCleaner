@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.gallerycleaner.ui.components.GlassCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import java.util.Calendar
@@ -65,10 +66,10 @@ internal fun GroupRow(
     val done = fraction >= 1f && group.items.isNotEmpty()
     val displayName = label ?: group.key
 
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = 0.dp,
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier.padding(14.dp).fillMaxWidth(),

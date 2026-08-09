@@ -16,9 +16,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.gallerycleaner.ui.components.GlassButton
 import kotlinx.coroutines.launch
 
 private data class OnboardingPage(
@@ -94,7 +96,8 @@ fun OnboardingScreen(onDone: () -> Unit) {
     val isLastPage by remember { derivedStateOf { pagerState.currentPage == ONBOARDING_PAGES.lastIndex } }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        // Transparent (Batch22) — see matching comment in HomeScreen.kt.
+        containerColor = Color.Transparent,
         bottomBar = {
             Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
                 PageIndicator(pagerState = pagerState, pageCount = ONBOARDING_PAGES.size)
@@ -110,7 +113,8 @@ fun OnboardingScreen(onDone: () -> Unit) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Button(
+                    GlassButton(
+                        text = if (isLastPage) "Get Started" else "Next",
                         onClick = {
                             if (isLastPage) {
                                 onDone()
@@ -118,9 +122,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
                                 scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
                             }
                         }
-                    ) {
-                        Text(if (isLastPage) "Get Started" else "Next")
-                    }
+                    )
                 }
             }
         }

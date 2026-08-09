@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.gallerycleaner.ui.components.GlassButton
+import com.example.gallerycleaner.ui.components.GlassCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,21 +78,28 @@ fun TrashScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.72f)
+                )
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        // Transparent (Batch22) — see matching comment in HomeScreen.kt.
+        containerColor = Color.Transparent,
         bottomBar = {
             if (selected.isNotEmpty()) {
-                Surface(color = MaterialTheme.colorScheme.surface) {
+                GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = 0.dp
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        OutlinedButton(
-                            onClick = { onRestore(selected.toList()); selected.clear() },
-                            modifier = Modifier.weight(1f)
-                        ) { Text("Restore") }
+                        GlassButton(
+                            text = "Restore",
+                            modifier = Modifier.weight(1f),
+                            onClick = { onRestore(selected.toList()); selected.clear() }
+                        )
                         Button(
                             onClick = { onDeletePermanently(selected.toList()) },
                             modifier = Modifier.weight(1f),

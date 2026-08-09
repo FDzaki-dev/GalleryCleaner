@@ -22,6 +22,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import com.example.gallerycleaner.ui.components.GlassButton
+import com.example.gallerycleaner.ui.components.GlassCard
 
 /** Multi-select alternative to swiping one photo at a time: tap thumbnails
  *  to select several, then bulk-delete them in one action. Selected items
@@ -141,19 +143,15 @@ internal fun GridSelectContent(
         }
 
         if (selected.isNotEmpty()) {
-            Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+            GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 0.dp) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    OutlinedButton(onClick = onCompressSelected) {
-                        Text("Compress ${selected.size}")
-                    }
+                    GlassButton(text = "Compress ${selected.size}", onClick = onCompressSelected)
                     if (onOrganizeSelected != null) {
                         Spacer(Modifier.width(12.dp))
-                        OutlinedButton(onClick = onOrganizeSelected) {
-                            Text("Organize ${selected.size}")
-                        }
+                        GlassButton(text = "Organize ${selected.size}", onClick = onOrganizeSelected)
                     }
                     Spacer(Modifier.width(12.dp))
                     Button(

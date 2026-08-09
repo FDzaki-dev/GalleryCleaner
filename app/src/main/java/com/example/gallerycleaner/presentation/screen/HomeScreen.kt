@@ -117,7 +117,18 @@ fun HomeScreen(
         searchQuery = ""
     }
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        // Transparent (Batch22, was solid colorScheme.background): the
+        // Signature/Midnight-Blue theme paints its ambient gradient onto the
+        // MainActivity root Surface, one level up, specifically so glass
+        // panels have visible depth to float over (see the doc comment at
+        // that call site). A solid Scaffold background here was painting
+        // flat over that gradient on every screen, which is why the app
+        // looked like a plain dark theme instead of glassmorphism despite
+        // Batch21's ColorScheme rewrite — this was the actual gap, not a
+        // missing component. For Amber Reserve/Indigo Noir (no gradient
+        // painted at the root, root Surface uses colorScheme.background
+        // directly instead) this renders identically to before.
+        containerColor = Color.Transparent,
         topBar = {
             Column {
                 TopAppBar(
@@ -212,7 +223,14 @@ fun HomeScreen(
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background
+                        // Translucent (Batch22, was fully opaque) so the top
+                        // bar reads as a frosted glass strip over the
+                        // scrolling content behind it, matching the panels
+                        // below — no Modifier.blur (minSdk 24, see
+                        // MidnightGlassTokens doc comment), translucency
+                        // alone carries the effect here same as it does for
+                        // GlassCard/GlassButton.
+                        containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.72f)
                     )
                 )
                 // Thin, unobtrusive cue that the rest of a large gallery is still

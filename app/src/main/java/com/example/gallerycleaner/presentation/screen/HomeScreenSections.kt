@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.gallerycleaner.ui.components.GlassCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import java.util.Calendar
@@ -89,12 +90,10 @@ internal fun SectionLabel(text: String) {
  *  sits in trash waiting to be freed, and all-time cleanup totals. */
 @Composable
 internal fun LargestFilesCard(items: List<MediaItem>, onClick: () -> Unit) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = 0.dp,
+        onClick = onClick
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(
@@ -177,10 +176,9 @@ internal fun StorageDashboard(
 ) {
     var showGoalDialog by remember { mutableStateOf(false) }
 
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.fillMaxWidth()
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = 0.dp
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             Text(
@@ -384,10 +382,11 @@ internal fun OnThisDayRow(photos: List<MediaItem>, onClick: () -> Unit) {
  *  trivial) CPU work rather than happening silently in the background. */
 @Composable
 internal fun ScanTriggerRow(title: String, subtitle: String, scanning: Boolean, onClick: () -> Unit) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.fillMaxWidth().clickable(enabled = !scanning, onClick = onClick)
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = 0.dp,
+        onClick = onClick,
+        enabled = !scanning
     ) {
         Row(
             modifier = Modifier.padding(14.dp).fillMaxWidth(),
@@ -413,10 +412,10 @@ internal fun ScanTriggerRow(title: String, subtitle: String, scanning: Boolean, 
 @Composable
 internal fun SmartCategoryRow(group: MediaGroup, onClick: () -> Unit) {
     val totalBytes = remember(group.key) { group.items.sumOf { it.sizeBytes } }
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = 0.dp,
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier.padding(14.dp).fillMaxWidth(),

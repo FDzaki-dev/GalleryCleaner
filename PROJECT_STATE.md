@@ -1,6 +1,119 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
+v22 — Batch22 (Atomic Change: Glassmorphism component cascade — Card+Button, seluruh app)
+
+## Glassmorphism Component Cascade (Batch22, Atomic Change — 9 file)
+Permintaan user: 1 batch atomic change berisi SEMUA bagian yang belum
+terjangkau rewrite Batch21 ("Component level NOT yet done" — lihat section
+Batch21 di bawah), plus home screen wajib terlihat glass bukan flat seperti
+di screenshot yang dilampirkan user. Melebihi batch limit 10 file/1 modul
+biasa — dikecualikan sesuai aturan "Atomic Change" (1 perubahan visual
+kohesif, sama pola `Surface(color=colorScheme.surface/surfaceVariant,
+shape=RoundedCornerShape(20.dp))` diulang di banyak file, harus konsisten
+diganti bersamaan atau tidak sama sekali; setengah-setengah akan membuat
+sebagian layar glass dan sebagian flat, terlihat seperti bug bukan desain).
+
+**Root cause temuan (bukan cuma "komponen belum dipasang")**: `Scaffold`
+tiap layar (`HomeScreen`/`TrashScreen`/`SettingsScreen`/`SwipeScreen`/
+`OnboardingScreen`) pakai `containerColor = MaterialTheme.colorScheme.background`
+SOLID. `MainActivity.kt` root `Surface` sudah melukis ambient gradient
+(`MidnightGlass.AmbientGradient`) sejak Batch21, TAPI Scaffold di atasnya
+mengecat solid tepat di atas gradient itu — jadi gradient tidak pernah
+benar-benar terlihat di balik konten, persis seperti yang ditunjukkan
+screenshot user (background rata gelap, bukan glow biru). Ini penyebab
+utama kenapa app "masih terlihat flat" walau ColorScheme sudah 100% diganti
+Batch21 — bukan sekadar Card/Button yang belum di-cascade. Diperbaiki di
+SEMUA Scaffold: `containerColor = Color.Transparent` (root gradient kini
+tembus), `TopAppBar` `containerColor` → `colorScheme.background.copy(alpha
+= 0.72f)` (translucent, meniru toolbar kaca iOS tanpa `Modifier.blur` —
+tetap konsisten `minSdk=24`, lihat doc comment `MidnightGlassTokens`).
+Untuk tema Amber Reserve/Indigo Noir (tidak dapat gradient dari root,
+`glassBackdrop == null` sehingga root `Surface` tetap solid
+`colorScheme.background`), hasil render identik dengan sebelumnya — 0
+regresi visual di 2 tema itu.
+
+**GlassCard.kt — extend API (non-breaking)**: tambah `onClick: (() ->
+Unit)? = null` + `enabled: Boolean = true`. `clickable` diterapkan SETELAH
+`.glassPanel(...)` di modifier chain (bukan digabung ke `modifier` yang
+di-pass caller, yang diterapkan SEBELUM glassPanel) — pola yang sama persis
+sudah dipakai `GlassButton` sejak Batch21, supaya ripple/indication kelihatan
+di ATAS lapisan kaca, bukan tertimbun di bawahnya (kalau clickable duluan,
+background glass akan menggambar ulang di atas ripple dan menyembunyikannya).
+
+**8 titik `Surface(color=surface/surfaceVariant, shape=RoundedCornerShape(20.dp))`
+→ `GlassCard`** (semua diberi `contentPadding = 0.dp` karena Column/Row di
+dalamnya sudah punya padding manual sendiri — set 0 di GlassCard mencegah
+double-padding, bukan oversight):
+- `HomeScreenSections.kt`: `LargestFilesCard`, `StorageDashboard`,
+  `ScanTriggerRow` (`enabled = !scanning` diteruskan ke `GlassCard`, ganti
+  `.clickable(enabled=...)` lama), `SmartCategoryRow`.
+- `HomeScreenFolderRow.kt`: `GroupRow` — ini row bulan/folder yang persis
+  terlihat di screenshot 1 user ("Agustus 2026" dst).
+- `SwipeScreenControls.kt`: `FinishedPanel` stat row (Surface tanpa
+  `fillMaxWidth`, sengaja dipertahankan wrap-content sama seperti aslinya).
+- `SwipeScreenGrid.kt`: bottom action bar (Compress/Organize/Delete).
+- `TrashScreen.kt`: bottom action bar (Restore/Delete permanently).
+
+**1 titik chip kecil → `Modifier.glassPanel()` langsung (bukan GlassCard)**:
+`SwipeScreenControls.kt` `InfoChip` — border/elevasi lebih tipis
+(`elevation=3.dp`, `borderWidth=0.5.dp`) daripada default GlassCard, karena
+menumpuk di atas foto preview, bukan panel berdiri sendiri. Pakai
+`glassPanel` mentah (bukan GlassCard) supaya bisa override kedua parameter
+itu tanpa nambah lagi parameter opsional ke GlassCard yang tidak akan
+dipakai di tempat lain.
+
+**7 titik `Button`/`OutlinedButton` non-semantik → `GlassButton`** (dari 26
+total titik Button di seluruh app — sisanya SENGAJA tidak disentuh, lihat
+"Tidak disentuh" di bawah):
+- `OnboardingScreen.kt` — "Next"/"Get Started" (CTA utama flow onboarding).
+- `SwipeScreenControls.kt` — "Continue" di `FinishedPanel`.
+- `SwipeScreenGrid.kt` — "Compress N", "Organize N" (OutlinedButton → GlassButton).
+- `TrashScreen.kt` — "Restore" (OutlinedButton → GlassButton, bottom bar).
+- `MainActivity.kt` — "Grant access" (`PermissionScreen`), "Unlock"
+  (`AppLockScreen`) — dua CTA full-width, `modifier = Modifier.fillMaxWidth()`
+  diteruskan ke `GlassButton` (sudah punya `height(52.dp)` bawaan sendiri,
+  `shape`/`height` manual lama di kedua situs ini dihapus, sudah didup GlassButton).
+
+**Tidak disentuh (disengaja, didokumentasikan — 19 dari 26 titik Button,
+plus beberapa Card/Surface)**:
+- **10 tombol AlertDialog** (Save/Reset/Cancel/Set goal/OK/Move/Delete All,
+  dst.) — precedent Batch14: tombol kecil di dalam dialog akan rusak
+  proporsinya kalau diganti komponen "timbul"/kaca berukuran penuh; berlaku
+  sama untuk GlassButton (dirancang 52dp height, bukan untuk dialog compact).
+- **4 TextButton link gaya top-bar** (`HomeScreen` "Trash", `TrashScreen`
+  "Empty Trash"/"Select all", `SwipeScreenGrid` "Select all") — ini teks-link
+  minimalis khas toolbar iOS, bukan tombol kartu; menjadikannya GlassButton
+  akan terlihat berlebihan di app bar yang sudah translucent.
+- **3 tombol warna semantik delete** (`HomeScreenSections` "Clean up",
+  `SwipeScreenGrid` "Delete N selected", `TrashScreen` "Delete permanently")
+  — pakai `colorScheme.secondary` (CoralDelete) sengaja, precedent sejak
+  Batch12/14: `GlassButton` tidak punya parameter warna, swap paksa akan
+  menghilangkan sinyal delete yang app-critical.
+- **`RoundActionButton`** (Keep ✓ / Delete ✕ / Skip ⏭ / Organize 🗂 di
+  `SwipeScreenControls.kt`) — custom `Box`+`Canvas`, bukan `Button()`,
+  warnanya semantik Keep/Delete/neutral; di luar cakupan grep Button( dan
+  memang tidak boleh disentuh (precedent Keep/Delete sejak Batch2).
+  circular action button ini sendiri sudah cukup "melayang" secara visual
+  (bulat, shadow) — tidak butuh treatment glass tambahan.
+- **`ExpiryBanner`, `PillChip`/`FilterChip`** — tetap `Surface`, warna
+  semantik (secondary-tint warning / selected-state chip), bukan kandidat
+  Card generik.
+- **`SettingsScreen.kt` `ThemeStyleCard`** — masih pending (item lama sejak
+  Batch11), butuh extend `GlassCard` dengan parameter `borderColor`/
+  `borderWidth` dinamis untuk state "selected" sebelum aman dikonversi
+  (persis alasan Batch11 kenapa `GlassSurface` diberi param border
+  tambahan) — di luar cakupan permintaan user kali ini (fokus: home
+  screen + cascade Card/Button generik), next batch kalau diminta.
+
+**Verifikasi**: brace/paren balanced 0/0 di SEMUA file `.kt` project (sweep
+penuh, bukan cuma file yang disentuh). Single call-site check: `GlassCard(`
+8 titik pemanggilan (+1 definisi), `GlassButton(` 7 titik pemanggilan (+1
+definisi) — sesuai rencana, tidak ada situs yang kelewat/dobel. Protected
+assets (3 gradle, manifest, workflow, .gitignore) tidak tersentuh sama
+sekali — 0 permission baru dibutuhkan, murni perubahan Compose UI.
+
+## Versi Historis
 v20 — Batch20 (ROADMAP Fase A item 4: Sort di layar Swipe — shipped. **FASE A SELESAI 4/4.**) + fix nama APK release
 
 ## Sort di Layar Swipe (Batch20) — Fase A selesai

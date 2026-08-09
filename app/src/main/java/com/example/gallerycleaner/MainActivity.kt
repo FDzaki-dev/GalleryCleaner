@@ -37,6 +37,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.example.gallerycleaner.ui.components.GlassButton
 import com.example.gallerycleaner.ui.theme.GalleryCleanerTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -909,13 +910,11 @@ private fun PermissionScreen(onRequest: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(28.dp))
-        Button(
-            onClick = onRequest,
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(26.dp)
-        ) {
-            Text("Grant access", style = MaterialTheme.typography.titleMedium)
-        }
+        GlassButton(
+            text = "Grant access",
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onRequest
+        )
     }
 }
 
@@ -941,12 +940,10 @@ private fun AppLockScreen(onUnlockClick: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(28.dp))
-        Button(
-            onClick = onUnlockClick,
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(26.dp)
-        ) {
-            Text("Unlock", style = MaterialTheme.typography.titleMedium)
-        }
+        GlassButton(
+            text = "Unlock",
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onUnlockClick
+        )
     }
 }

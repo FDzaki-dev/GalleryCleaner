@@ -92,6 +92,8 @@ fun SettingsScreen(
     }
 
     Scaffold(
+        // Transparent (Batch22) — see matching comment in HomeScreen.kt.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },
@@ -101,7 +103,7 @@ fun SettingsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.72f)
                 )
             )
         }
