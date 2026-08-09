@@ -36,10 +36,10 @@ tiap rilis besar.
   trash** (`HomeScreenSections.kt`) — tidak disebut di listing Sponge
 
 **Gap nyata (Sponge sudah, kita belum):**
-- ❌ **Random clean mode** — belum ada
-- ❌ **Move-to-folder saat swipe** — `MediaDataSource` sudah punya
-  primitive `moveTo`, tapi belum diekspos sebagai aksi swipe (baru
-  keep/delete 2 arah, belum ada 3rd action "organize")
+- ❌ **Random clean mode** — ✅ shipped Batch16
+- ❌ **Move-to-folder saat swipe** — ✅ shipped Batch17 (koreksi: primitive
+  `moveTo` yang diklaim "sudah ada" di Batch15 TERNYATA tidak pernah ada;
+  dibangun baru dari nol, lihat item 2 Fase A dan `PROJECT_STATE.md`)
 - ❌ **Cleanup goal** (target custom, mis. "bebaskan 2GB bulan ini") —
   Sponge sendiri baru mau tambahin ini (per balasan developer Juli 2026),
   jadi ini kesempatan untuk **duluan**, bukan sekadar catch-up
@@ -67,9 +67,14 @@ tiap rilis besar.
    `MediaGroup` sebelum masuk SwipeScreen, toggle di HomeScreen (ikon
    Shuffle top bar) + Settings (section "Swiping"), persisted via
    `SettingsStore.randomModeEnabledFlow`. Detail: `PROJECT_STATE.md`.
-2. **3rd swipe action "Organize"**: swipe atas (atau tombol ke-3) →
-   pilih folder tujuan, pakai `moveTo` yang sudah ada di
-   `MediaDataSource` — tinggal expose ke UI, backend sudah siap.
+2. ✅ **3rd swipe action "Organize"** (Batch17) — **koreksi audit**: klaim
+   Batch15 bahwa `MediaDataSource` sudah punya primitive `moveTo` TERNYATA
+   SALAH (grep hanya menemukan `Cursor.moveToNext()`, API tak terkait,
+   bukan primitive move). Dibangun dari nol: `MoveHelper.kt` (RELATIVE_PATH
+   update API 29+, direct-file move API 24-28, permission-request dance
+   identik `ImageCompressor`), tombol "Organize" ke-3 di `ActionButtonRow`
+   + aksi bulk "Organize N" di grid mode, `OrganizeFolderDialog` (pilih
+   folder existing atau buat baru). Detail: `PROJECT_STATE.md`.
 3. **Cleanup goal**: target storage (mis. slider GB) atau target jumlah
    foto, progress bar di HomeScreen dashboard, notifikasi saat tercapai.
    Ini fitur yang Sponge SENDIRI baru rencanakan — kalau kita duluan

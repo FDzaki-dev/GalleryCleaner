@@ -386,6 +386,13 @@ fun AppRoot(
     val trashItems = derivedMedia.trashItems
     val expiredTrashItems = derivedMedia.expiredTrashItems
 
+    // Distinct folders already present in the active library — offered as
+    // quick-pick suggestions in the "Organize" folder dialog (SwipeScreen)
+    // so a typo can't silently create a stray near-duplicate folder.
+    val existingFolders = remember(activeMedia) {
+        activeMedia.map { it.relativePath }.filter { it.isNotBlank() }.distinct().sorted()
+    }
+
     var groups by remember { mutableStateOf<List<MediaGroup>>(emptyList()) }
     LaunchedEffect(activeMedia, groupMode, sortOption) {
         groups = withContext(Dispatchers.Default) {
@@ -595,6 +602,110 @@ fun AppRoot(
         }
     }
 
+    /** Last-good-write-request pending state for "Organize" (ROADMAP Fase A
+     *  item 2) — mirrors pendingCompressRetry's shape exactly. [second] is
+     *  the destination folder, carried alongside the items so the retry
+     *  after the system consent dialog knows where to move them, same as
+     *  before the dialog interrupted the flow. */
+    var pendingOrganizeRetry by remember { mutableStateOf<Pair<List<MediaItem>, String>?>(null) }
+    val organizeRequestLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        val pending = pendingOrganizeRetry
+        pendingOrganizeRetry = null
+        if (result.resultCode == android.app.Activity.RESULT_OK && pending != null) {
+            val (items, targetFolder) = pending
+            scope.launch(Dispatchers.IO) {
+                // Write access for the whole batch was just granted (API 30+
+                // path) — every MoveHelper.moveTo call below should now
+                // succeed without hitting RecoverableSecurityException again.
+                val movedIds = items.mapNotNull { item ->
+                    when (MoveHelper.moveTo(context, item, targetFolder)) {
+                        is MoveHelper.Result.Success, MoveHelper.Result.AlreadyThere -> item.id
+                        else -> null
+                    }
+                }.toSet()
+                withContext(Dispatchers.Main) {
+                    applyOrganizeResult(movedIds, targetFolder)
+                    if (movedIds.size < items.size) {
+                        snackbarHostState.showSnackbar("Gagal memindahkan ${items.size - movedIds.size} file")
+                    }
+                }
+            }
+        } else if (pending != null) {
+            scope.launch { snackbarHostState.showSnackbar("Izin memindahkan file ditolak") }
+        }
+    }
+
+    /** Reflects a successful move in local state without a full library
+     *  rescan: updates each moved item's `relativePath`/`bucketName` in
+     *  place in `allMedia`, rather than deleting it from the list the way
+     *  performPermanentDeletion does. Organize isn't deletion — the photo
+     *  is still in the library, just under a different folder, so total
+     *  library size/count must stay exactly the same. */
+    fun applyOrganizeResult(movedIds: Set<Long>, targetFolder: String) {
+        if (movedIds.isEmpty()) return
+        val newBucketName = targetFolder.trimEnd('/').substringAfterLast('/', targetFolder)
+        allMedia = allMedia.map { item ->
+            if (item.id in movedIds) {
+                item.copy(relativePath = targetFolder, bucketName = newBucketName)
+            } else item
+        }
+    }
+
+    /** Moves [items] to [targetFolder]. On API 30+, requests write access
+     *  for the whole batch up front via `MediaStore.createWriteRequest` —
+     *  one system dialog for the selection, exactly mirroring
+     *  performCompression's batched path above. Below that, moves directly
+     *  (MoveHelper handles the RELATIVE_PATH vs. direct-file split
+     *  internally) and stops at the first RecoverableSecurityException,
+     *  same reasoning as performCompression's non-batched fallback: one
+     *  repeated-prompt experience per photo would be worse than asking the
+     *  user to retry after granting access to the first one. */
+    fun performOrganize(items: List<MediaItem>, targetFolder: String) {
+        if (items.isEmpty()) return
+        scope.launch(Dispatchers.IO) {
+            if (MoveHelper.supportsBatchWriteRequest()) {
+                try {
+                    val uris = items.map { it.uri }
+                    val pending = MediaStore.createWriteRequest(context.contentResolver, uris)
+                    withContext(Dispatchers.Main) {
+                        pendingOrganizeRetry = items to targetFolder
+                        organizeRequestLauncher.launch(IntentSenderRequest.Builder(pending.intentSender).build())
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        snackbarHostState.showSnackbar("Gagal meminta izin memindahkan file")
+                    }
+                }
+            } else {
+                val movedIds = mutableSetOf<Long>()
+                var needsPermissionSender: IntentSender? = null
+                for (item in items) {
+                    when (val result = MoveHelper.moveTo(context, item, targetFolder)) {
+                        is MoveHelper.Result.Success -> movedIds.add(item.id)
+                        MoveHelper.Result.AlreadyThere -> movedIds.add(item.id)
+                        is MoveHelper.Result.NeedsPermission -> {
+                            needsPermissionSender = result.recoverySender
+                            break
+                        }
+                        MoveHelper.Result.Failed -> Unit
+                    }
+                }
+                withContext(Dispatchers.Main) {
+                    if (movedIds.isNotEmpty()) applyOrganizeResult(movedIds, targetFolder)
+                    val sender = needsPermissionSender
+                    if (sender != null) {
+                        pendingOrganizeRetry = items.filterNot { it.id in movedIds } to targetFolder
+                        organizeRequestLauncher.launch(IntentSenderRequest.Builder(sender).build())
+                    } else if (movedIds.size < items.size) {
+                        snackbarHostState.showSnackbar("Gagal memindahkan ${items.size - movedIds.size} file")
+                    }
+                }
+            }
+        }
+    }
+
     BackHandler(enabled = showTrash) { showTrash = false }
     BackHandler(enabled = showSettings) { showSettings = false }
 
@@ -645,6 +756,8 @@ fun AppRoot(
                     progressStore = progressStore,
                     hapticsEnabled = hapticsEnabled,
                     onCompressRequest = ::performCompression,
+                    existingFolders = existingFolders,
+                    onOrganizeRequest = ::performOrganize,
                     onBack = { selectedGroup = null },
                     onFinishWithDeletions = { deletions ->
                         scope.launch {

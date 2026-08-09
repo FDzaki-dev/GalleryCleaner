@@ -49,7 +49,8 @@ internal fun ActionButtonRow(
     enabled: Boolean,
     onDelete: () -> Unit,
     onSkip: () -> Unit,
-    onKeep: () -> Unit
+    onKeep: () -> Unit,
+    onOrganize: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp, horizontal = 24.dp),
@@ -72,6 +73,23 @@ internal fun ActionButtonRow(
             enabled = enabled,
             onClick = onSkip
         )
+        // Optional 3rd action ("Organize" — ROADMAP Fase A item 2): moves the
+        // current photo to a folder of the user's choosing instead of
+        // keep/delete. Nullable + separate small button rather than a new
+        // swipe-gesture direction — SwipeCard's gesture detection already
+        // owns left/right for Delete/Keep, and a 3rd gesture direction risks
+        // colliding with the existing tap-to-zoom / drag interactions there.
+        // A button is explicitly an accepted alternative per the roadmap.
+        if (onOrganize != null) {
+            RoundActionButton(
+                symbol = "🗂",
+                background = MaterialTheme.colorScheme.surfaceVariant,
+                symbolColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                size = 48.dp,
+                enabled = enabled,
+                onClick = onOrganize
+            )
+        }
         RoundActionButton(
             symbol = "✓",
             background = MaterialTheme.colorScheme.primary,
@@ -154,5 +172,93 @@ private fun StatColumn(label: String, value: String) {
         Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+/** Folder picker for the "Organize" action: pick from folders that already
+ *  exist in the library (so a stray typo can't scatter photos into a new
+ *  near-duplicate folder), or type a new one to create. [suggestedFolders]
+ *  should be distinct `MediaItem.relativePath` values, trailing slash
+ *  included (same shape the rest of the app already uses). */
+@Composable
+internal fun OrganizeFolderDialog(
+    itemCount: Int,
+    suggestedFolders: List<String>,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var customFolder by remember { mutableStateOf("") }
+    var selectedExisting by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (itemCount == 1) "Move to folder" else "Move $itemCount items to folder") },
+        text = {
+            Column {
+                if (suggestedFolders.isNotEmpty()) {
+                    Text(
+                        "Existing folders",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        suggestedFolders.take(6).forEach { folder ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedExisting = folder
+                                        customFolder = ""
+                                    }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selectedExisting == folder,
+                                    onClick = {
+                                        selectedExisting = folder
+                                        customFolder = ""
+                                    }
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(folder, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+                Text(
+                    "Or create a new one",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(6.dp))
+                TextField(
+                    value = customFolder,
+                    onValueChange = {
+                        customFolder = it
+                        if (it.isNotBlank()) selectedExisting = null
+                    },
+                    singleLine = true,
+                    placeholder = { Text("Pictures/GalleryCleaner/Organized") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            val target = selectedExisting ?: customFolder.trim().let { raw ->
+                if (raw.isEmpty()) null else if (raw.endsWith("/")) raw else "$raw/"
+            }
+            TextButton(
+                enabled = target != null,
+                onClick = { target?.let(onConfirm) }
+            ) {
+                Text("Move")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
 }
 

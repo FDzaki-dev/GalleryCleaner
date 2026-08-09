@@ -40,12 +40,20 @@ fun SwipeScreen(
     hapticsEnabled: Boolean = true,
     onBack: () -> Unit,
     onFinishWithDeletions: (List<MediaItem>) -> Unit,
-    onCompressRequest: (List<MediaItem>) -> Unit = {}
+    onCompressRequest: (List<MediaItem>) -> Unit = {},
+    existingFolders: List<String> = emptyList(),
+    onOrganizeRequest: (List<MediaItem>, String) -> Unit = { _, _ -> }
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     var index by remember(group.key) { mutableIntStateOf(0) }
     val pendingDeletes = remember(group.key) { mutableStateListOf<MediaItem>() }
+    // Items sent off to a different folder via "Organize" — kept separate
+    // from pendingDeletes (they're not deleted, and onFinishWithDeletions'
+    // contract is specifically about trash/deletion) but tracked the same
+    // way so the swipe/grid flow skips past them just like a delete would.
+    val pendingOrganized = remember(group.key) { mutableStateListOf<MediaItem>() }
+    var organizeTarget by remember(group.key) { mutableStateOf<List<MediaItem>?>(null) }
     var restored by remember(group.key) { mutableStateOf(false) }
     var lastDecision by remember(group.key) { mutableStateOf<Pair<MediaItem, SwipeDecision>?>(null) }
     var buttonDecision by remember(group.key) { mutableStateOf<SwipeDecision?>(null) }
@@ -109,9 +117,11 @@ fun SwipeScreen(
     // rather than memoized, since pendingDeletes is small (one folder's worth)
     // and this keeps it trivially correct with no stale-cache risk.
     val pendingDeleteIds = pendingDeletes.map { it.id }.toSet()
+    val pendingOrganizedIds = pendingOrganized.map { it.id }.toSet()
+    val skipIds = pendingDeleteIds + pendingOrganizedIds
     val currentItem = run {
         var i = index
-        while (i < group.items.size && group.items[i].id in pendingDeleteIds) i++
+        while (i < group.items.size && group.items[i].id in skipIds) i++
         group.items.getOrNull(i)
     }
     // The raw `index` can undercount once items ahead of it have been
@@ -204,6 +214,10 @@ fun SwipeScreen(
                         val toCompress = group.items.filter { it.id in gridSelected }
                         onCompressRequest(toCompress)
                         gridSelected.clear()
+                    },
+                    pendingOrganizedIds = pendingOrganizedIds,
+                    onOrganizeSelected = {
+                        organizeTarget = group.items.filter { it.id in gridSelected }
                     }
                 )
             } else {
@@ -275,6 +289,11 @@ fun SwipeScreen(
                                 isTransitioning = true
                                 buttonDecision = SwipeDecision.Keep
                             }
+                        },
+                        onOrganize = {
+                            if (!isTransitioning) {
+                                organizeTarget = listOf(currentItem)
+                            }
                         }
                     )
                 }
@@ -287,6 +306,27 @@ fun SwipeScreen(
     }
     if (showInfo && currentItem != null) {
         FileInfoDialog(item = currentItem, onDismiss = { showInfo = false })
+    }
+    organizeTarget?.let { itemsToOrganize ->
+        OrganizeFolderDialog(
+            itemCount = itemsToOrganize.size,
+            suggestedFolders = existingFolders,
+            onConfirm = { targetFolder ->
+                pendingOrganized.addAll(itemsToOrganize.filterNot { it.id in pendingOrganizedIds })
+                onOrganizeRequest(itemsToOrganize, targetFolder)
+                gridSelected.removeAll(itemsToOrganize.map { it.id }.toSet())
+                // Single-photo organize from the swipe button behaves like a
+                // decision that isn't Keep/Delete: advance past it the same
+                // way Skip does, so the flow doesn't get stuck re-showing a
+                // photo that already left this folder.
+                if (itemsToOrganize.size == 1 && itemsToOrganize.first().id == currentItem?.id) {
+                    index += 1
+                    scope.launch { progressStore.saveProgress(group.key, index) }
+                }
+                organizeTarget = null
+            },
+            onDismiss = { organizeTarget = null }
+        )
     }
 }
 

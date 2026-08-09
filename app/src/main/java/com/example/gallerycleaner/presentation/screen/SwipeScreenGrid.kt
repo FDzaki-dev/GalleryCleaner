@@ -37,13 +37,15 @@ internal fun GridSelectContent(
     selected: List<Long>,
     onToggleSelect: (Long) -> Unit,
     onDeleteSelected: () -> Unit,
-    onCompressSelected: () -> Unit
+    onCompressSelected: () -> Unit,
+    pendingOrganizedIds: Set<Long> = emptySet(),
+    onOrganizeSelected: (() -> Unit)? = null
 ) {
     // Items already handled (via this grid or a prior swipe decision) drop
     // out of view immediately — visible, immediate confirmation that a
     // bulk-delete action actually took effect.
-    val visibleItems = remember(items, pendingDeleteIds) {
-        items.filterNot { it.id in pendingDeleteIds }
+    val visibleItems = remember(items, pendingDeleteIds, pendingOrganizedIds) {
+        items.filterNot { it.id in pendingDeleteIds || it.id in pendingOrganizedIds }
     }
     val allSelected = visibleItems.isNotEmpty() && selected.size == visibleItems.size
     var zoomedItem by remember { mutableStateOf<MediaItem?>(null) }
@@ -146,6 +148,12 @@ internal fun GridSelectContent(
                 ) {
                     OutlinedButton(onClick = onCompressSelected) {
                         Text("Compress ${selected.size}")
+                    }
+                    if (onOrganizeSelected != null) {
+                        Spacer(Modifier.width(12.dp))
+                        OutlinedButton(onClick = onOrganizeSelected) {
+                            Text("Organize ${selected.size}")
+                        }
                     }
                     Spacer(Modifier.width(12.dp))
                     Button(

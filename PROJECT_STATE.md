@@ -1,7 +1,50 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v16 — Batch16 (ROADMAP Fase A item 1: Random clean mode — shipped)
+v17 — Batch17 (ROADMAP Fase A item 2: Organize (3rd swipe action) — shipped; koreksi audit moveTo)
+
+## Organize — 3rd Swipe Action (Batch17)
+Mengeksekusi item 2 Fase A di `ROADMAP.md`.
+
+**Koreksi penting terhadap riset Batch15**: `ROADMAP.md` sebelumnya menyatakan
+`MediaDataSource` "sudah punya primitive `moveTo`, tinggal expose ke UI".
+Diverifikasi ulang di batch ini dengan `grep -rn "moveTo" .` — satu-satunya
+match adalah `Cursor.moveToNext()` di `MediaDataSource.kt`/`CrashLogger.kt`,
+API Android bawaan untuk iterasi cursor, sama sekali tidak terkait dengan
+memindahkan file. Tidak ada primitive move yang pernah ada di project ini
+sebelum batch ini. Kesalahan riset Batch15 kemungkinan dari pattern-match
+nama "moveTo" tanpa verifikasi isi function-nya. Sudah dikoreksi di
+`ROADMAP.md`; catatan ini didokumentasikan agar tidak terulang.
+
+**File baru:**
+- `data/media/MoveHelper.kt` — `moveTo(context, item, targetRelativePath): Result`. Dua jalur:
+  - API 29+ (`Build.VERSION_CODES.Q`): update kolom `RELATIVE_PATH` via `ContentResolver.update` — di scoped storage, ini benar-benar memindahkan file fisik, bukan cuma metadata (perilaku terdokumentasi Android, bukan asumsi).
+  - API 24-28 (pre-scoped-storage, `WRITE_EXTERNAL_STORAGE` maxSdk 28 sudah ada di manifest): `File.renameTo` dengan fallback copy+delete lintas filesystem, lalu update kolom `DATA` + `MediaScannerConnection.scanFile` supaya gallery app lain langsung lihat lokasi baru.
+  - `RecoverableSecurityException` ditangkap di kedua jalur, sealed `Result.NeedsPermission(sender)` — pola identik `ImageCompressor.compressInPlace`/`DeleteHelper`.
+  - `supportsBatchWriteRequest()`: `SDK_INT >= 30`, sama cutoff `MediaStore.createWriteRequest`.
+
+**File diedit:**
+- `SwipeScreenControls.kt`: `ActionButtonRow` param baru `onOrganize: (() -> Unit)? = null` — tombol ke-3 (📁, 48dp) antara Skip dan Keep, muncul hanya kalau caller menyediakan (nullable, bukan breaking change untuk siapa pun yang belum pakai). `OrganizeFolderDialog` baru: radio list folder existing (dari `existingFolders`, dibatasi tampil 6 pertama) + text field folder baru, tombol Move disabled sampai ada target valid.
+- `SwipeScreenGrid.kt`: `GridSelectContent` param baru `pendingOrganizedIds: Set<Long> = emptySet()`, `onOrganizeSelected: (() -> Unit)? = null` — item yang sudah di-organize ikut disaring dari `visibleItems` (sama seperti `pendingDeleteIds`), tombol "Organize N" muncul di action bar bila `onOrganizeSelected` disediakan.
+- `SwipeScreen.kt`: state baru `pendingOrganized` (SnapshotStateList, sejajar `pendingDeletes`) + `organizeTarget` (item yang sedang menunggu pilihan folder di dialog). `currentItem`/`pendingDeleteIds` logic diperluas jadi `skipIds = pendingDeleteIds + pendingOrganizedIds` supaya alur swipe skip item yang sudah di-organize, sama seperti item yang sudah di-delete. **Sengaja TIDAK masuk `pendingDeletes`/`onFinishWithDeletions`** — organize bukan delete, kontrak `onFinishWithDeletions` (dipakai `MainActivity` untuk `trashStore.addToTrash`) khusus untuk item yang benar-benar akan ditrash. Param baru `existingFolders: List<String> = emptyList()`, `onOrganizeRequest: (List<MediaItem>, String) -> Unit = { _, _ -> }` (default no-op, non-breaking).
+- `MainActivity.kt`:
+  - `existingFolders` — `activeMedia.map{it.relativePath}.distinct().sorted()`, diteruskan ke `SwipeScreen` sebagai saran folder di dialog.
+  - `performOrganize(items, targetFolder)` — API 30+: `MediaStore.createWriteRequest` untuk seluruh batch (1 dialog sistem, pola identik `performCompression`), retry lewat `organizeRequestLauncher` (launcher terpisah dari delete/compress — tiga pending-state independen, konsisten dengan alasan kenapa compress sudah punya launcher sendiri: satu launcher untuk dua state tidak bisa tahu sedang resume yang mana). API <30: loop per-item, stop di `RecoverableSecurityException` pertama, sisa item (yang belum sempat dicoba) dibawa ke retry setelah user grant izin — bukan retry seluruh batch dari awal (menghindari re-attempt item yang sudah berhasil).
+  - `applyOrganizeResult(movedIds, targetFolder)` — update `relativePath`/`bucketName` item yang berhasil pindah langsung di `allMedia` in-place (`.map` + `.copy`), BUKAN filter-out seperti delete. Ini penting: organize tidak mengurangi total library, cuma pindah folder — kalau memakai pola delete (`filterNot`) maka `totalLibraryBytes`/dashboard stats akan salah turun padahal foto masih ada.
+
+**Verifikasi:** brace/paren balanced 0/0 di 5 file (1 baru: `MoveHelper.kt`; 4 diedit: `SwipeScreenControls.kt`, `SwipeScreenGrid.kt`, `SwipeScreen.kt`, `MainActivity.kt`). Grep ulang memastikan `GridSelectContent(`/`ActionButtonRow(`/`SwipeScreen(` masing-masing cuma 1 call site (tidak ada caller lama yang kelewat di-update). Protected assets (manifest, 3 gradle, workflow, .gitignore) tidak tersentuh — tidak perlu permission baru.
+
+**Belum sempurna (minor, next batch kalau perlu):**
+- `Filmstrip` (di `SwipeScreenGrid.kt`) belum secara visual meredupkan/mencoret item yang sudah di-organize — functional correctness tetap benar (swipe flow `skipIds` sudah skip item itu), ini murni kosmetik, beda dari item yang sudah di-delete yang juga belum ditandai di situ (pre-existing, bukan regresi batch ini).
+- Belum ada test end-to-end nyata (tidak ada emulator/compiler di environment ini) — perlu 1x build + manual test di device sebelum dianggap benar-benar solid, terutama jalur legacy (API 24-28) yang lebih jarang teruji di ekosistem modern.
+
+## Belum Dikerjakan (masih tertunda, prioritas berikutnya)
+- **ROADMAP Fase A item 3 — Cleanup goal**: target storage/jumlah foto + progress bar di HomeScreen. Belum ada model data untuk goal tersimpan (perlu `SettingsStore` key baru + UI slider/input + progress calculation dari `StatsStore`).
+- **ROADMAP Fase A item 4 — verifikasi Sort di layar Swipe**: `SortOption` dipakai di Home, belum dicek/dipasang eksplisit di `SwipeScreen`/`Filmstrip`.
+- **Cascade `MidnightSkeuoButton`/`MidnightSkeuoSlot` ke layar lain** — diaudit ulang Batch14: TERNYATA sebagian besar `Button(`/`TextButton(` di HomeScreen/SwipeScreen/TrashScreen/OnboardingScreen (17 titik, 8 file) TIDAK cocok jadi swap langsung. Alasan: (1) banyak adalah `TextButton`/`OutlinedButton` kecil di dalam AlertDialog (Cancel/OK/Reset) — mengubahnya jadi tombol skeuomorphic timbul 56dp akan merusak proporsi dialog; (2) satu `Button` di `HomeScreenSections.kt` (tombol "Clean up") sengaja pakai `colorScheme.secondary` (CoralDelete) untuk makna semantik delete — `MidnightSkeuoButton` dari spec tidak punya parameter warna (hardcode `RaisedGradient`+`TextMuted`/`ElectricCyan`), swap paksa akan menghilangkan sinyal warna Keep/Delete yang app-critical. Kesimpulan: cascade literal spec (tanpa extend API) TIDAK aman untuk 5+ dari 17 titik ini — butuh keputusan user dulu: (a) extend `MidnightSkeuoButton` dengan parameter warna opsional (di luar cakupan spec asli), atau (b) cascade hanya ke situs yang benar-benar netral/non-semantik. BELUM dieksekusi, menunggu arahan.
+- Phase-1b (flat package → real sub-package) — masih butuh compiler nyata per-layer, tidak tersedia di environment ini.
+- `IconButton`/`RadioButton`/`FilterChip` di `SettingsScreen.kt` masih M3 default — spec Midnight tidak menyediakan varian untuk itu.
+- Batch10-14 belum dikonfirmasi hijau di CI — perlu push & cek run berikutnya.
 
 ## Random Clean Mode (Batch16)
 Mengeksekusi item pertama Fase A di `ROADMAP.md` ("tutup gap fungsional inti").
@@ -11,12 +54,11 @@ Mengeksekusi item pertama Fase A di `ROADMAP.md` ("tutup gap fungsional inti").
 - `MainActivity.kt`: `onGroupClick` di `HomeScreen(...)` sekarang cek `randomModeEnabled` — bila aktif, `selectedGroup = group.copy(items = group.items.shuffled())` sebelum masuk `SwipeScreen`; bila tidak, group asli tanpa diubah. `randomModeEnabledFlow` di-collect di `AppRoot`, diteruskan ke `HomeScreen` + dipakai di shuffle logic.
 - **Tradeoff sadar (didokumentasikan di doc comment `randomModeEnabledFlow`)**: reshuffle terjadi tiap kali folder dibuka, bukan sekali lalu dipersist per-folder. `ProgressStore` menyimpan index integer per `group.key` (bukan per-item), jadi resume setelah keluar-masuk ulang sebuah folder di mode random akan menempatkan index yang sama tapi urutan item yang berbeda (karena reshuffle baru). Ini disengaja — mode random secara sifat adalah "sampling ulang", bukan "lanjutkan urutan tetap"; behavior identik saat mode OFF (urutan asli, resume akurat) tidak berubah sama sekali.
 - Verifikasi: brace/paren balanced 0/0 di 4 file yang disentuh. `group.key` tidak diubah oleh `.copy(items=...)` — semua fitur lain yang bergantung ke key (folder label, progress, trash) tidak terpengaruh.
-- Belum disentuh batch ini: item 2-4 Fase A (organize/3rd swipe action, cleanup goal, verifikasi Sort di layar Swipe) — next batch, sesuai Batch Limit (1 fitur discrete per batch untuk item yang lebih invasif seperti organize, yang butuh perubahan `SwipeDecision` sealed class + UI baru).
 
 ## Roadmap Baru (Batch15, historis — lihat ROADMAP.md untuk status terkini)
 - File baru: `ROADMAP.md` (root) — riset kompetitif "Sponge - Gallery Cleaner" (web search real, bukan asumsi) + audit jujur fitur project ini yang sudah setara/lebih unggul vs yang masih gap.
-- 4 Fase: (A) tutup gap fungsional inti — random mode, 3rd swipe action "organize" (backend `moveTo` sudah ada, tinggal expose UI), cleanup goal (window peluang: Sponge sendiri baru rencanakan ini per Juli 2026); (B) diferensiasi AI on-device — duplicate detection, blur detection, backup-before-delete; (C) lanjutan kerja existing — keputusan MidnightSkeuoButton cascade, Phase-1b, CI hijau; (D) jangkauan pasar — multi-bahasa, monetisasi one-time-purchase, Play Store readiness.
-- Lihat `ROADMAP.md` untuk detail lengkap + sumber riset.
+- 4 Fase: (A) tutup gap fungsional inti — random mode, 3rd swipe action "organize", cleanup goal (window peluang: Sponge sendiri baru rencanakan ini per Juli 2026); (B) diferensiasi AI on-device — duplicate detection, blur detection, backup-before-delete; (C) lanjutan kerja existing — keputusan MidnightSkeuoButton cascade, Phase-1b, CI hijau; (D) jangkauan pasar — multi-bahasa, monetisasi one-time-purchase, Play Store readiness.
+- Lihat `ROADMAP.md` untuk detail lengkap + sumber riset. **Catatan (Batch17): item "backend moveTo sudah ada" di paragraf ini adalah klaim yang ternyata salah, dikoreksi di Batch17 — lihat section "Organize" di atas.**
 
 ## Versi Saat Ini (historis)
 v14 — Batch14 (Cleanup: hapus 10 dead color token yang disetujui user, verifikasi 0 referensi)
