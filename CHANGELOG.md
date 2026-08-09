@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## v9_Batch9 — 2026-08-09
+- Refactor (God File split, scope: SwipeScreen.kt saja): 822 baris → 4 file (`SwipeScreen.kt` 292 baris main composable, `SwipeScreenGrid.kt` 223, `SwipeScreenControls.kt` 158, `SwipeScreenCard.kt` 194). Ekstraksi via exact line-range slicing — isi fungsi 100% identik. 8 `private fun` → `internal fun` (dipanggil lintas file); `SWIPE_CARD_DECODE_SIZE` juga jadi `internal` (dipakai di 2 file); `SWIPE_THRESHOLD_PX`/`MAX_ROTATION_DEG` dipindah ke `SwipeScreenCard.kt` (tetap `private`, dead duplicate di file lama dihapus). Import per file di-trim ke yang benar-benar dipakai.
+
 ## v8_Batch8 — 2026-08-09
 - Refactor (God File split, scope: HomeScreen.kt saja): 1001 baris → 4 file (`HomeScreen.kt` 361 baris main composable, `HomeScreenSearch.kt` 126, `HomeScreenSections.kt` 384, `HomeScreenFolderRow.kt` 235). Ekstraksi via exact line-range slicing (bukan retyping) — isi fungsi 100% identik, hanya 15 `private fun` → `internal fun` (satu-satunya perubahan kode, wajib karena Kotlin `private` top-level file-scoped).
 

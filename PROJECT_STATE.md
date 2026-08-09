@@ -1,7 +1,19 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v8 — Batch8 (Pecah God File: HomeScreen.kt → 4 file)
+v9 — Batch9 (Pecah God File: SwipeScreen.kt → 4 file)
+
+## God File Split — SwipeScreen.kt (Batch9)
+822 baris → 4 file, teknik identik Batch7/8 (extract by exact line range, tidak ada logic ditulis ulang):
+- `SwipeScreen.kt` (292 baris) — composable utama saja (top bar, state, orchestration Swipe/Grid mode).
+- `SwipeScreenGrid.kt` (223 baris) — GridSelectContent, Filmstrip.
+- `SwipeScreenControls.kt` (158 baris) — InfoBar, InfoChip, ActionButtonRow, RoundActionButton, FinishedPanel, StatColumn.
+- `SwipeScreenCard.kt` (194 baris) — SwipeCard, FullscreenViewer, FileInfoDialog.
+- 8 fungsi `private fun` → `internal fun` (dipanggil lintas file baru): GridSelectContent, Filmstrip, InfoBar, ActionButtonRow, FinishedPanel, SwipeCard, FullscreenViewer, FileInfoDialog. Sisanya (InfoChip, RoundActionButton, StatColumn, `private enum class SwipeViewMode`) tetap `private` — hanya dipanggil dalam file yang sama.
+- `SWIPE_CARD_DECODE_SIZE` (const, dipakai di `SwipeScreen.kt` & `SwipeScreenCard.kt`) → `private` jadi `internal` karena lintas file. `SWIPE_THRESHOLD_PX`/`MAX_ROTATION_DEG` dipindah penuh ke `SwipeScreenCard.kt` (tetap `private`, hanya dipakai di situ) — duplikat lama di `SwipeScreen.kt` dihapus.
+- Verifikasi: 11/11 fungsi (1 utama + 10 sub) terkonfirmasi ada, brace/paren balanced per file (0/0 di keempatnya), call-graph silang dicek manual, import per file di-trim ke yang benar-benar dipakai (bukan copy blok penuh) — dicek via analisis simbol otomatis lalu direview manual.
+- Caller eksternal (`MainActivity.kt` — `SwipeScreen(...)`) tidak disentuh, signature publik `fun SwipeScreen(...)` identik.
+- God file split sekarang selesai untuk kedua target awal (HomeScreen Batch8, SwipeScreen Batch9). Sisa file besar lain (bila ada) belum diaudit ulang.
 
 ## God File Split — HomeScreen.kt (Batch8)
 1001 baris → 4 file, teknik sama seperti Batch7 (extract by exact line range, tidak ada logic ditulis ulang):
@@ -11,7 +23,7 @@ v8 — Batch8 (Pecah God File: HomeScreen.kt → 4 file)
 - `HomeScreenFolderRow.kt` (235 baris) — GroupRow, RenameFolderDialog, CoverThumbnail, ProgressRing.
 - Semua 15 sub-composable diubah `private fun` → `internal fun` (Kotlin: `private` top-level = file-scoped, jadi wajib `internal` biar bisa dipanggil lintas file dalam 1 module — ini SATU-SATUNYA perubahan kode selain lokasi file; isi fungsi 100% identik).
 - Verifikasi: 16/16 fungsi (1 utama + 15 sub) terkonfirmasi ada, brace/paren balanced per file, call-graph silang (SectionLabel/GroupRow/PillChip/CoverThumbnail/ProgressRing/RenameFolderDialog dipanggil lintas file baru) dicek manual — semua sudah `internal`. Dicek juga: tidak ada file LAIN (SettingsScreen, MainActivity, dst) yang bergantung pada nama-nama ini (false positive `SettingsSectionLabel` dikecualikan).
-- SwipeScreen.kt (822 baris) belum — next batch, pola sama akan dipakai.
+- SwipeScreen.kt (822 baris) — SELESAI di Batch9 (lihat section di atas).
 
 ## God File Split — MediaRepository.kt (Batch7)
 Scope batch ini: HANYA `MediaRepository.kt` (517 baris). HomeScreen(1001)/SwipeScreen(822) belum — itu Compose state extraction, jauh lebih berisiko tanpa compiler nyata, next batch terpisah.
@@ -33,7 +45,7 @@ Nama artifact log kegagalan build diubah agar lebih informatif & unik per-run:
 - Alasan: `run_number` + `short_sha` membuat tiap artifact unik lintas run (bukan hanya lintas attempt dalam 1 run), memudahkan lacak balik ke commit persis yang gagal.
 
 ## Status Build Terakhir
-Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`onUncaughtException` typo)→fixed Batch5. Batch6: OK, build hijau (dikonfirmasi user). Batch7: OK, build hijau (dikonfirmasi user). Batch8 (ini): belum ter-CI.
+Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`onUncaughtException` typo)→fixed Batch5. Batch6: OK, build hijau (dikonfirmasi user). Batch7: OK, build hijau (dikonfirmasi user). Batch8: belum ada konfirmasi CI dari user. Batch9 (ini): belum ter-CI.
 
 
 ## Fix Batch4 Build Failure (dari test-result-main-attempt-1.log kedua)
@@ -90,3 +102,5 @@ Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`
 - 4 GradleException guard clause (keystore path/password/alias/key password) sudah benar strukturnya setelah fix Batch1 — perlu verifikasi ulang via CI run berikutnya.
 - Migrasi screen-level ke komponen tactile/glass baru (§11-15 per-component look) — lihat catatan Theme System di atas.
 - Approval dibutuhkan untuk hapus dead color tokens di Color.kt (lihat daftar di atas).
+- Phase-1b (flat package → real sub-package `com.example.gallerycleaner.data.media` dst + tambah import) — belum dikerjakan, butuh compiler nyata per-layer.
+- Batch8 & Batch9 (God File split HomeScreen/SwipeScreen) — belum dikonfirmasi hijau di CI, perlu di-push & dicek run berikutnya.
