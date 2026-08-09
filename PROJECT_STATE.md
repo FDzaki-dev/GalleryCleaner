@@ -294,7 +294,14 @@ Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`
 - **Phase-1b (belum dikerjakan, next batch)**: split flat package → real sub-package (`com.example.gallerycleaner.data.media`, dst) + tambah `import` di semua pemanggil. Ini butuh compiler nyata untuk validasi tiap langkah (tidak tersedia di environment ini) — akan dikerjakan bertahap per-layer dengan checkpoint CI hijau di antaranya, bukan sekaligus.
 - File besar (HomeScreen/SwipeScreen/MediaRepository → Screen/ViewModel/State/Event) BELUM dipecah — itu audit item #3, technically Phase-1 juga tapi butuh perubahan logic nyata (bukan mechanical move), risiko tinggi tanpa compiler → next batch terpisah, bukan bagian atomic move ini.
 
-## Theme System — AMOLED Hybrid Glassmorphism (compose-amoled-hybrid-glass-final.md)
+## Theme System — CURRENT (Batch21): Glassmorphism, Midnight Blue Edition
+- `AppTheme.SIGNATURE` (default) = `ui/theme/MidnightGlassTokens.kt` (`MidnightGlass`) + `ui/theme/Theme.kt` (`SignatureDark`/`SignatureLight`) + `ui/components/{GlassModifier,GlassCard,GlassButton}.kt`.
+- ColorScheme level (background/surface/surfaceVariant/tertiary/outline) = 100% rewritten, applies automatically everywhere via `MaterialTheme.colorScheme`. `MainActivity.kt` root `Surface` also paints the ambient gradient backdrop (Signature only).
+- Component level (NOT yet done, next batch if wanted): dashboard/list `Card`s in HomeScreen/SwipeScreen/TrashScreen still use plain M3 `Card` — swap to `GlassCard` per-screen for a fully "kaca" look on every panel, not just the ColorScheme base. `GlassButton` similarly not yet cascaded to the app's ~17 M3 `Button`/`TextButton` call sites (same open item as Batch14's audit, now against Glass API instead of Skeuo).
+- Amber Reserve / Indigo Noir themes: untouched by this rewrite, still their original flat-color style (out of scope — user asked specifically about the default/Signature theme).
+- No `Modifier.blur`/RenderEffect anywhere — deliberate, see `GlassModifier.kt` doc comment (API31+ only, `minSdk=24`).
+
+## Theme System — HISTORICAL (superseded Batch21): AMOLED Hybrid Glassmorphism (compose-amoled-hybrid-glass-final.md)
 - Sumber: spec markdown yang diupload user (793 baris, 25 section). Diimplementasikan sebagai arsitektur §23:
   `ui/theme/{Color,Shape,Typography,GlassTokens,TactileTokens,Theme}.kt` + `ui/components/{GlassSurface,GlassCard,TactileButton,TactileSwitch,TactileSlider,GlassNavigation}.kt`.
 - `AppTheme.SIGNATURE` (default aplikasi, tidak berubah — tetap default) di-override total: background=AmoledBlack(#030508), surface=GlassBase(#0A0F16), surfaceVariant=GlassElevated(#101722), outline=GlassBorder(alpha 3.5%), tertiary=AccentBlue(#6670FF) untuk selection/focus/progress (§17).

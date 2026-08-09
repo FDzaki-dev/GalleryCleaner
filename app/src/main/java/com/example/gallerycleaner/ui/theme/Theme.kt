@@ -21,34 +21,40 @@ private val LightOutline = androidx.compose.ui.graphics.Color(0xFFDDD9D4)
 private val LightTextPrimary = androidx.compose.ui.graphics.Color(0xFF1C1E1F)
 private val LightTextSecondary = androidx.compose.ui.graphics.Color(0xFF5C6167)
 
-// FULL override (2026-08-09) — dari uploaded spec "Panduan Lengkap: Desain
-// Visual Skeuomorphism-Dark (Midnight Blue Edition)". Ini bukan tambahan di
-// atas override sebelumnya (AMOLED Glass §Batch2, lalu Skeuo-Cyan §Batch12)
-// — SELURUH sistem token & komponen tema lama (GlassTokens.kt,
-// TactileTokens.kt, SkeuoTokens.kt versi Cyan, GlassCard/GlassSurface/
-// GlassNavigation/TactileButton/TactileSlider/TactileSwitch/SkeuoModifier/
-// SkeuoDarkButton lama) DIHAPUS di batch ini dan digantikan 100% oleh
-// `SkeuoMidnightTheme` (lihat `SkeuoMidnightTokens.kt`) — permintaan
-// eksplisit user: "hapus semua konfigurasi theme lama, timpa dengan 1 theme
-// baru 100% sesuai spec". Primary/Secondary (SageKeep/CoralDelete) tetap
-// TIDAK diubah — aturan project yang konsisten sejak override pertama:
-// Keep/Delete semantic colors app-critical UX, di luar cakupan spec visual
-// manapun. Spec ini "Dark" by name/definisi (Midnight Blue Edition), sama
-// seperti precedent sebelumnya, jadi SignatureLight TIDAK disentuh.
+// FULL override (2026-08-10) — rewrite total dari "Skeuomorphism-Dark
+// Midnight Blue Edition" (Batch13) ke **Glassmorphism — Midnight Blue
+// Edition**. Sama seperti override sebelumnya, ini bukan tambahan di atas
+// sistem lama — SELURUH token & komponen skeuomorphism (`SkeuoMidnightTokens.kt`,
+// `SkeuoMidnightModifier.kt`, `MidnightSkeuoButton.kt`, `MidnightSkeuoSlot.kt`)
+// DIHAPUS batch ini, digantikan 100% oleh `MidnightGlass` (lihat
+// `MidnightGlassTokens.kt`) + komponen baru `GlassModifier.kt`/`GlassCard.kt`/
+// `GlassButton.kt`. Permintaan eksplisit user: rewrite total (bukan ganti
+// palet warna saja) jadi hint & gradasi warna Midnight-Blue dengan gaya
+// visual Glassmorphism yang paling dominan.
+// Hue family (deep navy/indigo blue) DIPERTAHANKAN dari override sebelumnya
+// — yang berubah adalah material language: raised/debossed metallic →
+// translucent frosted glass. Primary/Secondary (SageKeep/CoralDelete) tetap
+// TIDAK diubah — aturan project konsisten sejak override pertama: Keep/Delete
+// semantic colors app-critical UX, di luar cakupan spec visual manapun.
+// `surface`/`surfaceVariant` dipakai sebagai fallback SOLID (bukan translucent)
+// untuk context M3 yang butuh `Color` biasa (mis. `CardDefaults.cardColors`)
+// — translucency & edge-light "kaca" yang sesungguhnya datang dari
+// `Modifier.glassPanel()`/`GlassCard` yang dipasang eksplisit per-komponen,
+// bukan lewat ColorScheme (Color tidak bisa membawa Brush gradient).
 private val SignatureDark = darkColorScheme(
     primary = SageKeep,
     onPrimary = Color0F,
     secondary = CoralDelete,
     onSecondary = Color0F,
-    tertiary = SkeuoMidnightTheme.ElectricCyan, // §5 "Glow Accent" — selection/focus/progress/active accent
+    tertiary = MidnightGlass.GlowBlue,           // signature glass glow — selection/focus/progress/active accent
     onTertiary = Color0F,
-    background = SkeuoMidnightTheme.DarkShadow,      // §1.3 "Ambient Drop Shadow" — deepest tone, canvas the drop-shadows read against
-    onBackground = SkeuoMidnightTheme.TextBright,
-    surface = SkeuoMidnightTheme.BaseSurface,        // §1.1 "Base Surface (Midnight Navy)" — dasar material
-    onSurface = SkeuoMidnightTheme.TextBright,
-    surfaceVariant = SkeuoMidnightTheme.LightHighlight, // §1.2 "Directional Specular Light (Top-Left)"
-    onSurfaceVariant = SkeuoMidnightTheme.TextMuted,
-    outline = SkeuoMidnightTheme.LightHighlight,     // highlight edge tone doubles as hairline/outline color
+    background = MidnightGlass.VoidDeep,         // deepest tone — canvas the ambient gradient + glass panels float over
+    onBackground = MidnightGlass.TextBright,
+    surface = MidnightGlass.GlassSurfaceFlat,    // solid fallback for plain M3 surfaces (Card/Sheet default colors)
+    onSurface = MidnightGlass.TextBright,
+    surfaceVariant = MidnightGlass.NavyCore,
+    onSurfaceVariant = MidnightGlass.TextMuted,
+    outline = MidnightGlass.EdgeHighlight,       // hairline reads as a faint glass edge, not a hard M3 divider
     error = CoralDelete,
     onError = Color0F
 )
@@ -58,15 +64,15 @@ private val SignatureLight = lightColorScheme(
     onPrimary = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
     secondary = androidx.compose.ui.graphics.Color(0xFFD44A32), // darker coral, same reason
     onSecondary = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
-    tertiary = androidx.compose.ui.graphics.Color(0xFF4B54D6), // darker indigo-blue accent, for light-bg contrast
+    tertiary = MidnightGlass.GlowBlueOnLight,    // darker Midnight-Blue glow accent, for light-bg contrast
     onTertiary = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
-    background = LightBg,
-    onBackground = LightTextPrimary,
-    surface = LightSurface,
-    onSurface = LightTextPrimary,
-    surfaceVariant = LightSurfaceRaised,
-    onSurfaceVariant = LightTextSecondary,
-    outline = LightOutline,
+    background = MidnightGlass.IceBackground,    // "frosted ice" counterpart to the dark glass ambient
+    onBackground = MidnightGlass.IceTextPrimary,
+    surface = MidnightGlass.IceGlassSurfaceFlat,
+    onSurface = MidnightGlass.IceTextPrimary,
+    surfaceVariant = androidx.compose.ui.graphics.Color(0xFFE4EAFB),
+    onSurfaceVariant = MidnightGlass.IceTextSecondary,
+    outline = androidx.compose.ui.graphics.Color(0xFFCBD5F0),
     error = androidx.compose.ui.graphics.Color(0xFFD44A32),
     onError = androidx.compose.ui.graphics.Color(0xFFFFFFFF)
 )

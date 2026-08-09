@@ -18,6 +18,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -114,7 +115,23 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
             GalleryCleanerTheme(darkTheme = darkTheme, appTheme = appTheme) {
-                Surface(modifier = Modifier.fillMaxSize()) {
+                // Glassmorphism needs something with visible depth behind
+                // the frosted panels — a flat Surface color alone would
+                // make GlassCard's translucency invisible. Painted only
+                // for AppTheme.SIGNATURE (the Midnight Blue Glass theme);
+                // Amber Reserve / Indigo Noir keep their plain flat
+                // Surface exactly as before, unaffected by this rewrite.
+                val glassBackdrop = if (appTheme == AppTheme.SIGNATURE) {
+                    if (darkTheme) com.example.gallerycleaner.ui.theme.MidnightGlass.AmbientGradient
+                    else com.example.gallerycleaner.ui.theme.MidnightGlass.IceAmbientGradient
+                } else null
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .let { m -> if (glassBackdrop != null) m.background(glassBackdrop) else m },
+                    color = if (glassBackdrop != null) androidx.compose.ui.graphics.Color.Transparent
+                            else MaterialTheme.colorScheme.background
+                ) {
                     // initial = null, not false: collectAsState briefly
                     // returns the initial value before DataStore's first
                     // real emission arrives. Defaulting to false would mean

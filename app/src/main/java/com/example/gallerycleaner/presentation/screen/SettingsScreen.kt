@@ -35,7 +35,7 @@ import com.example.gallerycleaner.ui.theme.OxbloodDelete
 import com.example.gallerycleaner.ui.theme.PeriwinkleKeep
 import com.example.gallerycleaner.ui.theme.SageKeep
 import com.example.gallerycleaner.ui.theme.CoralDelete
-import com.example.gallerycleaner.ui.theme.SkeuoMidnightTheme
+import com.example.gallerycleaner.ui.theme.MidnightGlass
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -329,8 +329,8 @@ private val THEME_STYLES = listOf(
     ThemeStyle(
         appTheme = AppTheme.SIGNATURE,
         label = "Signature",
-        description = "Midnight-navy skeuomorphism with an electric-cyan glow.",
-        previewBg = SkeuoMidnightTheme.BaseSurface,
+        description = "Midnight-blue glassmorphism — frosted panels over a deep navy glow.",
+        previewBg = MidnightGlass.NavyCore,
         swatchKeep = SageKeep,
         swatchDelete = CoralDelete
     ),
@@ -355,12 +355,11 @@ private val THEME_STYLES = listOf(
 @Composable
 private fun ThemeStyleCard(style: ThemeStyle, selected: Boolean, onClick: () -> Unit) {
     // Theme-agnostic by design: this card is used to pick between Signature
-    // (Midnight-Skeuo), Amber Reserve, and Indigo Noir, so it stays plain
-    // M3 (colorScheme-driven) rather than any one theme's own components —
-    // using MidnightSkeuoSlot here would look wrong once Amber/Indigo is
-    // selected. Reverted off GlassCard (deleted this batch, see Theme.kt)
-    // back to a manual clip+background+border Row, same technique as
-    // before Batch10's migration.
+    // (Midnight-Blue Glassmorphism), Amber Reserve, and Indigo Noir, so it
+    // stays plain M3 (colorScheme-driven) rather than any one theme's own
+    // components — using GlassCard here would look wrong once Amber/Indigo
+    // is selected. Manual clip+background+border Row, same technique kept
+    // since before Batch10's short-lived Tactile/Glass migration.
     Row(
         modifier = Modifier
             .fillMaxWidth()
