@@ -36,6 +36,7 @@ import com.example.gallerycleaner.ui.theme.PeriwinkleKeep
 import com.example.gallerycleaner.ui.theme.SageKeep
 import com.example.gallerycleaner.ui.theme.CoralDelete
 import com.example.gallerycleaner.ui.theme.AmoledBlack
+import com.example.gallerycleaner.ui.components.TactileSwitch
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -198,7 +199,7 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Switch(checked = reminderEnabled, onCheckedChange = ::onReminderToggle)
+                    TactileSwitch(checked = reminderEnabled, onCheckedChange = ::onReminderToggle)
                 }
             }
 
@@ -220,7 +221,7 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Switch(
+                    TactileSwitch(
                         checked = hapticsEnabled,
                         onCheckedChange = { scope.launch { settingsStore.setHapticFeedbackEnabled(it) } }
                     )
@@ -249,7 +250,7 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Switch(
+                    TactileSwitch(
                         checked = appLockEnabled,
                         enabled = isDeviceSecure,
                         onCheckedChange = { scope.launch { settingsStore.setAppLockEnabled(it) } }

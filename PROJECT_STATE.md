@@ -1,7 +1,16 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v9 — Batch9 (Pecah God File: SwipeScreen.kt → 4 file)
+v10 — Batch10 (Tactile Component Migration: SettingsScreen Switch → TactileSwitch)
+
+## Tactile/Glass Component Migration — SettingsScreen.kt (Batch10)
+Scope batch ini: HANYA 3 pemakaian M3 `Switch(...)` di `SettingsScreen.kt` → `TactileSwitch(...)` (§12, `ui/components/TactileSwitch.kt`).
+- API drop-in identik: `checked`, `onCheckedChange`, `modifier`, `enabled` — 0 perubahan logic, hanya nama composable + 1 import baru (`com.example.gallerycleaner.ui.components.TactileSwitch`).
+- Diverifikasi: `Switch(` sudah 0 pemakaian tersisa di seluruh project (`grep -rl` across semua screen mengonfirmasi `SettingsScreen.kt` adalah satu-satunya file yang pernah pakai `Switch`), brace/paren balanced (0/0).
+- `ThemeStyleCard` (custom Row+clip+background+border+clickable di file yang sama) SENGAJA belum dikonversi ke `GlassCard` — `GlassCard`/`GlassSurface` tidak punya parameter border-color/width dinamis untuk state "selected" (border primary 2dp vs outline 1dp yang dipakai sekarang), jadi konversi paksa akan menghilangkan visual selection indicator yang sudah berfungsi. Butuh perluasan API `GlassSurface` dulu (tambah `borderWidth` param) sebelum migrasi ini aman — next batch, bukan bagian atomic ini.
+- `IconButton`/`RadioButton`/`FilterChip` di file yang sama TIDAK diubah — belum ada varian tactile/glass untuk itu di `ui/components/` (baru ada Button/Card/Switch/Slider/Surface/Navigation), migrasi butuh komponen baru dulu.
+- File lain yang pakai `Card(`/`Button(` M3 asli (HomeScreen*, SwipeScreen*, TrashScreen, OnboardingScreen) belum diaudit di batch ini — next batch per-file, pola sama.
+
 
 ## God File Split — SwipeScreen.kt (Batch9)
 822 baris → 4 file, teknik identik Batch7/8 (extract by exact line range, tidak ada logic ditulis ulang):
@@ -45,7 +54,7 @@ Nama artifact log kegagalan build diubah agar lebih informatif & unik per-run:
 - Alasan: `run_number` + `short_sha` membuat tiap artifact unik lintas run (bukan hanya lintas attempt dalam 1 run), memudahkan lacak balik ke commit persis yang gagal.
 
 ## Status Build Terakhir
-Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`onUncaughtException` typo)→fixed Batch5. Batch6: OK, build hijau (dikonfirmasi user). Batch7: OK, build hijau (dikonfirmasi user). Batch8: belum ada konfirmasi CI dari user. Batch9 (ini): belum ter-CI.
+Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`onUncaughtException` typo)→fixed Batch5. Batch6: OK, build hijau (dikonfirmasi user). Batch7: OK, build hijau (dikonfirmasi user). Batch8+Batch9: OK, build hijau (dikonfirmasi user). Batch10 (ini): belum ter-CI.
 
 
 ## Fix Batch4 Build Failure (dari test-result-main-attempt-1.log kedua)
@@ -100,7 +109,8 @@ Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`
 
 ## Belum Dikerjakan / Catatan
 - 4 GradleException guard clause (keystore path/password/alias/key password) sudah benar strukturnya setelah fix Batch1 — perlu verifikasi ulang via CI run berikutnya.
-- Migrasi screen-level ke komponen tactile/glass baru (§11-15 per-component look) — lihat catatan Theme System di atas.
+- Migrasi Card/Button lain (HomeScreen*, SwipeScreen*, TrashScreen, OnboardingScreen) ke `GlassCard`/`TactileButton` — belum, next batch per-file.
+- `ThemeStyleCard` di SettingsScreen.kt belum ke `GlassCard` — butuh `GlassSurface` dapat parameter `borderWidth` dinamis dulu (lihat catatan Batch10 di atas), supaya selection indicator (border 2dp primary) tidak hilang.
 - Approval dibutuhkan untuk hapus dead color tokens di Color.kt (lihat daftar di atas).
 - Phase-1b (flat package → real sub-package `com.example.gallerycleaner.data.media` dst + tambah import) — belum dikerjakan, butuh compiler nyata per-layer.
-- Batch8 & Batch9 (God File split HomeScreen/SwipeScreen) — belum dikonfirmasi hijau di CI, perlu di-push & dicek run berikutnya.
+- Batch10 (ini) — belum dikonfirmasi hijau di CI, perlu di-push & dicek run berikutnya.

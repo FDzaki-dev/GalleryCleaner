@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## v10_Batch10 — 2026-08-09
+- Refactor (Tactile Component Migration, scope: SettingsScreen.kt saja): 3 pemakaian M3 `Switch(...)` → `TactileSwitch(...)` (§12). API drop-in identik (checked/onCheckedChange/modifier/enabled), 0 perubahan logic, +1 import. Dikonfirmasi `Switch(` sudah 0 pemakaian di seluruh project. `ThemeStyleCard`/`IconButton`/`RadioButton`/`FilterChip` di file yang sama sengaja belum disentuh (butuh perluasan API komponen dulu — lihat PROJECT_STATE).
+
 ## v9_Batch9 — 2026-08-09
 - Refactor (God File split, scope: SwipeScreen.kt saja): 822 baris → 4 file (`SwipeScreen.kt` 292 baris main composable, `SwipeScreenGrid.kt` 223, `SwipeScreenControls.kt` 158, `SwipeScreenCard.kt` 194). Ekstraksi via exact line-range slicing — isi fungsi 100% identik. 8 `private fun` → `internal fun` (dipanggil lintas file); `SWIPE_CARD_DECODE_SIZE` juga jadi `internal` (dipakai di 2 file); `SWIPE_THRESHOLD_PX`/`MAX_ROTATION_DEG` dipindah ke `SwipeScreenCard.kt` (tetap `private`, dead duplicate di file lama dihapus). Import per file di-trim ke yang benar-benar dipakai.
 
