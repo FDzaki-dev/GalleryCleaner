@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## v8_Batch8 — 2026-08-09
+- Refactor (God File split, scope: HomeScreen.kt saja): 1001 baris → 4 file (`HomeScreen.kt` 361 baris main composable, `HomeScreenSearch.kt` 126, `HomeScreenSections.kt` 384, `HomeScreenFolderRow.kt` 235). Ekstraksi via exact line-range slicing (bukan retyping) — isi fungsi 100% identik, hanya 15 `private fun` → `internal fun` (satu-satunya perubahan kode, wajib karena Kotlin `private` top-level file-scoped).
+
 ## v7_Batch7 — 2026-08-09
 - Refactor (God File split, scope: MediaRepository.kt saja): 517 baris → 3 file (`MediaRepository.kt` 107 baris facade, `MediaDataSource.kt` 150 baris raw I/O, `MediaScanner.kt` 322 baris analytical scans). Semua fungsi publik 100% copy-paste (bukan ditulis ulang) — `MediaRepository` tetap jadi satu-satunya entry point yang dipanggil `MainActivity`/`CleaningReminderWorker`, 0 file caller diubah.
 

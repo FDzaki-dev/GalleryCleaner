@@ -1,7 +1,17 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v7 — Batch7 (Pecah God File: MediaRepository.kt → MediaRepository+MediaDataSource+MediaScanner)
+v8 — Batch8 (Pecah God File: HomeScreen.kt → 4 file)
+
+## God File Split — HomeScreen.kt (Batch8)
+1001 baris → 4 file, teknik sama seperti Batch7 (extract by exact line range, tidak ada logic ditulis ulang):
+- `HomeScreen.kt` (361 baris) — composable utama saja (Scaffold, search state, LazyColumn orchestration).
+- `HomeScreenSearch.kt` (126 baris) — SearchResultsContent, SearchPhotoGrid.
+- `HomeScreenSections.kt` (384 baris) — ExpiryBanner, SectionLabel, LargestFilesCard, StorageDashboard, OnThisDayRow, ScanTriggerRow, SmartCategoryRow, FilterRow, PillChip.
+- `HomeScreenFolderRow.kt` (235 baris) — GroupRow, RenameFolderDialog, CoverThumbnail, ProgressRing.
+- Semua 15 sub-composable diubah `private fun` → `internal fun` (Kotlin: `private` top-level = file-scoped, jadi wajib `internal` biar bisa dipanggil lintas file dalam 1 module — ini SATU-SATUNYA perubahan kode selain lokasi file; isi fungsi 100% identik).
+- Verifikasi: 16/16 fungsi (1 utama + 15 sub) terkonfirmasi ada, brace/paren balanced per file, call-graph silang (SectionLabel/GroupRow/PillChip/CoverThumbnail/ProgressRing/RenameFolderDialog dipanggil lintas file baru) dicek manual — semua sudah `internal`. Dicek juga: tidak ada file LAIN (SettingsScreen, MainActivity, dst) yang bergantung pada nama-nama ini (false positive `SettingsSectionLabel` dikecualikan).
+- SwipeScreen.kt (822 baris) belum — next batch, pola sama akan dipakai.
 
 ## God File Split — MediaRepository.kt (Batch7)
 Scope batch ini: HANYA `MediaRepository.kt` (517 baris). HomeScreen(1001)/SwipeScreen(822) belum — itu Compose state extraction, jauh lebih berisiko tanpa compiler nyata, next batch terpisah.
@@ -23,7 +33,7 @@ Nama artifact log kegagalan build diubah agar lebih informatif & unik per-run:
 - Alasan: `run_number` + `short_sha` membuat tiap artifact unik lintas run (bukan hanya lintas attempt dalam 1 run), memudahkan lacak balik ke commit persis yang gagal.
 
 ## Status Build Terakhir
-Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`onUncaughtException` typo)→fixed Batch5. Batch6: OK, build hijau (dikonfirmasi user). Batch7 (ini): belum ter-CI.
+Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`onUncaughtException` typo)→fixed Batch5. Batch6: OK, build hijau (dikonfirmasi user). Batch7: OK, build hijau (dikonfirmasi user). Batch8 (ini): belum ter-CI.
 
 
 ## Fix Batch4 Build Failure (dari test-result-main-attempt-1.log kedua)
