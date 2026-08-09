@@ -272,6 +272,7 @@ fun AppRoot(
         initial = SettingsStore.DEFAULT_TRASH_RETENTION_DAYS
     )
     val hapticsEnabled by settingsStore.hapticFeedbackEnabledFlow.collectAsState(initial = true)
+    val randomModeEnabled by settingsStore.randomModeEnabledFlow.collectAsState(initial = false)
     // Defaults to true (not false) for the brief window before DataStore's
     // real persisted value loads — this only matters for a split second,
     // but which way it's wrong matters: defaulting true means a genuinely
@@ -682,11 +683,26 @@ fun AppRoot(
                     },
                     onGroupModeChange = { groupMode = it },
                     onSortChange = { sortOption = it },
-                    onGroupClick = { selectedGroup = it },
+                    onGroupClick = { group ->
+                        // Reshuffled fresh on every entry rather than once and
+                        // cached — see randomModeEnabledFlow's doc comment for
+                        // why that's the deliberate tradeoff (ProgressStore's
+                        // saved index is only meaningful within one shuffled
+                        // session, not across re-entries).
+                        selectedGroup = if (randomModeEnabled) {
+                            group.copy(items = group.items.shuffled())
+                        } else {
+                            group
+                        }
+                    },
                     onTrashClick = { showTrash = true },
                     onSettingsClick = { showSettings = true },
                     onRefresh = { refreshTrigger++ },
-                    onCleanExpiredTrash = { performPermanentDeletion(expiredTrashItems) }
+                    onCleanExpiredTrash = { performPermanentDeletion(expiredTrashItems) },
+                    randomModeEnabled = randomModeEnabled,
+                    onRandomModeToggle = { enabled ->
+                        scope.launch { settingsStore.setRandomModeEnabled(enabled) }
+                    }
                 )
             }
         }

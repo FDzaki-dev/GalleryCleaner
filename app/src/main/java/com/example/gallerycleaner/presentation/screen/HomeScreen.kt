@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -64,7 +65,9 @@ fun HomeScreen(
     onTrashClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onRefresh: () -> Unit,
-    onCleanExpiredTrash: () -> Unit
+    onCleanExpiredTrash: () -> Unit,
+    randomModeEnabled: Boolean = false,
+    onRandomModeToggle: (Boolean) -> Unit = {}
 ) {
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -172,6 +175,22 @@ fun HomeScreen(
                                     Icons.Filled.Refresh,
                                     contentDescription = "Refresh library",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            // Quick access to random clean mode without a trip to
+                            // Settings — same persisted toggle either way (see
+                            // SettingsScreen's "Swiping" section), tinted primary
+                            // when on so its state is visible at a glance.
+                            IconButton(onClick = { onRandomModeToggle(!randomModeEnabled) }) {
+                                Icon(
+                                    Icons.Filled.Shuffle,
+                                    contentDescription = if (randomModeEnabled) {
+                                        "Random clean mode on — tap to turn off"
+                                    } else {
+                                        "Random clean mode off — tap to turn on"
+                                    },
+                                    tint = if (randomModeEnabled) MaterialTheme.colorScheme.primary
+                                           else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             IconButton(onClick = onSettingsClick) {

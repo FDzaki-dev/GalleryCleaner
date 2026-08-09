@@ -1,9 +1,19 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v15 — Batch15 (Roadmap: ROADMAP.md baru — gap analysis vs Sponge, goals menuju parity/superiority)
+v16 — Batch16 (ROADMAP Fase A item 1: Random clean mode — shipped)
 
-## Roadmap Baru (Batch15)
+## Random Clean Mode (Batch16)
+Mengeksekusi item pertama Fase A di `ROADMAP.md` ("tutup gap fungsional inti").
+- `SettingsStore.kt`: `randomModeEnabledFlow`/`setRandomModeEnabled(Boolean)` — key baru `random_mode_enabled`, default `false`.
+- `HomeScreen.kt`: param baru `randomModeEnabled: Boolean = false`, `onRandomModeToggle: (Boolean) -> Unit = {}`. Ikon Shuffle di top bar (antara Refresh dan Settings), tint primary saat aktif — quick toggle tanpa masuk Settings.
+- `SettingsScreen.kt`: section baru "Swiping" (di atas "Feedback") dengan `Switch` yang bind ke setting yang sama persis — dua entry point, satu sumber kebenaran (DataStore), konsisten dengan pola existing (haptics, app lock, dll).
+- `MainActivity.kt`: `onGroupClick` di `HomeScreen(...)` sekarang cek `randomModeEnabled` — bila aktif, `selectedGroup = group.copy(items = group.items.shuffled())` sebelum masuk `SwipeScreen`; bila tidak, group asli tanpa diubah. `randomModeEnabledFlow` di-collect di `AppRoot`, diteruskan ke `HomeScreen` + dipakai di shuffle logic.
+- **Tradeoff sadar (didokumentasikan di doc comment `randomModeEnabledFlow`)**: reshuffle terjadi tiap kali folder dibuka, bukan sekali lalu dipersist per-folder. `ProgressStore` menyimpan index integer per `group.key` (bukan per-item), jadi resume setelah keluar-masuk ulang sebuah folder di mode random akan menempatkan index yang sama tapi urutan item yang berbeda (karena reshuffle baru). Ini disengaja — mode random secara sifat adalah "sampling ulang", bukan "lanjutkan urutan tetap"; behavior identik saat mode OFF (urutan asli, resume akurat) tidak berubah sama sekali.
+- Verifikasi: brace/paren balanced 0/0 di 4 file yang disentuh. `group.key` tidak diubah oleh `.copy(items=...)` — semua fitur lain yang bergantung ke key (folder label, progress, trash) tidak terpengaruh.
+- Belum disentuh batch ini: item 2-4 Fase A (organize/3rd swipe action, cleanup goal, verifikasi Sort di layar Swipe) — next batch, sesuai Batch Limit (1 fitur discrete per batch untuk item yang lebih invasif seperti organize, yang butuh perubahan `SwipeDecision` sealed class + UI baru).
+
+## Roadmap Baru (Batch15, historis — lihat ROADMAP.md untuk status terkini)
 - File baru: `ROADMAP.md` (root) — riset kompetitif "Sponge - Gallery Cleaner" (web search real, bukan asumsi) + audit jujur fitur project ini yang sudah setara/lebih unggul vs yang masih gap.
 - 4 Fase: (A) tutup gap fungsional inti — random mode, 3rd swipe action "organize" (backend `moveTo` sudah ada, tinggal expose UI), cleanup goal (window peluang: Sponge sendiri baru rencanakan ini per Juli 2026); (B) diferensiasi AI on-device — duplicate detection, blur detection, backup-before-delete; (C) lanjutan kerja existing — keputusan MidnightSkeuoButton cascade, Phase-1b, CI hijau; (D) jangkauan pasar — multi-bahasa, monetisasi one-time-purchase, Play Store readiness.
 - Lihat `ROADMAP.md` untuk detail lengkap + sumber riset.
@@ -19,6 +29,9 @@ User approve pending item dari Batch12 ("Approval dibutuhkan untuk hapus dead co
 - Verifikasi: brace/paren balanced 0/0 di seluruh `app/src/**/*.kt` (bukan cuma file yang diedit), grep ulang pasca-hapus mengonfirmasi `SageKeep`/`CoralDelete` masih wired penuh.
 
 ## Belum Dikerjakan (masih tertunda, prioritas berikutnya)
+- **ROADMAP Fase A item 2 — 3rd swipe action "Organize"**: `moveTo` primitive sudah ada di `MediaDataSource`, tapi belum diekspos ke `SwipeDecision` (baru `Keep`/`Delete`) atau UI (`SwipeScreenControls`/`SwipeCard`). Butuh: extend `SwipeDecision` sealed class, folder-picker dialog, wiring swipe-up gesture atau tombol ke-3. Lebih invasif dari random mode (Batch16) — batch terpisah.
+- **ROADMAP Fase A item 3 — Cleanup goal**: target storage/jumlah foto + progress bar di HomeScreen. Belum ada model data untuk goal tersimpan (perlu `SettingsStore` key baru + UI slider/input + progress calculation dari `StatsStore`).
+- **ROADMAP Fase A item 4 — verifikasi Sort di layar Swipe**: `SortOption` dipakai di Home, belum dicek/dipasang eksplisit di `SwipeScreen`/`Filmstrip`.
 - **Cascade `MidnightSkeuoButton`/`MidnightSkeuoSlot` ke layar lain** — diaudit ulang Batch14: TERNYATA sebagian besar `Button(`/`TextButton(` di HomeScreen/SwipeScreen/TrashScreen/OnboardingScreen (17 titik, 8 file) TIDAK cocok jadi swap langsung. Alasan: (1) banyak adalah `TextButton`/`OutlinedButton` kecil di dalam AlertDialog (Cancel/OK/Reset) — mengubahnya jadi tombol skeuomorphic timbul 56dp akan merusak proporsi dialog; (2) satu `Button` di `HomeScreenSections.kt` (tombol "Clean up") sengaja pakai `colorScheme.secondary` (CoralDelete) untuk makna semantik delete — `MidnightSkeuoButton` dari spec tidak punya parameter warna (hardcode `RaisedGradient`+`TextMuted`/`ElectricCyan`), swap paksa akan menghilangkan sinyal warna Keep/Delete yang app-critical. Kesimpulan: cascade literal spec (tanpa extend API) TIDAK aman untuk 5+ dari 17 titik ini — butuh keputusan user dulu: (a) extend `MidnightSkeuoButton` dengan parameter warna opsional (di luar cakupan spec asli), atau (b) cascade hanya ke situs yang benar-benar netral/non-semantik. BELUM dieksekusi, menunggu arahan.
 - Phase-1b (flat package → real sub-package) — masih butuh compiler nyata per-layer, tidak tersedia di environment ini.
 - `IconButton`/`RadioButton`/`FilterChip` di `SettingsScreen.kt` masih M3 default — spec Midnight tidak menyediakan varian untuk itu.

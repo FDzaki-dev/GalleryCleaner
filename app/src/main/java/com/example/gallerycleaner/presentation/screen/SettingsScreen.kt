@@ -54,6 +54,7 @@ fun SettingsScreen(
     )
     val reminderEnabled by settingsStore.cleaningReminderEnabledFlow.collectAsState(initial = false)
     val hapticsEnabled by settingsStore.hapticFeedbackEnabledFlow.collectAsState(initial = true)
+    val randomModeEnabled by settingsStore.randomModeEnabledFlow.collectAsState(initial = false)
     val appLockEnabled by settingsStore.appLockEnabledFlow.collectAsState(initial = false)
     val isDeviceSecure = remember {
         (context.getSystemService(Context.KEYGUARD_SERVICE) as? android.app.KeyguardManager)?.isDeviceSecure == true
@@ -199,6 +200,31 @@ fun SettingsScreen(
                         )
                     }
                     Switch(checked = reminderEnabled, onCheckedChange = ::onReminderToggle)
+                }
+            }
+
+            item { Spacer(Modifier.height(24.dp)) }
+            item { SettingsSectionLabel("Swiping") }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Random clean mode", style = MaterialTheme.typography.bodyLarge)
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            "Shuffle a folder's photos into random order each time you open it, instead of date order.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = randomModeEnabled,
+                        onCheckedChange = { scope.launch { settingsStore.setRandomModeEnabled(it) } }
+                    )
                 }
             }
 

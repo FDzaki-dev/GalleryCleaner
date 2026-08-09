@@ -26,6 +26,7 @@ private val CLEANING_REMINDER_ENABLED_KEY = booleanPreferencesKey("cleaning_remi
 private val HAPTIC_FEEDBACK_ENABLED_KEY = booleanPreferencesKey("haptic_feedback_enabled")
 private val APP_LOCK_ENABLED_KEY = booleanPreferencesKey("app_lock_enabled")
 private val HAS_SEEN_ONBOARDING_KEY = booleanPreferencesKey("has_seen_onboarding")
+private val RANDOM_MODE_ENABLED_KEY = booleanPreferencesKey("random_mode_enabled")
 
 /** Everything the user can configure about how the app behaves, kept in one
  *  place the way a Settings screen in any polished app would. */
@@ -120,5 +121,23 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setHasSeenOnboarding(seen: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[HAS_SEEN_ONBOARDING_KEY] = seen }
+    }
+
+    /** Whether entering a folder for review shuffles its photos into random
+     *  order instead of the default (date/name/size, per SortOption). A
+     *  quick way to sample across a large folder rather than always seeing
+     *  the same items first — matches the "random clean mode" competitors
+     *  in this category offer. Reshuffled fresh each time a folder is
+     *  opened (not persisted per-folder), so ProgressStore's saved index
+     *  for that group.key is only meaningful within one shuffled session;
+     *  that's an accepted tradeoff of random mode, not a bug. Defaults to
+     *  false — off until the user opts in, same as other behavior-changing
+     *  toggles in this store. */
+    val randomModeEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[RANDOM_MODE_ENABLED_KEY] ?: false
+    }
+
+    suspend fun setRandomModeEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[RANDOM_MODE_ENABLED_KEY] = enabled }
     }
 }

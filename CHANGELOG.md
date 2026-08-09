@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v16_Batch16 — 2026-08-09
+- Feature (ROADMAP Fase A, item 1): **Random clean mode**. `SettingsStore` — `randomModeEnabledFlow`/`setRandomModeEnabled` (default false, persisted). `HomeScreen` top bar — ikon Shuffle toggle cepat (tinted primary saat aktif), berdampingan dengan entry di `SettingsScreen` bagian baru "Swiping" (switch, sama persis setting yang dipersist, sesuai roadmap "toggle di HomeScreen/Settings").
+- `MainActivity.kt` — `onGroupClick` sekarang shuffle `group.items` (`MediaGroup.copy(items = ...shuffled())`) sebelum masuk `SwipeScreen` bila mode aktif; `group.key` tidak diubah (ProgressStore tetap jalan by key). Reshuffle terjadi tiap kali folder dibuka (bukan sekali lalu di-cache) — tradeoff sadar: index tersimpan di `ProgressStore` untuk group.key itu hanya akurat dalam 1 sesi acak yang sama, didokumentasikan di doc comment `randomModeEnabledFlow`.
+- Verifikasi: brace/paren balanced 0/0 di 4 file yang diedit (`SettingsStore.kt`, `HomeScreen.kt`, `SettingsScreen.kt`, `MainActivity.kt`). Protected assets tak tersentuh. `SwipeDecision`/`MediaModels.kt` tidak diubah — item ini murni ordering, bukan aksi baru (beda dari item 2 roadmap "Organize").
+
 ## v15_Batch15 — 2026-08-09
 - Add: `ROADMAP.md` — roadmap strategis vs kompetitor "Sponge - Gallery Cleaner" (riset web search real per tanggal batch). Gap analysis jujur: fitur kita yang sudah unggul (app lock, crash logger, 3 gaya tema, smart category/on-this-day/largest-files card) vs gap nyata (random mode, 3rd swipe action organize, cleanup goal, multi-bahasa, duplicate detection). 4 fase roadmap + definisi "sukses" yang terukur, bukan checklist kosong.
 

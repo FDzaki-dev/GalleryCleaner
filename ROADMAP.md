@@ -63,8 +63,10 @@ tiap rilis besar.
 ## 3. Roadmap (goals, bukan jadwal tanggal — tiap fase = beberapa batch)
 
 ### Fase A — Tutup gap fungsional inti (prioritas tertinggi)
-1. **Random clean mode**: shuffle urutan `MediaGroup`/`MediaItem` sebelum
-   masuk SwipeScreen, toggle di HomeScreen/Settings.
+1. ✅ **Random clean mode** (Batch16) — shuffle urutan `MediaItem` dalam
+   `MediaGroup` sebelum masuk SwipeScreen, toggle di HomeScreen (ikon
+   Shuffle top bar) + Settings (section "Swiping"), persisted via
+   `SettingsStore.randomModeEnabledFlow`. Detail: `PROJECT_STATE.md`.
 2. **3rd swipe action "Organize"**: swipe atas (atau tombol ke-3) →
    pilih folder tujuan, pakai `moveTo` yang sudah ada di
    `MediaDataSource` — tinggal expose ke UI, backend sudah siap.
