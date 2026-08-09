@@ -21,20 +21,29 @@ private val LightOutline = androidx.compose.ui.graphics.Color(0xFFDDD9D4)
 private val LightTextPrimary = androidx.compose.ui.graphics.Color(0xFF1C1E1F)
 private val LightTextSecondary = androidx.compose.ui.graphics.Color(0xFF5C6167)
 
+// Skeuomorphism-Dark override (2026-08-09) — from uploaded spec "Panduan
+// Lengkap: Desain Visual 'Skeuomorphism-Dark' pada Native Kotlin". Replaces
+// the AMOLED Hybrid Glassmorphism base material (AmoledBlack/GlassBase/
+// GlassElevated/GlassBorder) with the spec's §2 palette. Primary/Secondary
+// (SageKeep/CoralDelete) intentionally untouched — same rule as the prior
+// override: Keep/Delete semantic colors are app-critical UX, out of scope
+// for any visual-material spec, generic or skeuomorphic. Spec is Dark-only
+// by name/definition (like the AMOLED spec before it), so SignatureLight is
+// left as-is.
 private val SignatureDark = darkColorScheme(
     primary = SageKeep,
     onPrimary = Color0F,
     secondary = CoralDelete,
     onSecondary = Color0F,
-    tertiary = AccentBlue, // §17 restrained functional accent — selection/focus/progress
-    onTertiary = GlassTextPrimary,
-    background = AmoledBlack,        // §3 AMOLED foundation
-    onBackground = GlassTextPrimary, // §16
-    surface = GlassBase,             // §5 Level 1 glass
+    tertiary = AccentNeon, // §2 "warna aksen ... untuk lampu indikator" — selection/focus/progress accent
+    onTertiary = Color0F,
+    background = DarkShadow,          // §2 "Bayangan bawah" — deepest tone, canvas the drop-shadows read against
+    onBackground = GlassTextPrimary,
+    surface = DarkSurface,            // §1.1 "Material Gelap (Base)" — dasar material, bukan hitam pekat
     onSurface = GlassTextPrimary,
-    surfaceVariant = GlassElevated,  // §5 Level 2 glass
+    surfaceVariant = LightHighlight,  // §1.2 "Cahaya Terarah (Highlight)"
     onSurfaceVariant = GlassTextSecondary,
-    outline = GlassBorder,           // §8 — never plain white
+    outline = LightHighlight,         // highlight edge tone doubles as the hairline/outline color
     error = CoralDelete,
     onError = Color0F
 )

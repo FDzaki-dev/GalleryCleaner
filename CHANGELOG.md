@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## v12_Batch12 — 2026-08-09
+- Theme Override (Skeuomorphism-Dark, dari upload user `Panduan_Skeuomorphism___Dark_Kotlin.md`): 3 file baru — `ui/theme/SkeuoTokens.kt` (§2 palette + §4 metallic brush), `ui/components/SkeuoModifier.kt` (§3 `Modifier.skeuomorphicDark`, drawBehind+setShadowLayer), `ui/components/SkeuoDarkButton.kt` (§5 tombol contoh) — logic 100% copy dari spec. `Theme.kt` `SignatureDark`: background/surface/surfaceVariant/tertiary di-override ke token baru (DarkShadow/DarkSurface/LightHighlight/AccentNeon); primary/secondary (Keep/Delete) & SignatureLight tidak disentuh. **Catatan cakupan**: komponen Glass/Tactile existing (GlassCard, TactileButton, dst) hardcode token lama langsung — belum ikut berubah visual, itu next batch terpisah (lihat PROJECT_STATE).
+
 ## v11_Batch11 — 2026-08-09
 - Refactor (GlassSurface API extension, scope: `GlassSurface.kt`+`GlassCard.kt`+`SettingsScreen.kt`): tambah param `borderWidth` ke `GlassSurface`, tambah `shape`/`borderColor`/`borderWidth` ke `GlassCard` (semua default identik behavior lama → 0 breaking change). `ThemeStyleCard` di SettingsScreen dikonversi dari Row manual → `GlassCard`, radius dipertahankan 14dp (bukan default 18dp) untuk 0 regresi visual, selection border (2dp primary vs 1dp GlassBorder) tetap sama persis. Background sekarang pakai token Glass resmi menggantikan `surfaceVariant` hardcode.
 

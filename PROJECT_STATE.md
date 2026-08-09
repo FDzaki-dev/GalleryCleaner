@@ -1,7 +1,17 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v11 — Batch11 (GlassSurface borderWidth param + ThemeStyleCard → GlassCard)
+v12 — Batch12 (Theme Override: Skeuomorphism-Dark — foundation + ColorScheme)
+
+## Theme Override — Skeuomorphism-Dark (Batch12)
+Sumber: `Panduan_Skeuomorphism___Dark_Kotlin.md` (165 baris, 6 section) diupload user, permintaan eksplisit: override tema sekarang, 100% sesuai spec markdown.
+- **File baru (3), logic 100% copy dari spec, tidak ditulis ulang:**
+  - `ui/theme/SkeuoTokens.kt` — §2 palette (`DarkSurface` #1E1F22, `DarkShadow` #0C0D0F, `LightHighlight` #2E3136, `AccentNeon` #00FFCC) + §4 `metallicDarkBrush` (procedural gradient, bukan bitmap texture).
+  - `ui/components/SkeuoModifier.kt` — §3 `Modifier.skeuomorphicDark(cornerRadius, elevation)`, drawBehind + `setShadowLayer` 2x (drop shadow gelap bawah-kanan, highlight terang atas-kiri) via Canvas native — GPU-accelerated, bukan tumpukan Box+blur (§6.1/§6.2). Satu-satunya perubahan dari spec: `DarkShadow`/`LightHighlight` diimpor dari `ui.theme` (spec asli 1 file, project ini pisah token dari komponen, sesuai struktur `ui/theme/` vs `ui/components/` yang sudah ada).
+  - `ui/components/SkeuoDarkButton.kt` — §5 `SkeuoDarkButton`, gabungan modifier+brush di atas. Catatan spec asli dipertahankan: `isPressed` masih placeholder (belum ada `pointerInput` ACTION_DOWN/UP nyata) — bukan bug baru, itu keterbatasan yang sudah ada di spec sumber.
+- **`Theme.kt` — `SignatureDark` override:** `background`→`DarkShadow`, `surface`→`DarkSurface`, `surfaceVariant`→`LightHighlight`, `tertiary`→`AccentNeon` (accent/indikator, gantikan `AccentBlue`). `primary`/`secondary` (SageKeep/CoralDelete, Keep/Delete semantic) TIDAK diubah — aturan project yang sama sejak override tema pertama (Batch2), di luar cakupan spec visual manapun. `SignatureLight` TIDAK disentuh — spec ini "Dark" by name/definisi, sama seperti precedent AMOLED sebelumnya.
+- **⚠️ PENTING — batas cakupan batch ini (jujur, bukan 100% visual cascade):** Override `ColorScheme` HANYA mengubah komponen yang baca dari `MaterialTheme.colorScheme` (Scaffold, TopAppBar, Text default, dll). `GlassCard`/`GlassSurface`/`TactileButton`/`TactileSwitch`/`TactileSlider`/`GlassNavigation` (dipakai di HomeScreen/SwipeScreen/SettingsScreen/TrashScreen) HARDCODE token dari `GlassTokens.kt` (`GlassBase`/`GlassElevated`/`GlassBorder`/`AccentBlue`) langsung, BUKAN lewat `colorScheme` — jadi visual translucent-glass-blur pada komponen itu TIDAK otomatis berubah jadi skeuomorphic solid-material+drawn-shadow dari batch ini saja. Ini bukan oversight — swap teknik render (translucent alpha-layer vs solid material+Canvas-drawn shadow/highlight) di 6 komponen bersama yang dipakai di semua layar adalah perubahan fondasi visual berisiko tinggi tanpa compiler nyata untuk verifikasi; dipecah jadi batch terpisah (lihat Belum Dikerjakan).
+- Verifikasi: brace/paren balanced 0/0 di 4 file (3 baru + Theme.kt), tidak ada import yatim, `GlassTokens.kt` tidak disentuh (masih dipakai penuh oleh 6 komponen glass di atas).
 
 ## GlassSurface API Extension + ThemeStyleCard Migration (Batch11)
 Scope batch ini: 3 file — `GlassSurface.kt`, `GlassCard.kt` (perluasan API), `SettingsScreen.kt` (migrasi `ThemeStyleCard`).
@@ -63,7 +73,7 @@ Nama artifact log kegagalan build diubah agar lebih informatif & unik per-run:
 - Alasan: `run_number` + `short_sha` membuat tiap artifact unik lintas run (bukan hanya lintas attempt dalam 1 run), memudahkan lacak balik ke commit persis yang gagal.
 
 ## Status Build Terakhir
-Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`onUncaughtException` typo)→fixed Batch5. Batch6: OK, build hijau (dikonfirmasi user). Batch7: OK, build hijau (dikonfirmasi user). Batch8+Batch9: OK, build hijau (dikonfirmasi user). Batch10+Batch11 (ini): belum ter-CI.
+Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`onUncaughtException` typo)→fixed Batch5. Batch6: OK, build hijau (dikonfirmasi user). Batch7: OK, build hijau (dikonfirmasi user). Batch8+Batch9: OK, build hijau (dikonfirmasi user). Batch10, Batch11, Batch12 (ini): belum ter-CI.
 
 
 ## Fix Batch4 Build Failure (dari test-result-main-attempt-1.log kedua)
@@ -117,9 +127,10 @@ Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`
 2. Update `.github/workflows/build.yml` — step build sekarang tee output ke `test-result-<branch>-attempt-<run_attempt>.log` dan upload sebagai artifact HANYA jika job gagal (`if: failure()`), agar log kegagalan berikutnya tinggal diambil dari GitHub Actions Artifacts tanpa perlu re-run.
 
 ## Belum Dikerjakan / Catatan
+- **Skeuomorphic cascade ke komponen bersama (next batch, prioritas tinggi kalau mau visual 100% berubah)**: swap `GlassSurface`/`GlassCard`/`TactileButton`/`TactileSwitch`/`TactileSlider`/`GlassNavigation` dari `.background(GlassBase/GlassElevated)+.border(GlassBorder)` → `.skeuomorphicDark()+.background(metallicDarkBrush)`. Ini akan mengubah tampilan di SEMUA layar sekaligus (HomeScreen/SwipeScreen/SettingsScreen/TrashScreen) — scope besar, perlu dipecah per-komponen dengan checkpoint, bukan sekali jalan.
 - 4 GradleException guard clause (keystore path/password/alias/key password) sudah benar strukturnya setelah fix Batch1 — perlu verifikasi ulang via CI run berikutnya.
-- Migrasi Card/Button lain (HomeScreen*, SwipeScreen*, TrashScreen, OnboardingScreen) ke `GlassCard`/`TactileButton` — belum, next batch per-file, `GlassCard` sekarang sudah fleksibel (shape/borderColor/borderWidth) jadi siap dipakai.
+- Migrasi Card/Button lain (HomeScreen*, SwipeScreen*, TrashScreen, OnboardingScreen) ke `GlassCard`/`TactileButton` — perlu diputuskan dulu: tetap Glass, atau langsung skeuomorphic (lihat poin di atas), supaya tidak migrasi 2x.
 - `IconButton`/`RadioButton`/`FilterChip` di SettingsScreen.kt masih M3 default — belum ada varian tactile untuk itu di `ui/components/`.
 - Approval dibutuhkan untuk hapus dead color tokens di Color.kt (lihat daftar di atas).
 - Phase-1b (flat package → real sub-package `com.example.gallerycleaner.data.media` dst + tambah import) — belum dikerjakan, butuh compiler nyata per-layer.
-- Batch10 & Batch11 (ini) — belum dikonfirmasi hijau di CI, perlu di-push & dicek run berikutnya.
+- Batch10, Batch11, Batch12 (ini) — belum dikonfirmasi hijau di CI, perlu di-push & dicek run berikutnya.
