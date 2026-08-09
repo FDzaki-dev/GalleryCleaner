@@ -602,6 +602,28 @@ fun AppRoot(
         }
     }
 
+    /** Reflects a successful move in local state without a full library
+     *  rescan: updates each moved item's `relativePath`/`bucketName` in
+     *  place in `allMedia`, rather than deleting it from the list the way
+     *  performPermanentDeletion does. Organize isn't deletion — the photo
+     *  is still in the library, just under a different folder, so total
+     *  library size/count must stay exactly the same.
+     *
+     *  Declared BEFORE organizeRequestLauncher below (Batch18 fix) — Kotlin
+     *  local functions, unlike top-level ones, must already be in scope at
+     *  their point of use even inside a nested lambda; declaring it after
+     *  the launcher that references it was an "Unresolved reference" build
+     *  failure (see PROJECT_STATE.md Batch18 / CI run 141). */
+    fun applyOrganizeResult(movedIds: Set<Long>, targetFolder: String) {
+        if (movedIds.isEmpty()) return
+        val newBucketName = targetFolder.trimEnd('/').substringAfterLast('/', targetFolder)
+        allMedia = allMedia.map { item ->
+            if (item.id in movedIds) {
+                item.copy(relativePath = targetFolder, bucketName = newBucketName)
+            } else item
+        }
+    }
+
     /** Last-good-write-request pending state for "Organize" (ROADMAP Fase A
      *  item 2) — mirrors pendingCompressRetry's shape exactly. [second] is
      *  the destination folder, carried alongside the items so the retry
@@ -634,22 +656,6 @@ fun AppRoot(
             }
         } else if (pending != null) {
             scope.launch { snackbarHostState.showSnackbar("Izin memindahkan file ditolak") }
-        }
-    }
-
-    /** Reflects a successful move in local state without a full library
-     *  rescan: updates each moved item's `relativePath`/`bucketName` in
-     *  place in `allMedia`, rather than deleting it from the list the way
-     *  performPermanentDeletion does. Organize isn't deletion — the photo
-     *  is still in the library, just under a different folder, so total
-     *  library size/count must stay exactly the same. */
-    fun applyOrganizeResult(movedIds: Set<Long>, targetFolder: String) {
-        if (movedIds.isEmpty()) return
-        val newBucketName = targetFolder.trimEnd('/').substringAfterLast('/', targetFolder)
-        allMedia = allMedia.map { item ->
-            if (item.id in movedIds) {
-                item.copy(relativePath = targetFolder, bucketName = newBucketName)
-            } else item
         }
     }
 

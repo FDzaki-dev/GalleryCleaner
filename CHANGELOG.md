@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v18_Batch18 — 2026-08-09
+- Fix CI build failure (run141/attempt1, log user): `compileReleaseKotlin` FAILED — `MainActivity.kt:629:21 Unresolved reference: applyOrganizeResult`. Root cause: Batch17 declared `applyOrganizeResult` (local fun) AFTER `organizeRequestLauncher`, whose callback lambda calls it — Kotlin local functions must already be in scope at point of use, even inside a nested lambda executed later. Fix: reordered so `applyOrganizeResult` is declared before `organizeRequestLauncher`/`performOrganize`. No logic changed, pure reorder.
+- Verifikasi: brace/paren balanced 0/0. Grep ulang seluruh `MainActivity.kt` untuk pola forward-reference serupa pada fungsi lokal lain (`applyOrganizeResult`/`performOrganize`/`performCompression`/`performPermanentDeletion`) — tidak ditemukan kasus lain.
+- Satu-satunya error di log CI ini; tidak ada error kedua yang tersembunyi setelah yang pertama (Kotlin compiler berhenti di error pertama untuk file ini).
+
 ## v17_Batch17 — 2026-08-09
 - Feature (ROADMAP Fase A, item 2): **3rd swipe action "Organize"** — move current photo(s) to a folder of choice, distinct from Keep/Delete.
 - **Koreksi audit**: `ROADMAP.md` (Batch15) mengklaim `MediaDataSource` sudah punya primitive `moveTo` — diverifikasi ulang batch ini via grep, klaim itu SALAH (hanya cocok `Cursor.moveToNext()`, API tak terkait). Tidak ada primitive move sebelumnya. Dikoreksi di `ROADMAP.md`, dibangun dari nol di sini.

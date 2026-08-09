@@ -1,9 +1,16 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v17 — Batch17 (ROADMAP Fase A item 2: Organize (3rd swipe action) — shipped; koreksi audit moveTo)
+v18 — Batch18 (Fix CI build failure Batch17: forward-reference lokal fun `applyOrganizeResult`)
 
-## Organize — 3rd Swipe Action (Batch17)
+## Fix Batch18 Build Failure (dari log-fail_main_run141-attempt1_9282172.log, user)
+- Error: `MainActivity.kt:629:21 Unresolved reference: applyOrganizeResult`, task `:app:compileReleaseKotlin` FAILED.
+- Sebab: di Batch17, `fun applyOrganizeResult(...)` didefinisikan SETELAH `organizeRequestLauncher` — padahal callback lambda `organizeRequestLauncher` memanggilnya. Local function di Kotlin (beda dari top-level function) harus sudah ada di scope pada titik pemakaian, termasuk di dalam lambda yang baru dieksekusi belakangan — urutan deklarasi tekstual tetap dicek compiler.
+- Fix: pindahkan blok `applyOrganizeResult` ke atas, sebelum `pendingOrganizeRetry`/`organizeRequestLauncher`/`performOrganize`. Isi fungsi tidak diubah sama sekali, murni reorder.
+- Verifikasi: brace/paren balanced 0/0 di `MainActivity.kt`. Grep manual seluruh local fun lain (`performCompression`, `performPermanentDeletion`, `performOrganize`) — tidak ada pola forward-reference serupa di tempat lain.
+- Log CI cuma menunjukkan 1 error (compiler Kotlin berhenti di error pertama untuk file itu) — tidak ada error kedua yang perlu diantisipasi setelah fix ini, tapi tetap perlu 1x run CI nyata untuk konfirmasi hijau (sesuai item "Batch10-14 belum dikonfirmasi hijau" — sekarang bertambah "Batch15-18 juga belum").
+
+## Organize — 3rd Swipe Action (Batch17, kode — lihat fix di atas untuk build error-nya)
 Mengeksekusi item 2 Fase A di `ROADMAP.md`.
 
 **Koreksi penting terhadap riset Batch15**: `ROADMAP.md` sebelumnya menyatakan
