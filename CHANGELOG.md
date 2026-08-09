@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## v7_Batch7 — 2026-08-09
+- Refactor (God File split, scope: MediaRepository.kt saja): 517 baris → 3 file (`MediaRepository.kt` 107 baris facade, `MediaDataSource.kt` 150 baris raw I/O, `MediaScanner.kt` 322 baris analytical scans). Semua fungsi publik 100% copy-paste (bukan ditulis ulang) — `MediaRepository` tetap jadi satu-satunya entry point yang dipanggil `MainActivity`/`CleaningReminderWorker`, 0 file caller diubah.
+
 ## v6_Batch6 — 2026-08-09
 - Fix: `AndroidManifest.xml` (protected, parsial) — tambah `android:largeHeap="true"`. Root cause dari `crash_20260809_074212_....txt` (runtime OOM, dari CrashLogger produksi user): heap 256MB terlalu kecil untuk grid Compose image-heavy. Aman sekarang karena Coil cache sudah dipin fixed-percentage di `GalleryCleanerApp.kt`.
 - Update: `.github/workflows/build.yml` — rename artifact log-fail: `test-result-<branch>-attempt-<attempt>.log` → `log-fail_<branch>_run<run_number>-attempt<attempt>_<short_sha>.log` (unik lintas run, bukan cuma lintas attempt).

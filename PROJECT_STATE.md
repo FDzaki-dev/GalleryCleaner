@@ -1,7 +1,15 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v6 — Batch6 (Fix OOM crash runtime + rename artifact log-fail jadi lebih informatif)
+v7 — Batch7 (Pecah God File: MediaRepository.kt → MediaRepository+MediaDataSource+MediaScanner)
+
+## God File Split — MediaRepository.kt (Batch7)
+Scope batch ini: HANYA `MediaRepository.kt` (517 baris). HomeScreen(1001)/SwipeScreen(822) belum — itu Compose state extraction, jauh lebih berisiko tanpa compiler nyata, next batch terpisah.
+- `MediaDataSource.kt` (baru, 150 baris) — raw MediaStore paging I/O: `loadAllMedia`, `loadMediaProgressively`, `queryMediaPage`.
+- `MediaScanner.kt` (baru, 322 baris) — analytical/CPU-heavy scans: `smartCategories`, `onThisDay`, `findExactDuplicates`, `findBlurryPhotos`, `findNearDuplicates` + semua private helper (hash/decode/laplacian/aHash).
+- `MediaRepository.kt` (107 baris) — jadi **facade tipis**: `group`/`sortItems`/`monthKey` tetap di sini (orkestrasi), 8 fungsi publik lain jadi one-line delegator ke MediaDataSource/MediaScanner.
+- **Kenapa facade, bukan pindah caller**: semua caller existing (`MainActivity.kt`, `CleaningReminderWorker.kt`) tetap manggil `MediaRepository.xxx(...)` tanpa perubahan sama sekali — 0 file lain disentuh, 0 risiko missed call-site. Isi fungsi 100% copy-paste (bukan ditulis ulang) dari file lama, jadi behavior dijamin identik.
+- Verifikasi: brace/paren balanced per file, 8/8 fungsi publik asli masih ada & bisa dipanggil dengan signature sama persis.
 
 ## Root Cause Crash Log (crash_20260809_074212_...txt, dari CrashLogger produksi user)
 `java.lang.OutOfMemoryError` saat Compose recomposition di LazyColumn (grid HomeScreen/TrashScreen), heap target hanya 256MB (`android:largeHeap` belum diset). Titik crash (`MutableObjectIntMap.initializeStorage`, alokasi 40 byte) cuma korban terakhir — bukan penyebab asli; tekanan memori kumulatif dari bitmap cache + LazySaveableStateHolder yang menahan state item off-screen.
@@ -15,7 +23,7 @@ Nama artifact log kegagalan build diubah agar lebih informatif & unik per-run:
 - Alasan: `run_number` + `short_sha` membuat tiap artifact unik lintas run (bukan hanya lintas attempt dalam 1 run), memudahkan lacak balik ke commit persis yang gagal.
 
 ## Status Build Terakhir
-Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED (`onUncaughtException` typo)→fixed Batch5. Batch5: OK (belum ter-CI ulang). Batch6 (ini): fix runtime OOM crash + rename artifact, belum ter-CI.
+Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`onUncaughtException` typo)→fixed Batch5. Batch6: OK, build hijau (dikonfirmasi user). Batch7 (ini): belum ter-CI.
 
 
 ## Fix Batch4 Build Failure (dari test-result-main-attempt-1.log kedua)
