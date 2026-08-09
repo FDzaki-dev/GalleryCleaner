@@ -1,7 +1,22 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v5 — Batch5 (Fix crash logger + Phase-1 package restructure: directory reorg)
+v6 — Batch6 (Fix OOM crash runtime + rename artifact log-fail jadi lebih informatif)
+
+## Root Cause Crash Log (crash_20260809_074212_...txt, dari CrashLogger produksi user)
+`java.lang.OutOfMemoryError` saat Compose recomposition di LazyColumn (grid HomeScreen/TrashScreen), heap target hanya 256MB (`android:largeHeap` belum diset). Titik crash (`MutableObjectIntMap.initializeStorage`, alokasi 40 byte) cuma korban terakhir — bukan penyebab asli; tekanan memori kumulatif dari bitmap cache + LazySaveableStateHolder yang menahan state item off-screen.
+Fix: `AndroidManifest.xml` (protected, edit parsial) — tambah `android:largeHeap="true"`. Aman dilakukan sekarang karena `GalleryCleanerApp.kt` sudah pin Coil memory/disk cache ke `maxSizePercent` tetap (0.15/0.02), BUKAN ke memori "available" versi `ActivityManager` — jadi alasan lama untuk menghindari largeHeap (cache ikut membesar) sudah tidak berlaku (lihat komentar existing di file itu).
+`MediaPreview.kt` / decode size / `lowMemory=true` di semua grid call-site sudah benar sejak awal — bukan bagian dari masalah.
+
+## GitHub Actions — Artifact Log-Fail Rename
+Nama artifact log kegagalan build diubah agar lebih informatif & unik per-run:
+- Sebelum: `test-result-<branch>-attempt-<run_attempt>.log`
+- Sesudah: `log-fail_<branch>_run<run_number>-attempt<run_attempt>_<short_sha>.log`
+- Alasan: `run_number` + `short_sha` membuat tiap artifact unik lintas run (bukan hanya lintas attempt dalam 1 run), memudahkan lacak balik ke commit persis yang gagal.
+
+## Status Build Terakhir
+Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED (`onUncaughtException` typo)→fixed Batch5. Batch5: OK (belum ter-CI ulang). Batch6 (ini): fix runtime OOM crash + rename artifact, belum ter-CI.
+
 
 ## Fix Batch4 Build Failure (dari test-result-main-attempt-1.log kedua)
 `CrashLogger.kt:40` — `Unresolved reference: onUncaughtException`. Nama method salah; interface `Thread.UncaughtExceptionHandler` method-nya `uncaughtException`, bukan `onUncaughtException`. DIPERBAIKI.
@@ -19,9 +34,6 @@ v5 — Batch5 (Fix crash logger + Phase-1 package restructure: directory reorg)
   - `ui/theme/`, `ui/components/` — TIDAK disentuh, sudah punya package sendiri sejak Batch2/3, sudah sesuai prinsip audit.
 - **Phase-1b (belum dikerjakan, next batch)**: split flat package → real sub-package (`com.example.gallerycleaner.data.media`, dst) + tambah `import` di semua pemanggil. Ini butuh compiler nyata untuk validasi tiap langkah (tidak tersedia di environment ini) — akan dikerjakan bertahap per-layer dengan checkpoint CI hijau di antaranya, bukan sekaligus.
 - File besar (HomeScreen/SwipeScreen/MediaRepository → Screen/ViewModel/State/Event) BELUM dipecah — itu audit item #3, technically Phase-1 juga tapi butuh perubahan logic nyata (bukan mechanical move), risiko tinggi tanpa compiler → next batch terpisah, bukan bagian atomic move ini.
-
-## Status Build Terakhir
-Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED (`onUncaughtException` typo)→fixed Batch5 (ini). Batch5: belum di-run ulang di CI.
 
 ## Theme System — AMOLED Hybrid Glassmorphism (compose-amoled-hybrid-glass-final.md)
 - Sumber: spec markdown yang diupload user (793 baris, 25 section). Diimplementasikan sebagai arsitektur §23:

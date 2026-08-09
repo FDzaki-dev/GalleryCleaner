@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v6_Batch6 — 2026-08-09
+- Fix: `AndroidManifest.xml` (protected, parsial) — tambah `android:largeHeap="true"`. Root cause dari `crash_20260809_074212_....txt` (runtime OOM, dari CrashLogger produksi user): heap 256MB terlalu kecil untuk grid Compose image-heavy. Aman sekarang karena Coil cache sudah dipin fixed-percentage di `GalleryCleanerApp.kt`.
+- Update: `.github/workflows/build.yml` — rename artifact log-fail: `test-result-<branch>-attempt-<attempt>.log` → `log-fail_<branch>_run<run_number>-attempt<attempt>_<short_sha>.log` (unik lintas run, bukan cuma lintas attempt).
+
 ## v5_Batch5 — 2026-08-09
 - Fix: `core/utils/CrashLogger.kt` — `onUncaughtException` → `uncaughtException` (nama method interface yang benar). Root cause dari `test-result-main-attempt-1.log` (build kedua).
 - Refactor (Atomic, Phase-1 partial): reorganisasi 17 file ke direktori `data/model/`, `data/media/`, `data/local/datastore/`, `presentation/screen/`, `worker/`, `core/utils/` sesuai Structure Audit. Package declaration TIDAK diubah (tetap flat) — murni physical move, 0 import rusak.

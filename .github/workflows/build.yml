@@ -77,7 +77,8 @@ jobs:
             exit 1
           }
 
-          LOG_FILE="test-result-${GITHUB_REF_NAME}-attempt-${GITHUB_RUN_ATTEMPT}.log"
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          LOG_FILE="log-fail_${GITHUB_REF_NAME}_run${GITHUB_RUN_NUMBER}-attempt${GITHUB_RUN_ATTEMPT}_${SHORT_SHA}.log"
           echo "LOG_FILE=$LOG_FILE" >> "$GITHUB_ENV"
 
           set +e
