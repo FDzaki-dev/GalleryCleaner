@@ -21,29 +21,34 @@ private val LightOutline = androidx.compose.ui.graphics.Color(0xFFDDD9D4)
 private val LightTextPrimary = androidx.compose.ui.graphics.Color(0xFF1C1E1F)
 private val LightTextSecondary = androidx.compose.ui.graphics.Color(0xFF5C6167)
 
-// Skeuomorphism-Dark override (2026-08-09) — from uploaded spec "Panduan
-// Lengkap: Desain Visual 'Skeuomorphism-Dark' pada Native Kotlin". Replaces
-// the AMOLED Hybrid Glassmorphism base material (AmoledBlack/GlassBase/
-// GlassElevated/GlassBorder) with the spec's §2 palette. Primary/Secondary
-// (SageKeep/CoralDelete) intentionally untouched — same rule as the prior
-// override: Keep/Delete semantic colors are app-critical UX, out of scope
-// for any visual-material spec, generic or skeuomorphic. Spec is Dark-only
-// by name/definition (like the AMOLED spec before it), so SignatureLight is
-// left as-is.
+// FULL override (2026-08-09) — dari uploaded spec "Panduan Lengkap: Desain
+// Visual Skeuomorphism-Dark (Midnight Blue Edition)". Ini bukan tambahan di
+// atas override sebelumnya (AMOLED Glass §Batch2, lalu Skeuo-Cyan §Batch12)
+// — SELURUH sistem token & komponen tema lama (GlassTokens.kt,
+// TactileTokens.kt, SkeuoTokens.kt versi Cyan, GlassCard/GlassSurface/
+// GlassNavigation/TactileButton/TactileSlider/TactileSwitch/SkeuoModifier/
+// SkeuoDarkButton lama) DIHAPUS di batch ini dan digantikan 100% oleh
+// `SkeuoMidnightTheme` (lihat `SkeuoMidnightTokens.kt`) — permintaan
+// eksplisit user: "hapus semua konfigurasi theme lama, timpa dengan 1 theme
+// baru 100% sesuai spec". Primary/Secondary (SageKeep/CoralDelete) tetap
+// TIDAK diubah — aturan project yang konsisten sejak override pertama:
+// Keep/Delete semantic colors app-critical UX, di luar cakupan spec visual
+// manapun. Spec ini "Dark" by name/definisi (Midnight Blue Edition), sama
+// seperti precedent sebelumnya, jadi SignatureLight TIDAK disentuh.
 private val SignatureDark = darkColorScheme(
     primary = SageKeep,
     onPrimary = Color0F,
     secondary = CoralDelete,
     onSecondary = Color0F,
-    tertiary = AccentNeon, // §2 "warna aksen ... untuk lampu indikator" — selection/focus/progress accent
+    tertiary = SkeuoMidnightTheme.ElectricCyan, // §5 "Glow Accent" — selection/focus/progress/active accent
     onTertiary = Color0F,
-    background = DarkShadow,          // §2 "Bayangan bawah" — deepest tone, canvas the drop-shadows read against
-    onBackground = GlassTextPrimary,
-    surface = DarkSurface,            // §1.1 "Material Gelap (Base)" — dasar material, bukan hitam pekat
-    onSurface = GlassTextPrimary,
-    surfaceVariant = LightHighlight,  // §1.2 "Cahaya Terarah (Highlight)"
-    onSurfaceVariant = GlassTextSecondary,
-    outline = LightHighlight,         // highlight edge tone doubles as the hairline/outline color
+    background = SkeuoMidnightTheme.DarkShadow,      // §1.3 "Ambient Drop Shadow" — deepest tone, canvas the drop-shadows read against
+    onBackground = SkeuoMidnightTheme.TextBright,
+    surface = SkeuoMidnightTheme.BaseSurface,        // §1.1 "Base Surface (Midnight Navy)" — dasar material
+    onSurface = SkeuoMidnightTheme.TextBright,
+    surfaceVariant = SkeuoMidnightTheme.LightHighlight, // §1.2 "Directional Specular Light (Top-Left)"
+    onSurfaceVariant = SkeuoMidnightTheme.TextMuted,
+    outline = SkeuoMidnightTheme.LightHighlight,     // highlight edge tone doubles as hairline/outline color
     error = CoralDelete,
     onError = Color0F
 )
@@ -53,7 +58,7 @@ private val SignatureLight = lightColorScheme(
     onPrimary = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
     secondary = androidx.compose.ui.graphics.Color(0xFFD44A32), // darker coral, same reason
     onSecondary = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
-    tertiary = androidx.compose.ui.graphics.Color(0xFF4B54D6), // darker AccentBlue for light-bg contrast
+    tertiary = androidx.compose.ui.graphics.Color(0xFF4B54D6), // darker indigo-blue accent, for light-bg contrast
     onTertiary = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
     background = LightBg,
     onBackground = LightTextPrimary,

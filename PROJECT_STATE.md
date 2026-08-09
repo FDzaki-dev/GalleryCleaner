@@ -1,7 +1,33 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v12 — Batch12 (Theme Override: Skeuomorphism-Dark — foundation + ColorScheme)
+v13 — Batch13 (FULL Theme Override: Skeuomorphism-Dark Midnight Blue Edition — hapus total sistem tema lama)
+
+## FULL Theme Override — Skeuomorphism-Dark Midnight Blue Edition (Batch13)
+Klarifikasi user atas Batch12: "override" = hapus SEMUA konfigurasi tema lama, timpa 100% dengan 1 spec baru — bukan partial (ColorScheme saja, komponen lama dipertahankan berdampingan) seperti Batch12.
+Sumber: `Panduan_Skeuomorphism_Midnight_Blue_Kotlin.md` (§1-5) diupload user.
+
+**Dihapus total (11 file — bukan sekadar tidak dipakai, benar-benar dihapus dari repo):**
+- `ui/theme/GlassTokens.kt`, `ui/theme/TactileTokens.kt`, `ui/theme/SkeuoTokens.kt` (versi Cyan Batch12)
+- `ui/components/GlassCard.kt`, `GlassSurface.kt`, `GlassNavigation.kt`, `TactileButton.kt`, `TactileSlider.kt`, `TactileSwitch.kt`, `SkeuoModifier.kt` (lama), `SkeuoDarkButton.kt` (lama)
+- Diverifikasi dulu (grep lintas seluruh project) sebelum hapus: hanya `SettingsScreen.kt` yang pernah memakai (`GlassCard`, `TactileSwitch`) — HomeScreen/SwipeScreen/TrashScreen/OnboardingScreen tidak pernah migrasi ke sistem lama ini, jadi penghapusan 0 breaking change di file-file itu.
+
+**Dibuat baru (4 file, logic 100% copy dari spec §2-4, hanya package diadaptasi):**
+- `ui/theme/SkeuoMidnightTokens.kt` — `object SkeuoMidnightTheme`: BaseSurface #0F172A, DarkShadow #050B14, LightHighlight #23324D, InnerShadowDark #070D18, InnerShadowLight #1E293B, ElectricCyan #00E5FF, TextMuted #94A3B8, TextBright #F8FAFC, + RaisedGradient/InsetGradient (Brush.linearGradient).
+- `ui/components/SkeuoMidnightModifier.kt` — §3 `Modifier.skeuoMidnightRaised()` (dual setShadowLayer: DarkShadow bawah-kanan + LightHighlight atas-kiri) dan `Modifier.skeuoMidnightDebossed()` (InnerShadowDark/InnerShadowLight, arah dibalik untuk efek cekung) via Canvas native.
+- `ui/components/MidnightSkeuoButton.kt` — §4A tombol timbul, elevasi 8dp→2dp saat ditekan, warna teks TextMuted→ElectricCyan saat pressed, ripple dimatikan (`indication = null`).
+- `ui/components/MidnightSkeuoSlot.kt` — §4B container cekung/inset untuk slot nilai/input.
+
+**`Theme.kt` — `SignatureDark` ditulis ulang total:** `background`→`DarkShadow`, `surface`→`BaseSurface`, `surfaceVariant`/`outline`→`LightHighlight`, `tertiary`→`ElectricCyan`, `onBackground`/`onSurface`→`TextBright`, `onSurfaceVariant`→`TextMuted`. Tidak ada satupun referensi token lama (`AmoledBlack`/`GlassBase`/`AccentBlue`/`AccentNeon`/dst) tersisa. `primary`/`secondary` (SageKeep/CoralDelete) TETAP tidak diubah — precedent sama sejak Batch2. `SignatureLight` TIDAK disentuh (spec Dark-only by definition).
+
+**`SettingsScreen.kt` — 3 titik yang bergantung ke sistem lama, diperbaiki agar tetap kompilasi + konsisten:**
+- 3× `TactileSwitch(...)` → M3 `Switch(...)` biasa (spec Midnight tidak menyediakan komponen switch — jujur mengikuti cakupan spec, bukan mengarang komponen baru; warna tetap otomatis ikut `colorScheme` yang sudah di-override).
+- `ThemeStyleCard` (dipakai untuk memilih di antara Signature/Amber Reserve/Indigo Noir — bukan cuma Midnight) direvert dari `GlassCard` ke `Row` manual (`clip`+`background(colorScheme.surface)`+`border`+`clickable`) — SENGAJA tidak pakai `MidnightSkeuoSlot` di sini karena komponen itu visualnya spesifik-Midnight dan akan salah tampil saat user memilih Amber/Indigo.
+- `previewBg` untuk opsi "Signature" di theme picker: `AmoledBlack` (dihapus) → `SkeuoMidnightTheme.BaseSurface`, deskripsi diperbarui.
+
+**Verifikasi:** grep lintas seluruh project untuk 20+ nama token/komponen lama → 0 referensi kode tersisa (hanya komentar dokumentasi yang menyebut nama lama secara historis). Brace/paren balanced 0/0 di 6 file (4 baru + Theme.kt + SettingsScreen.kt). Protected assets (manifest, 3 gradle, workflow, .gitignore) utuh tak tersentuh.
+
+**Belum dikerjakan (sama seperti sebelumnya, next batch):** `MidnightSkeuoButton`/`MidnightSkeuoSlot` belum dipasang menggantikan `Button`/`Card` M3 biasa di HomeScreen/SwipeScreen/TrashScreen/OnboardingScreen — baru level ColorScheme yang 100% ter-cascade otomatis ke semua layar (karena semua layar sudah pakai `MaterialTheme.colorScheme`, bukan warna hardcoded).
 
 ## Theme Override — Skeuomorphism-Dark (Batch12)
 Sumber: `Panduan_Skeuomorphism___Dark_Kotlin.md` (165 baris, 6 section) diupload user, permintaan eksplisit: override tema sekarang, 100% sesuai spec markdown.

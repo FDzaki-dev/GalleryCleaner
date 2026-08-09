@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v13_Batch13 — 2026-08-09
+- FULL Theme Override (klarifikasi user: hapus total, bukan partial): 11 file sistem tema/komponen lama dihapus (`GlassTokens.kt`, `TactileTokens.kt`, `SkeuoTokens.kt`-Cyan, `GlassCard.kt`, `GlassSurface.kt`, `GlassNavigation.kt`, `TactileButton.kt`, `TactileSlider.kt`, `TactileSwitch.kt`, `SkeuoModifier.kt`-lama, `SkeuoDarkButton.kt`-lama). Digantikan 100% oleh spec "Skeuomorphism-Dark Midnight Blue Edition": 4 file baru (`SkeuoMidnightTokens.kt`, `SkeuoMidnightModifier.kt`, `MidnightSkeuoButton.kt`, `MidnightSkeuoSlot.kt`) + `Theme.kt` (`SignatureDark` ditulis ulang total, 0 referensi token lama tersisa).
+- Fix: `SettingsScreen.kt` — 3× `TactileSwitch` → M3 `Switch` (spec baru tidak sediakan varian switch), `ThemeStyleCard` direvert dari `GlassCard` ke Row manual (tetap theme-agnostic untuk 3 opsi picker), preview swatch "Signature" pakai `SkeuoMidnightTheme.BaseSurface`.
+
 ## v12_Batch12 — 2026-08-09
 - Theme Override (Skeuomorphism-Dark, dari upload user `Panduan_Skeuomorphism___Dark_Kotlin.md`): 3 file baru — `ui/theme/SkeuoTokens.kt` (§2 palette + §4 metallic brush), `ui/components/SkeuoModifier.kt` (§3 `Modifier.skeuomorphicDark`, drawBehind+setShadowLayer), `ui/components/SkeuoDarkButton.kt` (§5 tombol contoh) — logic 100% copy dari spec. `Theme.kt` `SignatureDark`: background/surface/surfaceVariant/tertiary di-override ke token baru (DarkShadow/DarkSurface/LightHighlight/AccentNeon); primary/secondary (Keep/Delete) & SignatureLight tidak disentuh. **Catatan cakupan**: komponen Glass/Tactile existing (GlassCard, TactileButton, dst) hardcode token lama langsung — belum ikut berubah visual, itu next batch terpisah (lihat PROJECT_STATE).
 
