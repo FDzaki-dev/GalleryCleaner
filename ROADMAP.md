@@ -46,8 +46,11 @@ tiap rilis besar.
   all-time)
 - ❌ **Multi-bahasa** — cuma `values/` default (Inggris), belum ada
   `values-es`, `values-pt-rBR`, dst
-- ❌ **Sort by size/date/name di layar Swipe** — perlu diverifikasi apakah
-  `SortOption` sudah dipasang di UI Swipe atau baru di Home
+- ❌ **Sort by size/date/name di layar Swipe** — ✅ shipped Batch20. Audit:
+  sort SUDAH sampai ke SwipeScreen sejak awal (`MediaRepository.group()`
+  sort dulu baru group, jadi `group.items` selalu tiba pre-sorted). Yang
+  betulan hilang: cara GANTI sort tanpa keluar ke Home — sekarang ada
+  ikon Sort di top bar SwipeScreen.
 
 **Gap yang TIDAK disebutkan Sponge tapi jadi standar kategori app ini
 (peluang untuk melampaui, bukan sekadar menyamai):**
@@ -84,8 +87,18 @@ tiap rilis besar.
    memang all-time). Kita duluan ship ini sebelum Sponge (per riset
    Batch15, mereka baru rencanakan per Juli 2026) — selling point nyata,
    bukan cuma catch-up. Detail: `PROJECT_STATE.md`.
-4. **Verifikasi + expose Sort (size/date/name) di layar Swipe**, bukan
-   cuma Home — kalau ternyata belum ada, ini prioritas tinggi juga.
+4. ✅ **Sort (size/date/name) di layar Swipe** (Batch20) — **FASE A
+   SELESAI 4/4**. Audit: sort sudah otomatis berlaku di SwipeScreen sejak
+   awal (`MediaRepository.group()` sort items sebelum grouping — tidak
+   ada gap fungsional yang perlu diperbaiki). Yang ditambahkan: ikon Sort
+   di top bar SwipeScreen supaya bisa ganti sort tanpa keluar ke Home;
+   `MediaRepository.sortItems` dibuka jadi public biar SwipeScreen pakai
+   logic sort yang sama persis (bukan duplikat). Ganti sort mid-session
+   reset posisi swipe ke awal (posisi lama tidak lagi valid di urutan
+   baru) — didokumentasikan di `PROJECT_STATE.md`.
+
+**Fase A (tutup gap fungsional inti vs Sponge) selesai 4/4 di Batch20.**
+Lanjut Fase B.
 
 ### Fase B — Diferensiasi lewat AI/on-device intelligence
 5. **Duplicate & near-duplicate detection** — perceptual hash (pHash)

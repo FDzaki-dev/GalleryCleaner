@@ -8,7 +8,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.*
@@ -42,11 +44,32 @@ fun SwipeScreen(
     onFinishWithDeletions: (List<MediaItem>) -> Unit,
     onCompressRequest: (List<MediaItem>) -> Unit = {},
     existingFolders: List<String> = emptyList(),
-    onOrganizeRequest: (List<MediaItem>, String) -> Unit = { _, _ -> }
+    onOrganizeRequest: (List<MediaItem>, String) -> Unit = { _, _ -> },
+    sortOption: SortOption = SortOption.DATE,
+    onSortChange: (SortOption) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     var index by remember(group.key) { mutableIntStateOf(0) }
+    // Re-sorted view of this folder's items — ROADMAP Fase A item 4.
+    // Audit finding (Batch20): Sort already reached SwipeScreen correctly
+    // even before this change, because MediaRepository.group() sorts items
+    // BEFORE grouping, so group.items arrives here pre-sorted by whatever
+    // sortOption was active on Home at the moment the folder was opened.
+    // What was actually missing was the ability to CHANGE sort without
+    // backing out to Home first — this menu + sortedItems is that.
+    // MediaRepository.sortItems made public (was private) specifically so
+    // this reuses the exact same sort logic Home uses, rather than a
+    // second implementation that could silently drift from it.
+    val sortedItems = remember(group.items, sortOption) {
+        MediaRepository.sortItems(group.items, sortOption)
+    }
+    // Tracks the sort actually last applied to `index`/progress, separate
+    // from the `sortOption` prop itself — lets the effect below tell "user
+    // just changed sort mid-session" (reset position) apart from "prop
+    // arrived already matching, nothing to reset" (initial composition,
+    // must NOT clobber a restored resume position).
+    var lastAppliedSort by remember(group.key) { mutableStateOf(sortOption) }
     val pendingDeletes = remember(group.key) { mutableStateListOf<MediaItem>() }
     // Items sent off to a different folder via "Organize" — kept separate
     // from pendingDeletes (they're not deleted, and onFinishWithDeletions'
@@ -75,8 +98,24 @@ fun SwipeScreen(
     val gridSelected = remember(group.key) { mutableStateListOf<Long>() }
 
     LaunchedEffect(group.key) {
-        index = progressStore.progressFlow(group.key).first().coerceIn(0, group.items.size)
+        index = progressStore.progressFlow(group.key).first().coerceIn(0, sortedItems.size)
         restored = true
+    }
+
+    // Fires only on an actual mid-session sort change (see lastAppliedSort
+    // doc comment above) — a resort invalidates what position `index`
+    // pointed at (item N under DATE order isn't item N under SIZE order),
+    // so position + the one-step undo are reset rather than left pointing
+    // at the wrong photo. pendingDeletes/pendingOrganized are untouched:
+    // those are id-based sets, not positional, so they stay correct
+    // regardless of reordering.
+    LaunchedEffect(sortOption) {
+        if (sortOption != lastAppliedSort) {
+            lastAppliedSort = sortOption
+            index = 0
+            lastDecision = null
+            progressStore.saveProgress(group.key, 0)
+        }
     }
 
     // Quietly warm the image cache for the next couple of photos so the swipe
@@ -87,10 +126,10 @@ fun SwipeScreen(
     // of warming the one the card will actually ask for. That used to be
     // 900 here vs 600 on the card: every prefetch was pure waste, decoding
     // and caching a bitmap nothing ever displayed.
-    LaunchedEffect(index, group.key) {
+    LaunchedEffect(index, group.key, sortOption) {
         val loader = context.imageLoader
         (index + 1..index + 2).forEach { i ->
-            group.items.getOrNull(i)?.let { item ->
+            sortedItems.getOrNull(i)?.let { item ->
                 loader.enqueue(
                     ImageRequest.Builder(context)
                         .data(item.uri)
@@ -121,14 +160,14 @@ fun SwipeScreen(
     val skipIds = pendingDeleteIds + pendingOrganizedIds
     val currentItem = run {
         var i = index
-        while (i < group.items.size && group.items[i].id in skipIds) i++
-        group.items.getOrNull(i)
+        while (i < sortedItems.size && sortedItems[i].id in skipIds) i++
+        sortedItems.getOrNull(i)
     }
     // The raw `index` can undercount once items ahead of it have been
     // grid-deleted — find currentItem's real position for an accurate
     // "N of Total" label instead of just showing the stale pointer.
     val currentPosition = currentItem?.let { item ->
-        group.items.indexOfFirst { it.id == item.id } + 1
+        sortedItems.indexOfFirst { it.id == item.id } + 1
     } ?: (index + 1)
 
     Scaffold(
@@ -159,6 +198,30 @@ fun SwipeScreen(
                                 }
                             ) {
                                 Icon(Icons.Filled.Undo, contentDescription = "Undo last swipe")
+                            }
+                        }
+                    }
+                    // Sort control (ROADMAP Fase A item 4) — lets the current
+                    // sortOption be changed without leaving to Home first.
+                    // Available in both view modes (Grid benefits from it
+                    // just as much as Swipe does).
+                    var showSortMenu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { showSortMenu = true }) {
+                            Icon(Icons.Filled.Sort, contentDescription = "Sort: ${sortOption.label}")
+                        }
+                        DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
+                            SortOption.values().forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option.label) },
+                                    leadingIcon = if (option == sortOption) {
+                                        { Icon(Icons.Filled.Check, contentDescription = null) }
+                                    } else null,
+                                    onClick = {
+                                        showSortMenu = false
+                                        if (option != sortOption) onSortChange(option)
+                                    }
+                                )
                             }
                         }
                     }
@@ -198,31 +261,31 @@ fun SwipeScreen(
 
             if (viewMode == SwipeViewMode.Grid) {
                 GridSelectContent(
-                    items = group.items,
+                    items = sortedItems,
                     pendingDeleteIds = pendingDeleteIds,
                     selected = gridSelected,
                     onToggleSelect = { id ->
                         if (id in gridSelected) gridSelected.remove(id) else gridSelected.add(id)
                     },
                     onDeleteSelected = {
-                        group.items
+                        sortedItems
                             .filter { it.id in gridSelected && it.id !in pendingDeleteIds }
                             .forEach { pendingDeletes.add(it) }
                         gridSelected.clear()
                     },
                     onCompressSelected = {
-                        val toCompress = group.items.filter { it.id in gridSelected }
+                        val toCompress = sortedItems.filter { it.id in gridSelected }
                         onCompressRequest(toCompress)
                         gridSelected.clear()
                     },
                     pendingOrganizedIds = pendingOrganizedIds,
                     onOrganizeSelected = {
-                        organizeTarget = group.items.filter { it.id in gridSelected }
+                        organizeTarget = sortedItems.filter { it.id in gridSelected }
                     }
                 )
             } else {
                 Filmstrip(
-                    items = group.items,
+                    items = sortedItems,
                     currentIndex = index,
                     onSelect = { tapped ->
                         index = tapped
@@ -231,14 +294,14 @@ fun SwipeScreen(
                 )
 
                 if (currentItem != null) {
-                    InfoBar(item = currentItem, position = currentPosition, total = group.items.size)
+                    InfoBar(item = currentItem, position = currentPosition, total = sortedItems.size)
                 }
 
                 Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     if (currentItem == null) {
                         FinishedPanel(
                             deletedCount = pendingDeletes.size,
-                            reviewedCount = group.items.size,
+                            reviewedCount = sortedItems.size,
                             onDone = { finishAndExit() }
                         )
                     } else {

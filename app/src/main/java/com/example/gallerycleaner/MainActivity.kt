@@ -765,6 +765,14 @@ fun AppRoot(
                     onCompressRequest = ::performCompression,
                     existingFolders = existingFolders,
                     onOrganizeRequest = ::performOrganize,
+                    sortOption = sortOption,
+                    // Reuses the SAME sortOption state Home's own sort menu
+                    // writes to — one source of truth, deliberately not a
+                    // screen-local copy. Changing sort from inside
+                    // SwipeScreen also changes what Home shows next time,
+                    // which matches how every other shared setting in this
+                    // app already behaves (groupMode, randomModeEnabled).
+                    onSortChange = { sortOption = it },
                     onBack = { selectedGroup = null },
                     onFinishWithDeletions = { deletions ->
                         scope.launch {

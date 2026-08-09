@@ -69,7 +69,10 @@ object MediaRepository {
         return orderedKeys.map { key -> MediaGroup(key, grouped.getValue(key)) }
     }
 
-    private fun sortItems(items: List<MediaItem>, sort: SortOption): List<MediaItem> {
+    // Was private — made public (Batch20) so SwipeScreen's in-session sort
+    // control (ROADMAP Fase A item 4) reuses this exact logic instead of a
+    // second implementation that could drift from Home's.
+    fun sortItems(items: List<MediaItem>, sort: SortOption): List<MediaItem> {
         return when (sort) {
             SortOption.DATE -> items.sortedByDescending { it.dateTakenMillis }
             SortOption.SIZE -> items.sortedByDescending { it.sizeBytes }

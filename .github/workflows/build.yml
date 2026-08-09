@@ -117,8 +117,7 @@ jobs:
           set -euo pipefail
 
           VERSION_NAME="1.0.$(git rev-list --count HEAD)"
-          SHORT_SHA="$(git rev-parse --short HEAD)"
-          OUT_NAME="GalleryCleaner-v${VERSION_NAME}-${SHORT_SHA}.apk"
+          OUT_NAME="GalleryCleaner-v${VERSION_NAME}-Release.apk"
 
           cp \
             app/build/outputs/apk/release/app-release.apk \

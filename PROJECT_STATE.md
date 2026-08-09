@@ -1,7 +1,87 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v19 — Batch19 (ROADMAP Fase A item 3: Cleanup goal — shipped)
+v20 — Batch20 (ROADMAP Fase A item 4: Sort di layar Swipe — shipped. **FASE A SELESAI 4/4.**) + fix nama APK release
+
+## Sort di Layar Swipe (Batch20) — Fase A selesai
+Item terakhir Fase A di `ROADMAP.md`.
+
+**Audit finding**: tidak seperti kasus `moveTo` (Batch17, klaim salah), kali
+ini klaim roadmap ("perlu diverifikasi") memang perlu verifikasi murni —
+dan hasilnya: sort SUDAH bekerja benar di SwipeScreen sejak awal. Alurnya:
+`MainActivity`'s `LaunchedEffect(activeMedia, groupMode, sortOption)`
+memanggil `MediaRepository.group(activeMedia, groupMode, sortOption)`, dan
+`group()` MEMANGGIL `sortItems()` SEBELUM melakukan `groupBy` — jadi setiap
+`MediaGroup.items` yang terbentuk sudah dalam urutan sortOption yang aktif
+saat itu, SEBELUM pernah sampai ke `SwipeScreen`. Tidak ada bug, tidak ada
+kode yang hilang. Diverifikasi dengan membaca `MediaRepository.kt` baris ke
+baris, bukan asumsi/grep-dangkal (pelajaran dari kesalahan audit Batch15).
+
+**Yang genuinely hilang**: kemampuan mengganti sort SAAT SEDANG di dalam
+SwipeScreen, tanpa mundur ke Home dulu. Itu yang dibangun batch ini:
+- `data/media/MediaRepository.kt`: `sortItems()` diubah dari `private` ke
+  public — satu-satunya perubahan di file ini. `SwipeScreen` sekarang
+  memanggil fungsi yang SAMA PERSIS yang dipakai `group()`, menghindari
+  risiko dua implementasi sort yang perlahan-lahan drift beda hasil.
+- `presentation/screen/SwipeScreen.kt`: param baru `sortOption: SortOption
+  = SortOption.DATE`, `onSortChange: (SortOption) -> Unit = {}`.
+  `val sortedItems = remember(group.items, sortOption) { MediaRepository.sortItems(group.items, sortOption) }`
+  — SEMUA 13 referensi `group.items` di file ini diganti jadi `sortedItems`
+  (grid multi-select, filmstrip, `currentItem`/`skipIds` lookup, info bar
+  posisi, finished-panel reviewed count, prefetch 2-ahead). Ikon Sort baru
+  di top bar (tersedia di kedua view mode Swipe & Grid) — `DropdownMenu`
+  3 opsi dengan centang di opsi yang sedang aktif.
+- **Reset posisi saat ganti sort mid-session (desain sadar)**: `index`
+  adalah integer posisi ke dalam list. Kalau urutan list berubah (mis.
+  dari Date ke Size), posisi lama menunjuk ke foto yang beda — tidak bisa
+  dipertahankan begitu saja. `LaunchedEffect(sortOption)` dengan tracker
+  `lastAppliedSort` (state terpisah dari prop `sortOption`) mendeteksi
+  PERUBAHAN sebenarnya (bukan initial composition, yang nilainya sama
+  dengan `lastAppliedSort` sehingga tidak memicu reset) dan reset
+  `index`/`lastDecision`/progress ke 0. `pendingDeletes`/`pendingOrganized`
+  TIDAK direset — keduanya `Set<Long>` berbasis id, bukan posisi, jadi
+  aman dari reshuffle urutan apa pun.
+- `MainActivity.kt`: `sortOption`/`onSortChange` diteruskan ke
+  `SwipeScreen` menggunakan STATE GLOBAL yang sama dengan sort menu di
+  Home (bukan state lokal terpisah untuk SwipeScreen) — ganti sort dari
+  dalam SwipeScreen juga mengubah apa yang Home tampilkan berikutnya,
+  konsisten dengan pola `groupMode`/`randomModeEnabled` yang sudah lebih
+  dulu ada di app ini.
+- Verifikasi: brace/paren balanced 0/0 di 3 file (`SwipeScreen.kt`,
+  `MediaRepository.kt`, `MainActivity.kt`). Grep ulang `group\.items` di
+  `SwipeScreen.kt` — 0 sisa referensi fungsional (2 match tersisa cuma
+  komentar penjelasan). Single call-site check: `GridSelectContent(`/
+  `Filmstrip(`/`SwipeScreen(` masing-masing 1 tempat pemanggilan.
+
+**🎉 ROADMAP Fase A (tutup gap fungsional inti vs Sponge) SELESAI 4/4**:
+Random clean mode (16), Organize/3rd swipe action (17, fix 18), Cleanup
+goal (19), Sort di Swipe (20). Lanjut Fase B (AI on-device: duplicate
+detection, blur detection, backup-before-delete) di batch berikutnya.
+
+## Fix Nama File APK Release (Batch20, permintaan user)
+User minta hash commit acak di nama file APK Release diganti kata
+"Release". Sebelum: `GalleryCleaner-v1.0.22-3e0649f.apk` (lihat screenshot
+GitHub Release v1.0.143 yang dilampirkan user — ironisnya versionName di
+nama APK, `1.0.22`, juga tidak sinkron dengan nomor tag release
+`v1.0.143`; itu 2 skema angka berbeda — `VERSION_NAME` dari
+`git rev-list --count HEAD` vs tag dari `github.run_number` — TAPI ini
+DI LUAR permintaan user, tidak disentuh, hanya dicatat sebagai temuan).
+- `.github/workflows/build.yml` step "Rename APK": `OUT_NAME` sebelumnya
+  `GalleryCleaner-v${VERSION_NAME}-${SHORT_SHA}.apk` (SHORT_SHA dari
+  `git rev-parse --short HEAD`) → sekarang
+  `GalleryCleaner-v${VERSION_NAME}-Release.apk`. Baris `SHORT_SHA=...`
+  yang cuma dipakai di situ ikut dihapus (sudah tidak terpakai di step
+  ini — `SHORT_SHA` di step "Build signed release APK" untuk nama
+  `LOG_FILE` adalah variable shell LOKAL berbeda, terpisah, tidak
+  tersentuh oleh perubahan ini).
+- Protected asset (`.github/workflows/*`) — perubahan MINIMAL, cuma 1
+  baris nama file, sisanya (build steps, secrets, keystore, signature
+  verification, Release publishing) sama sekali tidak disentuh.
+- Verifikasi: brace/paren balanced 0/0 di `build.yml`.
+- **Catatan untuk verifikasi user**: efek baru terlihat di run CI
+  berikutnya (release berikutnya akan bernama
+  `GalleryCleaner-v1.0.144-Release.apk` atau serupa, bukan lagi diakhiri
+  hash commit).
 
 ## Cleanup Goal (Batch19)
 Mengeksekusi item 3 Fase A di `ROADMAP.md` — item terakhir yang kompetitor
@@ -13,11 +93,13 @@ bukan cuma catch-up.
 - **Desain sadar**: goal ditrack terhadap `totalFreedBytes` ALL-TIME (bukan per-bulan/per-minggu). Tidak ada auto-reset. Kalau user mau "goal baru bulan ini", mereka set ulang manual — konsisten dengan baris "All time: X freed" yang sudah lebih dulu ada di dashboard yang sama (kalau goal tracked periodik tapi baris di sebelahnya all-time, dua angka storage yang bersebelahan tapi beda basis waktu akan membingungkan).
 - Verifikasi: brace/paren balanced 0/0 di 4 file. Single call-site untuk `StorageDashboard(`/`HomeScreen(`.
 
-## Belum Dikerjakan (masih tertunda, prioritas berikutnya)
-- **ROADMAP Fase A item 4 (SATU-SATUNYA sisa Fase A)** — verifikasi + expose Sort (size/date/name) di layar Swipe: `SortOption` dipakai di Home, belum dicek/dipasang eksplisit di `SwipeScreen`/`Filmstrip`. Setelah ini, Fase A (gap fungsional inti vs Sponge) selesai 4/4 — lanjut Fase B (AI on-device: duplicate/blur detection, backup-before-delete).
-- Filmstrip belum secara visual meredupkan item yang sudah di-organize (Batch17, kosmetik minor).
-- Belum ada test end-to-end nyata untuk Organize (no emulator di sandbox) — sudah lolos 1x CI fix (Batch18), tapi belum dikonfirmasi manual di device asli terutama jalur legacy API 24-28.
-- **Item lama, masih menunggu keputusan user** (lihat detail lengkap di section Batch14 di bawah): (a) cascade `MidnightSkeuoButton`/`MidnightSkeuoSlot` — butuh keputusan extend-warna vs cascade-parsial; (b) Phase-1b flat→sub-package restructure; (c) Batch10-19 belum ada 1 run CI hijau yang terkonfirmasi user (Batch18 fix run141, belum ada laporan run142+ sukses).
+## Belum Dikerjakan (masih tertunda, prioritas berikutnya) — snapshot Batch18, LIHAT BAGIAN ATAS untuk status terkini
+- ~~ROADMAP Fase A item 4~~ — ✅ shipped Batch20, Fase A selesai 4/4. Lanjut Fase B (AI on-device: duplicate/blur detection, backup-before-delete) — belum dimulai.
+- Filmstrip belum secara visual meredupkan item yang sudah di-organize (Batch17, kosmetik minor, masih terbuka).
+- Belum ada test end-to-end nyata untuk Organize (no emulator di sandbox) — sudah lolos 1x CI fix (Batch18), masih belum dikonfirmasi manual di device asli terutama jalur legacy API 24-28.
+- ~~Batch10-19 belum ada 1 run CI hijau yang terkonfirmasi user~~ — ✅ terkonfirmasi Batch20: user melampirkan screenshot GitHub Release v1.0.143 sukses (APK 11.2MB ter-publish, signed, run142-ish). CI hijau sejak fix Batch18.
+- **Item lama, masih menunggu keputusan user**: (a) cascade `MidnightSkeuoButton`/`MidnightSkeuoSlot` — butuh keputusan extend-warna vs cascade-parsial (detail lengkap di section Batch14 di bawah); (b) Phase-1b flat→sub-package restructure — masih butuh compiler nyata per-layer, tidak tersedia di sandbox.
+- **Temuan baru (bukan diminta, sekadar dicatat)**: `VERSION_NAME` di nama file APK (dari `git rev-list --count HEAD`, mis. "1.0.22") tidak sinkron dengan nomor tag GitHub Release (dari `github.run_number`, mis. "v1.0.143") — dua skema angka berbeda dalam 1 workflow. Belum diminta user untuk disatukan, dibiarkan sampai ada instruksi eksplisit.
 
 ## Fix Batch18 Build Failure (dari log-fail_main_run141-attempt1_9282172.log, user)
 - Error: `MainActivity.kt:629:21 Unresolved reference: applyOrganizeResult`, task `:app:compileReleaseKotlin` FAILED.
