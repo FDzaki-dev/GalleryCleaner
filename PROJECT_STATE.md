@@ -1,7 +1,20 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v13 — Batch13 (FULL Theme Override: Skeuomorphism-Dark Midnight Blue Edition — hapus total sistem tema lama)
+v14 — Batch14 (Cleanup: hapus 10 dead color token yang disetujui user, verifikasi 0 referensi)
+
+## Dead Token Cleanup — Color.kt (Batch14)
+User approve pending item dari Batch12 ("Approval dibutuhkan untuk hapus dead color tokens"). Diverifikasi ulang dulu (grep lintas SELURUH project, bukan cuma app/src) karena token dead ini terakumulasi dari 2 override tema berturut-turut (AMOLED Batch2, lalu Midnight Batch13) yang tidak pernah membersihkan sisa palet "Graphite" original:
+- Dihapus (0 referensi nyata, hanya deklarasi diri sendiri di `Color.kt`): `GraphiteBg`, `GraphiteSurface`, `GraphiteSurfaceRaised`, `GraphiteOutline`, `TextPrimary`, `TextSecondary`, `TextMuted` (versi top-level lama — beda dari `SkeuoMidnightTheme.TextMuted` yang masih dipakai penuh), `AccentGold`, `SageKeepDim`, `CoralDeleteDim`.
+- Dipertahankan (masih dipakai `Theme.kt`/`SettingsScreen.kt`): `SageKeep`, `CoralDelete` (primary/secondary Signature + swatch picker) — sengaja tidak disentuh, app-critical Keep/Delete semantic, precedent sejak Batch2.
+- `Color.kt`: 73 baris → 46 baris. Palet Amber Reserve & Indigo Noir (2 theme style lain) TIDAK disentuh — semua tokennya masih aktif dipakai `Theme.kt`.
+- Verifikasi: brace/paren balanced 0/0 di seluruh `app/src/**/*.kt` (bukan cuma file yang diedit), grep ulang pasca-hapus mengonfirmasi `SageKeep`/`CoralDelete` masih wired penuh.
+
+## Belum Dikerjakan (masih tertunda, prioritas berikutnya)
+- **Cascade `MidnightSkeuoButton`/`MidnightSkeuoSlot` ke layar lain** — diaudit ulang Batch14: TERNYATA sebagian besar `Button(`/`TextButton(` di HomeScreen/SwipeScreen/TrashScreen/OnboardingScreen (17 titik, 8 file) TIDAK cocok jadi swap langsung. Alasan: (1) banyak adalah `TextButton`/`OutlinedButton` kecil di dalam AlertDialog (Cancel/OK/Reset) — mengubahnya jadi tombol skeuomorphic timbul 56dp akan merusak proporsi dialog; (2) satu `Button` di `HomeScreenSections.kt` (tombol "Clean up") sengaja pakai `colorScheme.secondary` (CoralDelete) untuk makna semantik delete — `MidnightSkeuoButton` dari spec tidak punya parameter warna (hardcode `RaisedGradient`+`TextMuted`/`ElectricCyan`), swap paksa akan menghilangkan sinyal warna Keep/Delete yang app-critical. Kesimpulan: cascade literal spec (tanpa extend API) TIDAK aman untuk 5+ dari 17 titik ini — butuh keputusan user dulu: (a) extend `MidnightSkeuoButton` dengan parameter warna opsional (di luar cakupan spec asli), atau (b) cascade hanya ke situs yang benar-benar netral/non-semantik. BELUM dieksekusi, menunggu arahan.
+- Phase-1b (flat package → real sub-package) — masih butuh compiler nyata per-layer, tidak tersedia di environment ini.
+- `IconButton`/`RadioButton`/`FilterChip` di `SettingsScreen.kt` masih M3 default — spec Midnight tidak menyediakan varian untuk itu.
+- Batch10-14 belum dikonfirmasi hijau di CI — perlu push & cek run berikutnya.
 
 ## FULL Theme Override — Skeuomorphism-Dark Midnight Blue Edition (Batch13)
 Klarifikasi user atas Batch12: "override" = hapus SEMUA konfigurasi tema lama, timpa 100% dengan 1 spec baru — bukan partial (ColorScheme saja, komponen lama dipertahankan berdampingan) seperti Batch12.
@@ -148,15 +161,9 @@ Batch1: FAILED→fixed. Batch2: FAILED(compile)→fixed Batch3. Batch4: FAILED(`
 - .gitignore
 - release.keystore (tidak disertakan di repo, via secrets)
 
-## Perubahan Batch Ini
+## Perubahan Batch Ini (Batch1, historis)
 1. Fix `app/build.gradle.kts` — tambah `}` yang hilang pada signingConfigs.release (baris ~61-62), penyebab `Expecting '}'` di line 123.
 2. Update `.github/workflows/build.yml` — step build sekarang tee output ke `test-result-<branch>-attempt-<run_attempt>.log` dan upload sebagai artifact HANYA jika job gagal (`if: failure()`), agar log kegagalan berikutnya tinggal diambil dari GitHub Actions Artifacts tanpa perlu re-run.
+- 4 GradleException guard clause (keystore path/password/alias/key password) — diverifikasi struktur benar sejak fix Batch1; masih perlu 1x CI run hijau sebagai bukti final.
 
-## Belum Dikerjakan / Catatan
-- **Skeuomorphic cascade ke komponen bersama (next batch, prioritas tinggi kalau mau visual 100% berubah)**: swap `GlassSurface`/`GlassCard`/`TactileButton`/`TactileSwitch`/`TactileSlider`/`GlassNavigation` dari `.background(GlassBase/GlassElevated)+.border(GlassBorder)` → `.skeuomorphicDark()+.background(metallicDarkBrush)`. Ini akan mengubah tampilan di SEMUA layar sekaligus (HomeScreen/SwipeScreen/SettingsScreen/TrashScreen) — scope besar, perlu dipecah per-komponen dengan checkpoint, bukan sekali jalan.
-- 4 GradleException guard clause (keystore path/password/alias/key password) sudah benar strukturnya setelah fix Batch1 — perlu verifikasi ulang via CI run berikutnya.
-- Migrasi Card/Button lain (HomeScreen*, SwipeScreen*, TrashScreen, OnboardingScreen) ke `GlassCard`/`TactileButton` — perlu diputuskan dulu: tetap Glass, atau langsung skeuomorphic (lihat poin di atas), supaya tidak migrasi 2x.
-- `IconButton`/`RadioButton`/`FilterChip` di SettingsScreen.kt masih M3 default — belum ada varian tactile untuk itu di `ui/components/`.
-- Approval dibutuhkan untuk hapus dead color tokens di Color.kt (lihat daftar di atas).
-- Phase-1b (flat package → real sub-package `com.example.gallerycleaner.data.media` dst + tambah import) — belum dikerjakan, butuh compiler nyata per-layer.
-- Batch10, Batch11, Batch12 (ini) — belum dikonfirmasi hijau di CI, perlu di-push & dicek run berikutnya.
+(Lihat "Belum Dikerjakan" di bagian atas file ini untuk daftar pending terkini — item lama di sini sudah diproses/superseded.)

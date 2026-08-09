@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v14_Batch14 — 2026-08-09
+- Cleanup (approved pending item dari Batch12): hapus 10 dead color token di `Color.kt` (`GraphiteBg`, `GraphiteSurface`, `GraphiteSurfaceRaised`, `GraphiteOutline`, `TextPrimary`, `TextSecondary`, `TextMuted`-lama, `AccentGold`, `SageKeepDim`, `CoralDeleteDim`) — 0 referensi nyata setelah diverifikasi grep lintas seluruh project. `SageKeep`/`CoralDelete` dipertahankan (masih dipakai `Theme.kt` primary/secondary + swatch picker).
+- Audit (bukan eksekusi): 17 titik `Button`/`TextButton`/`OutlinedButton` M3 di 8 file diperiksa untuk kandidat cascade `MidnightSkeuoButton` — ditemukan tidak aman untuk swap langsung tanpa extend API (lihat PROJECT_STATE "Belum Dikerjakan"), jadi TIDAK dieksekusi batch ini, menunggu keputusan user.
+
 ## v13_Batch13 — 2026-08-09
 - FULL Theme Override (klarifikasi user: hapus total, bukan partial): 11 file sistem tema/komponen lama dihapus (`GlassTokens.kt`, `TactileTokens.kt`, `SkeuoTokens.kt`-Cyan, `GlassCard.kt`, `GlassSurface.kt`, `GlassNavigation.kt`, `TactileButton.kt`, `TactileSlider.kt`, `TactileSwitch.kt`, `SkeuoModifier.kt`-lama, `SkeuoDarkButton.kt`-lama). Digantikan 100% oleh spec "Skeuomorphism-Dark Midnight Blue Edition": 4 file baru (`SkeuoMidnightTokens.kt`, `SkeuoMidnightModifier.kt`, `MidnightSkeuoButton.kt`, `MidnightSkeuoSlot.kt`) + `Theme.kt` (`SignatureDark` ditulis ulang total, 0 referensi token lama tersisa).
 - Fix: `SettingsScreen.kt` — 3× `TactileSwitch` → M3 `Switch` (spec baru tidak sediakan varian switch), `ThemeStyleCard` direvert dari `GlassCard` ke Row manual (tetap theme-agnostic untuk 3 opsi picker), preview swatch "Signature" pakai `SkeuoMidnightTheme.BaseSurface`.
