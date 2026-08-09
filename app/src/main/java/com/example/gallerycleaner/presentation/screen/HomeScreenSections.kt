@@ -171,8 +171,12 @@ internal fun StorageDashboard(
     trashReclaimableBytes: Long,
     largestItems: List<MediaItem> = emptyList(),
     totalFreedBytes: Long,
-    totalDeletedCount: Int
+    totalDeletedCount: Int,
+    cleanupGoalBytes: Long = DEFAULT_CLEANUP_GOAL_BYTES,
+    onCleanupGoalChange: (Long) -> Unit = {}
 ) {
+    var showGoalDialog by remember { mutableStateOf(false) }
+
     Surface(
         color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(20.dp),
@@ -197,6 +201,52 @@ internal fun StorageDashboard(
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
+            // Cleanup goal (ROADMAP Fase A item 3) — always shown, not
+            // gated behind totalDeletedCount > 0 like the "all time" line
+            // below, since an empty progress bar toward a goal is itself
+            // useful information (motivates a first session) whereas an
+            // empty "all time" line would just be noise.
+            Spacer(Modifier.height(14.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+            Spacer(Modifier.height(14.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { showGoalDialog = true },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Cleanup goal",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    "${formatBytes(totalFreedBytes.coerceAtMost(cleanupGoalBytes))} / ${formatBytes(cleanupGoalBytes)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            val goalProgress = if (cleanupGoalBytes > 0) {
+                (totalFreedBytes.toFloat() / cleanupGoalBytes.toFloat()).coerceIn(0f, 1f)
+            } else 0f
+            LinearProgressIndicator(
+                progress = { goalProgress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = if (goalProgress >= 1f) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.secondary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+            if (goalProgress >= 1f) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Goal reached! Tap to set a new one.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
             if (totalDeletedCount > 0) {
                 Spacer(Modifier.height(12.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
@@ -209,6 +259,68 @@ internal fun StorageDashboard(
             }
         }
     }
+
+    if (showGoalDialog) {
+        CleanupGoalDialog(
+            currentGoalBytes = cleanupGoalBytes,
+            onConfirm = {
+                onCleanupGoalChange(it)
+                showGoalDialog = false
+            },
+            onDismiss = { showGoalDialog = false }
+        )
+    }
+}
+
+/** Preset chips cover the common cases with one tap; the slider handles
+ *  everything in between without needing a raw numeric-entry field (goal
+ *  values don't need byte-level precision — nobody sets a goal of exactly
+ *  "1.37 GB"). Range 100 MB .. 20 GB chosen to comfortably bracket
+ *  DEFAULT_CLEANUP_GOAL_BYTES (2 GB) on both sides. */
+@Composable
+private fun CleanupGoalDialog(
+    currentGoalBytes: Long,
+    onConfirm: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val presetsBytes = listOf(500_000_000L, 1_000_000_000L, 2_000_000_000L, 5_000_000_000L, 10_000_000_000L)
+    var sliderBytes by remember { mutableStateOf(currentGoalBytes.toFloat()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Set cleanup goal") },
+        text = {
+            Column {
+                Text(
+                    formatBytes(sliderBytes.toLong()),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.height(8.dp))
+                Slider(
+                    value = sliderBytes,
+                    onValueChange = { sliderBytes = it },
+                    valueRange = 100_000_000f..20_000_000_000f
+                )
+                Spacer(Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    presetsBytes.forEach { preset ->
+                        FilterChip(
+                            selected = sliderBytes.toLong() == preset,
+                            onClick = { sliderBytes = preset.toFloat() },
+                            label = { Text(formatBytes(preset)) }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(sliderBytes.toLong()) }) { Text("Set goal") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
 }
 
 /** A horizontally-scrolling "memories" strip — deliberately distinct from

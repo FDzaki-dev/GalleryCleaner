@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -27,6 +28,13 @@ private val HAPTIC_FEEDBACK_ENABLED_KEY = booleanPreferencesKey("haptic_feedback
 private val APP_LOCK_ENABLED_KEY = booleanPreferencesKey("app_lock_enabled")
 private val HAS_SEEN_ONBOARDING_KEY = booleanPreferencesKey("has_seen_onboarding")
 private val RANDOM_MODE_ENABLED_KEY = booleanPreferencesKey("random_mode_enabled")
+private val CLEANUP_GOAL_BYTES_KEY = longPreferencesKey("cleanup_goal_bytes")
+
+/** Default cleanup goal (ROADMAP Fase A item 3): 2 GB. Arbitrary but
+ *  reasonable starting target — big enough to feel worth working toward,
+ *  small enough that a first cleaning session can make a visible dent
+ *  rather than the progress bar looking permanently near-empty. */
+const val DEFAULT_CLEANUP_GOAL_BYTES: Long = 2_000_000_000L
 
 /** Everything the user can configure about how the app behaves, kept in one
  *  place the way a Settings screen in any polished app would. */
@@ -139,5 +147,20 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setRandomModeEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[RANDOM_MODE_ENABLED_KEY] = enabled }
+    }
+
+    /** Cleanup goal (ROADMAP Fase A item 3): a target number of bytes to
+     *  free, tracked against `StatsStore.totalFreedBytesFlow` (all-time
+     *  cumulative, not reset per period — a goal that silently reset would
+     *  be confusing since nothing else about "all time" stats resets
+     *  either). Kept in `SettingsStore` rather than `StatsStore` since it's
+     *  a user-set preference, not a derived/recorded stat — same
+     *  separation of concerns the rest of this store already follows. */
+    val cleanupGoalBytesFlow: Flow<Long> = context.settingsDataStore.data.map { prefs ->
+        prefs[CLEANUP_GOAL_BYTES_KEY] ?: DEFAULT_CLEANUP_GOAL_BYTES
+    }
+
+    suspend fun setCleanupGoalBytes(bytes: Long) {
+        context.settingsDataStore.edit { prefs -> prefs[CLEANUP_GOAL_BYTES_KEY] = bytes.coerceAtLeast(1L) }
     }
 }

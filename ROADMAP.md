@@ -40,9 +40,10 @@ tiap rilis besar.
 - ❌ **Move-to-folder saat swipe** — ✅ shipped Batch17 (koreksi: primitive
   `moveTo` yang diklaim "sudah ada" di Batch15 TERNYATA tidak pernah ada;
   dibangun baru dari nol, lihat item 2 Fase A dan `PROJECT_STATE.md`)
-- ❌ **Cleanup goal** (target custom, mis. "bebaskan 2GB bulan ini") —
-  Sponge sendiri baru mau tambahin ini (per balasan developer Juli 2026),
-  jadi ini kesempatan untuk **duluan**, bukan sekadar catch-up
+- ❌ **Cleanup goal** (target custom, mis. "bebaskan 2GB bulan ini") — ✅
+  shipped Batch19 (target byte, slider+preset, progress bar di
+  StorageDashboard, tracked terhadap `StatsStore.totalFreedBytesFlow`
+  all-time)
 - ❌ **Multi-bahasa** — cuma `values/` default (Inggris), belum ada
   `values-es`, `values-pt-rBR`, dst
 - ❌ **Sort by size/date/name di layar Swipe** — perlu diverifikasi apakah
@@ -75,10 +76,14 @@ tiap rilis besar.
    identik `ImageCompressor`), tombol "Organize" ke-3 di `ActionButtonRow`
    + aksi bulk "Organize N" di grid mode, `OrganizeFolderDialog` (pilih
    folder existing atau buat baru). Detail: `PROJECT_STATE.md`.
-3. **Cleanup goal**: target storage (mis. slider GB) atau target jumlah
-   foto, progress bar di HomeScreen dashboard, notifikasi saat tercapai.
-   Ini fitur yang Sponge SENDIRI baru rencanakan — kalau kita duluan
-   ship, ini jadi selling point nyata, bukan cuma parity.
+3. ✅ **Cleanup goal** (Batch19) — target byte via
+   `SettingsStore.cleanupGoalBytesFlow` (default 2GB), dialog slider +
+   preset chips (500MB/1/2/5/10GB), progress bar di `StorageDashboard`
+   (HomeScreen), tracked terhadap `StatsStore.totalFreedBytesFlow`
+   all-time (bukan reset per periode — konsisten dengan stat lain yang
+   memang all-time). Kita duluan ship ini sebelum Sponge (per riset
+   Batch15, mereka baru rencanakan per Juli 2026) — selling point nyata,
+   bukan cuma catch-up. Detail: `PROJECT_STATE.md`.
 4. **Verifikasi + expose Sort (size/date/name) di layar Swipe**, bukan
    cuma Home — kalau ternyata belum ada, ini prioritas tinggi juga.
 

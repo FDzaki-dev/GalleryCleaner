@@ -1,7 +1,23 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v18 — Batch18 (Fix CI build failure Batch17: forward-reference lokal fun `applyOrganizeResult`)
+v19 — Batch19 (ROADMAP Fase A item 3: Cleanup goal — shipped)
+
+## Cleanup Goal (Batch19)
+Mengeksekusi item 3 Fase A di `ROADMAP.md` — item terakhir yang kompetitor
+(Sponge) sendiri belum ship per riset Batch15, jadi ini genuinely "duluan"
+bukan cuma catch-up.
+- `SettingsStore.kt`: `cleanupGoalBytesFlow`/`setCleanupGoalBytes(Long)`, key `cleanup_goal_bytes`. `DEFAULT_CLEANUP_GOAL_BYTES = 2_000_000_000L` (top-level const, dipakai juga sebagai default param di `HomeScreen`/`StorageDashboard` biar konsisten kalau flow belum ke-collect). Setter coerce `≥1L` — melindungi progress-bar division (`totalFreedBytes / cleanupGoalBytes`) dari divide-by-zero kalau user entah bagaimana set 0.
+- `HomeScreenSections.kt` — `StorageDashboard` diperluas: baris "Cleanup goal" (tap → buka dialog) + `LinearProgressIndicator` modern (`progress: () -> Float` lambda API, sesuai compose-bom 2024.06.00 / Material3 1.2.x — bukan overload Float lama yang deprecated). Warna primary + pesan "Goal reached!" saat progress ≥100%. `CleanupGoalDialog` (private, sama file): slider 100MB..20GB + 5 preset chip (500MB/1/2/5/10GB), preset ke-highlight kalau slider persis di situ.
+- `HomeScreen.kt`/`MainActivity.kt`: parameter tambahan diteruskan end-to-end (`cleanupGoalBytes`, `onCleanupGoalChange`), collect di `AppRoot` sejajar `totalFreedBytes`/`totalDeletedCount` yang sudah ada.
+- **Desain sadar**: goal ditrack terhadap `totalFreedBytes` ALL-TIME (bukan per-bulan/per-minggu). Tidak ada auto-reset. Kalau user mau "goal baru bulan ini", mereka set ulang manual — konsisten dengan baris "All time: X freed" yang sudah lebih dulu ada di dashboard yang sama (kalau goal tracked periodik tapi baris di sebelahnya all-time, dua angka storage yang bersebelahan tapi beda basis waktu akan membingungkan).
+- Verifikasi: brace/paren balanced 0/0 di 4 file. Single call-site untuk `StorageDashboard(`/`HomeScreen(`.
+
+## Belum Dikerjakan (masih tertunda, prioritas berikutnya)
+- **ROADMAP Fase A item 4 (SATU-SATUNYA sisa Fase A)** — verifikasi + expose Sort (size/date/name) di layar Swipe: `SortOption` dipakai di Home, belum dicek/dipasang eksplisit di `SwipeScreen`/`Filmstrip`. Setelah ini, Fase A (gap fungsional inti vs Sponge) selesai 4/4 — lanjut Fase B (AI on-device: duplicate/blur detection, backup-before-delete).
+- Filmstrip belum secara visual meredupkan item yang sudah di-organize (Batch17, kosmetik minor).
+- Belum ada test end-to-end nyata untuk Organize (no emulator di sandbox) — sudah lolos 1x CI fix (Batch18), tapi belum dikonfirmasi manual di device asli terutama jalur legacy API 24-28.
+- **Item lama, masih menunggu keputusan user** (lihat detail lengkap di section Batch14 di bawah): (a) cascade `MidnightSkeuoButton`/`MidnightSkeuoSlot` — butuh keputusan extend-warna vs cascade-parsial; (b) Phase-1b flat→sub-package restructure; (c) Batch10-19 belum ada 1 run CI hijau yang terkonfirmasi user (Batch18 fix run141, belum ada laporan run142+ sukses).
 
 ## Fix Batch18 Build Failure (dari log-fail_main_run141-attempt1_9282172.log, user)
 - Error: `MainActivity.kt:629:21 Unresolved reference: applyOrganizeResult`, task `:app:compileReleaseKotlin` FAILED.
@@ -45,15 +61,9 @@ nama "moveTo" tanpa verifikasi isi function-nya. Sudah dikoreksi di
 - `Filmstrip` (di `SwipeScreenGrid.kt`) belum secara visual meredupkan/mencoret item yang sudah di-organize — functional correctness tetap benar (swipe flow `skipIds` sudah skip item itu), ini murni kosmetik, beda dari item yang sudah di-delete yang juga belum ditandai di situ (pre-existing, bukan regresi batch ini).
 - Belum ada test end-to-end nyata (tidak ada emulator/compiler di environment ini) — perlu 1x build + manual test di device sebelum dianggap benar-benar solid, terutama jalur legacy (API 24-28) yang lebih jarang teruji di ekosistem modern.
 
-## Belum Dikerjakan (masih tertunda, prioritas berikutnya)
-- **ROADMAP Fase A item 3 — Cleanup goal**: target storage/jumlah foto + progress bar di HomeScreen. Belum ada model data untuk goal tersimpan (perlu `SettingsStore` key baru + UI slider/input + progress calculation dari `StatsStore`).
-- **ROADMAP Fase A item 4 — verifikasi Sort di layar Swipe**: `SortOption` dipakai di Home, belum dicek/dipasang eksplisit di `SwipeScreen`/`Filmstrip`.
-- **Cascade `MidnightSkeuoButton`/`MidnightSkeuoSlot` ke layar lain** — diaudit ulang Batch14: TERNYATA sebagian besar `Button(`/`TextButton(` di HomeScreen/SwipeScreen/TrashScreen/OnboardingScreen (17 titik, 8 file) TIDAK cocok jadi swap langsung. Alasan: (1) banyak adalah `TextButton`/`OutlinedButton` kecil di dalam AlertDialog (Cancel/OK/Reset) — mengubahnya jadi tombol skeuomorphic timbul 56dp akan merusak proporsi dialog; (2) satu `Button` di `HomeScreenSections.kt` (tombol "Clean up") sengaja pakai `colorScheme.secondary` (CoralDelete) untuk makna semantik delete — `MidnightSkeuoButton` dari spec tidak punya parameter warna (hardcode `RaisedGradient`+`TextMuted`/`ElectricCyan`), swap paksa akan menghilangkan sinyal warna Keep/Delete yang app-critical. Kesimpulan: cascade literal spec (tanpa extend API) TIDAK aman untuk 5+ dari 17 titik ini — butuh keputusan user dulu: (a) extend `MidnightSkeuoButton` dengan parameter warna opsional (di luar cakupan spec asli), atau (b) cascade hanya ke situs yang benar-benar netral/non-semantik. BELUM dieksekusi, menunggu arahan.
-- Phase-1b (flat package → real sub-package) — masih butuh compiler nyata per-layer, tidak tersedia di environment ini.
-- `IconButton`/`RadioButton`/`FilterChip` di `SettingsScreen.kt` masih M3 default — spec Midnight tidak menyediakan varian untuk itu.
-- Batch10-14 belum dikonfirmasi hijau di CI — perlu push & cek run berikutnya.
-
-## Random Clean Mode (Batch16)
+## Belum Dikerjakan (masih tertunda, prioritas berikutnya) — snapshot Batch16, LIHAT BAGIAN ATAS untuk status terkini
+- **ROADMAP Fase A item 3 — Cleanup goal**: ✅ shipped Batch19, lihat section di atas.
+- **ROADMAP Fase A item 4 — verifikasi Sort di layar Swipe**: masih pending, lihat section "Belum Dikerjakan" teratas.
 Mengeksekusi item pertama Fase A di `ROADMAP.md` ("tutup gap fungsional inti").
 - `SettingsStore.kt`: `randomModeEnabledFlow`/`setRandomModeEnabled(Boolean)` — key baru `random_mode_enabled`, default `false`.
 - `HomeScreen.kt`: param baru `randomModeEnabled: Boolean = false`, `onRandomModeToggle: (Boolean) -> Unit = {}`. Ikon Shuffle di top bar (antara Refresh dan Settings), tint primary saat aktif — quick toggle tanpa masuk Settings.

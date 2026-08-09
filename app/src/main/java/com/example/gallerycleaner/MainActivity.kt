@@ -465,6 +465,7 @@ fun AppRoot(
 
     val totalFreedBytes by statsStore.totalFreedBytesFlow.collectAsState(initial = 0L)
     val totalDeletedCount by statsStore.totalDeletedCountFlow.collectAsState(initial = 0)
+    val cleanupGoalBytes by settingsStore.cleanupGoalBytesFlow.collectAsState(initial = DEFAULT_CLEANUP_GOAL_BYTES)
 
     // Surface the biggest space hogs directly on the dashboard. This turns
     // storage pressure into an immediately actionable list instead of making
@@ -821,6 +822,10 @@ fun AppRoot(
                     randomModeEnabled = randomModeEnabled,
                     onRandomModeToggle = { enabled ->
                         scope.launch { settingsStore.setRandomModeEnabled(enabled) }
+                    },
+                    cleanupGoalBytes = cleanupGoalBytes,
+                    onCleanupGoalChange = { bytes ->
+                        scope.launch { settingsStore.setCleanupGoalBytes(bytes) }
                     }
                 )
             }

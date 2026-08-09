@@ -67,7 +67,9 @@ fun HomeScreen(
     onRefresh: () -> Unit,
     onCleanExpiredTrash: () -> Unit,
     randomModeEnabled: Boolean = false,
-    onRandomModeToggle: (Boolean) -> Unit = {}
+    onRandomModeToggle: (Boolean) -> Unit = {},
+    cleanupGoalBytes: Long = DEFAULT_CLEANUP_GOAL_BYTES,
+    onCleanupGoalChange: (Long) -> Unit = {}
 ) {
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -279,7 +281,9 @@ fun HomeScreen(
                         totalLibraryBytes = totalLibraryBytes,
                         trashReclaimableBytes = trashReclaimableBytes,
                         totalFreedBytes = totalFreedBytes,
-                        totalDeletedCount = totalDeletedCount
+                        totalDeletedCount = totalDeletedCount,
+                        cleanupGoalBytes = cleanupGoalBytes,
+                        onCleanupGoalChange = onCleanupGoalChange
                     )
                 }
 

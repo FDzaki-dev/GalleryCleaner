@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v19_Batch19 — 2026-08-10
+- Feature (ROADMAP Fase A, item 3): **Cleanup goal**. `SettingsStore.kt` — `cleanupGoalBytesFlow`/`setCleanupGoalBytes(Long)` (key `cleanup_goal_bytes`, default `DEFAULT_CLEANUP_GOAL_BYTES` = 2GB, coerced ≥1 to avoid div-by-zero in progress calc).
+- `HomeScreenSections.kt`: `StorageDashboard` — progress bar baru ("Cleanup goal" row, tap-to-edit) tracked `totalFreedBytes / cleanupGoalBytes` (coerced 0..1), warna primary saat goal tercapai + pesan "Goal reached!". `CleanupGoalDialog` baru — slider 100MB..20GB + 5 preset chips (500MB/1/2/5/10GB).
+- `HomeScreen.kt`/`MainActivity.kt`: param `cleanupGoalBytes`/`onCleanupGoalChange` diteruskan end-to-end, `settingsStore.cleanupGoalBytesFlow` di-collect di `AppRoot`.
+- Sengaja tracked terhadap `totalFreedBytes` ALL-TIME (bukan per periode) — tidak ada mekanisme reset goal otomatis; user set ulang goal manual kalau mau target baru. Konsisten dengan "All time: X freed" yang sudah ada di dashboard yang sama.
+- Verifikasi: brace/paren balanced 0/0 di 4 file (SettingsStore, HomeScreenSections, HomeScreen, MainActivity). Single call-site check: `StorageDashboard(`/`HomeScreen(` masing-masing 1 tempat pemanggilan.
+- ROADMAP Fase A selesai 3/4. Sisa: item 4 (verifikasi Sort di layar Swipe).
+
 ## v18_Batch18 — 2026-08-09
 - Fix CI build failure (run141/attempt1, log user): `compileReleaseKotlin` FAILED — `MainActivity.kt:629:21 Unresolved reference: applyOrganizeResult`. Root cause: Batch17 declared `applyOrganizeResult` (local fun) AFTER `organizeRequestLauncher`, whose callback lambda calls it — Kotlin local functions must already be in scope at point of use, even inside a nested lambda executed later. Fix: reordered so `applyOrganizeResult` is declared before `organizeRequestLauncher`/`performOrganize`. No logic changed, pure reorder.
 - Verifikasi: brace/paren balanced 0/0. Grep ulang seluruh `MainActivity.kt` untuk pola forward-reference serupa pada fungsi lokal lain (`applyOrganizeResult`/`performOrganize`/`performCompression`/`performPermanentDeletion`) — tidak ditemukan kasus lain.
