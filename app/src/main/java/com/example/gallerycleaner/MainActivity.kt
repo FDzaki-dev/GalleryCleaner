@@ -484,6 +484,7 @@ fun AppRoot(
     val totalFreedBytes by statsStore.totalFreedBytesFlow.collectAsState(initial = 0L)
     val totalDeletedCount by statsStore.totalDeletedCountFlow.collectAsState(initial = 0)
     val cleanupGoalBytes by settingsStore.cleanupGoalBytesFlow.collectAsState(initial = DEFAULT_CLEANUP_GOAL_BYTES)
+    val backupBeforeDeleteEnabled by settingsStore.backupBeforeDeleteEnabledFlow.collectAsState(initial = false)
 
     // Surface the biggest space hogs directly on the dashboard. This turns
     // storage pressure into an immediately actionable list instead of making
@@ -591,8 +592,13 @@ fun AppRoot(
         }
     }
 
-    fun performPermanentDeletion(items: List<MediaItem>) {
-        if (items.isEmpty()) return
+    // Declared BEFORE performPermanentDeletion below, same fix as Batch18's
+    // applyOrganizeResult/organizeRequestLauncher ordering (see that doc
+    // comment + PROJECT_STATE.md Batch18 / CI run 141): Kotlin local
+    // functions must already be in scope at their point of use — including
+    // inside a nested lambda — so declaring this after the function that
+    // references it would be an "Unresolved reference" build failure.
+    fun proceedWithPermanentDeletion(items: List<MediaItem>) {
         val uris = items.map { it.uri }
         if (Build.VERSION.SDK_INT >= 30) {
             pendingDeleteRetry = items
@@ -618,6 +624,27 @@ fun AppRoot(
                 pendingDeleteRetry = items
                 deleteRequestLauncher.launch(IntentSenderRequest.Builder(sender).build())
             }
+        }
+    }
+
+    /** ROADMAP Fase B item 7. Backup (if enabled) must run BEFORE the
+     *  delete request is even launched — it's the only point `item.uri` is
+     *  guaranteed still readable, on both the API 30+ system-dialog path
+     *  and the legacy direct-delete path above. Trade-off, documented in
+     *  `BackupHelper`: if the person cancels the API 30+ system dialog,
+     *  the backup copy was already made and is simply left behind —
+     *  harmless (an extra safety copy), unlike the alternative of backing
+     *  up only after a confirmed delete, which isn't possible once the
+     *  source is gone. */
+    fun performPermanentDeletion(items: List<MediaItem>) {
+        if (items.isEmpty()) return
+        if (backupBeforeDeleteEnabled) {
+            scope.launch(Dispatchers.IO) {
+                BackupHelper.backupBeforeDelete(context, items)
+                withContext(Dispatchers.Main) { proceedWithPermanentDeletion(items) }
+            }
+        } else {
+            proceedWithPermanentDeletion(items)
         }
     }
 

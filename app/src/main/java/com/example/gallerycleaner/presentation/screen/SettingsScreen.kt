@@ -56,6 +56,7 @@ fun SettingsScreen(
     val hapticsEnabled by settingsStore.hapticFeedbackEnabledFlow.collectAsState(initial = true)
     val randomModeEnabled by settingsStore.randomModeEnabledFlow.collectAsState(initial = false)
     val appLockEnabled by settingsStore.appLockEnabledFlow.collectAsState(initial = false)
+    val backupBeforeDeleteEnabled by settingsStore.backupBeforeDeleteEnabledFlow.collectAsState(initial = false)
     val isDeviceSecure = remember {
         (context.getSystemService(Context.KEYGUARD_SERVICE) as? android.app.KeyguardManager)?.isDeviceSecure == true
     }
@@ -189,6 +190,31 @@ fun SettingsScreen(
                             label = { Text("$days days") }
                         )
                     }
+                }
+            }
+
+            item { Spacer(Modifier.height(24.dp)) }
+            item { SettingsSectionLabel("Backup") }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Backup before delete", style = MaterialTheme.typography.bodyLarge)
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            "Copy each photo/video to Pictures or Movies > GalleryCleaner > Backup before it's permanently deleted.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = backupBeforeDeleteEnabled,
+                        onCheckedChange = { scope.launch { settingsStore.setBackupBeforeDeleteEnabled(it) } }
+                    )
                 }
             }
 

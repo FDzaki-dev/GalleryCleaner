@@ -121,3 +121,7 @@
 
 ## v24 — Batch24
 - Fix: teks hitam tak terbaca di Settings (radio "Match system"/Light/Dark, judul color-style Signature/Amber/Indigo, judul toggle Cleaning reminders/Random clean mode/Swipe haptics/App lock) — root cause: Scaffold `containerColor = Color.Transparent` (Batch22) membuat `contentColor` default M3 jadi Unspecified→hitam. Fix: `contentColor = MaterialTheme.colorScheme.onBackground` eksplisit di 5 Scaffold (Settings/Home/Onboarding/Swipe/Trash).
+
+## v25 — Batch25
+- ROADMAP: koreksi audit — duplicate detection (Similar photos) & blur auto-flag (Blurry photos) ternyata sudah live sejak batch sebelumnya, cuma belum ditandai ✅ di ROADMAP.md.
+- New: "Backup before delete" (Settings > Backup, default off) — copy foto/video ke Pictures|Movies/GalleryCleaner/Backup sebelum permanent-delete. Best-effort, tidak pernah memblokir delete yang diminta user.

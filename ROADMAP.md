@@ -101,15 +101,30 @@ tiap rilis besar.
 Lanjut Fase B.
 
 ### Fase B — Diferensiasi lewat AI/on-device intelligence
-5. **Duplicate & near-duplicate detection** — perceptual hash (pHash)
-   100% on-device, tanpa ML model besar (hindari APK bloat & privacy
-   risk), grouping "mirip" di HomeScreen sebagai smart category baru.
-6. **Blur/low-quality auto-flag** — deteksi sederhana (variance of
-   Laplacian atau sejenis) untuk highlight kandidat hapus, bukan
-   auto-delete (privacy & trust: user tetap yang mutuskan, konsisten
-   dengan filosofi Sponge "you decide, we just help").
-7. **Backup-before-permanent-delete** opsional (folder cadangan lokal
-   atau prompt export sebelum trash auto-expire).
+5. ✅ **Duplicate & near-duplicate detection** (audit Batch25: SUDAH ada
+   sejak batch sebelumnya, luput ditandai di roadmap ini — koreksi
+   dokumentasi, bukan fitur baru). Average hashing (aHash) 64-bit,
+   Hamming-distance clustering, 100% on-device, tanpa ML model besar.
+   `MediaScanner.findNearDuplicates()`, dipicu manual dari tombol "Scan"
+   di kartu "Similar photos" (Smart Detection, HomeScreen).
+6. ✅ **Blur/low-quality auto-flag** (audit Batch25: SUDAH ada, sama
+   seperti item 5 — koreksi dokumentasi). Laplacian-variance blur metric
+   pada grayscale sample kecil, 100% on-device. `MediaScanner.findBlurryPhotos()`,
+   dipicu manual dari tombol "Scan" di kartu "Blurry photos". Konsisten
+   dengan filosofi "you decide, we just help" — hasil scan cuma suggestion
+   list, tidak ada auto-delete.
+7. ✅ **Backup-before-permanent-delete** (Batch25) — opsional, default OFF
+   (`SettingsStore.backupBeforeDeleteEnabledFlow`), toggle di Settings >
+   Backup. Saat aktif, tiap item disalin ke `Pictures|Movies/GalleryCleaner/
+   Backup/` (MediaStore, API 29+, fallback File I/O API 24-28) SEBELUM
+   permanent-delete benar-benar berjalan — satu-satunya titik `uri` sumber
+   dijamin masih bisa dibaca, baik di jalur system-dialog (API 30+) maupun
+   direct-delete (API <30). Best-effort per item (satu file gagal backup
+   tidak pernah memblokir delete yang diminta user). Detail lengkap +
+   trade-off yang didokumentasikan: `PROJECT_STATE.md` Batch25.
+
+**Fase B (diferensiasi AI/on-device) selesai 3/3 per Batch25.** Lanjut
+Fase C.
 
 ### Fase C — Reliability & visual (lanjutan kerja yang sudah jalan)
 8. Selesaikan keputusan `MidnightSkeuoButton` cascade (parameter warna

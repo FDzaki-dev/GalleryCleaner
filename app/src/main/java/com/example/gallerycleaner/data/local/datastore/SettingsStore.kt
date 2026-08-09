@@ -29,6 +29,7 @@ private val APP_LOCK_ENABLED_KEY = booleanPreferencesKey("app_lock_enabled")
 private val HAS_SEEN_ONBOARDING_KEY = booleanPreferencesKey("has_seen_onboarding")
 private val RANDOM_MODE_ENABLED_KEY = booleanPreferencesKey("random_mode_enabled")
 private val CLEANUP_GOAL_BYTES_KEY = longPreferencesKey("cleanup_goal_bytes")
+private val BACKUP_BEFORE_DELETE_ENABLED_KEY = booleanPreferencesKey("backup_before_delete_enabled")
 
 /** Default cleanup goal (ROADMAP Fase A item 3): 2 GB. Arbitrary but
  *  reasonable starting target — big enough to feel worth working toward,
@@ -162,5 +163,21 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setCleanupGoalBytes(bytes: Long) {
         context.settingsDataStore.edit { prefs -> prefs[CLEANUP_GOAL_BYTES_KEY] = bytes.coerceAtLeast(1L) }
+    }
+
+    /** ROADMAP Fase B item 7 — copy each item to a local
+     *  `Pictures|Movies/GalleryCleaner/Backup/` folder (see `BackupHelper`)
+     *  right before it's permanently deleted. Defaults to false: this
+     *  trades disk space for a safety net, and unlike Trash's own
+     *  short-lived retention window, a backup copy sticks around
+     *  indefinitely until the person clears it themselves — real
+     *  storage-usage behavior that should be something the person opts
+     *  into, never a silent default. */
+    val backupBeforeDeleteEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[BACKUP_BEFORE_DELETE_ENABLED_KEY] ?: false
+    }
+
+    suspend fun setBackupBeforeDeleteEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[BACKUP_BEFORE_DELETE_ENABLED_KEY] = enabled }
     }
 }

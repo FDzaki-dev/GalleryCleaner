@@ -1,7 +1,7 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v24 — Batch24 (Fix: Scaffold contentColor — black text across Settings/Home/Onboarding/Swipe/Trash)
+v25 — Batch25 (ROADMAP Fase B: Backup-before-delete + audit koreksi duplicate/blur detection)
 
 ## Glassmorphism Component Cascade (Batch22, Atomic Change — 9 file)
 Permintaan user: 1 batch atomic change berisi SEMUA bagian yang belum
@@ -487,3 +487,44 @@ sudah ada. Text yang sudah set warna eksplisit (subtitle onSurfaceVariant,
 dll) tidak terpengaruh. GlassCard.kt (Batch23) tetap diperlukan terpisah
 karena `Box` internalnya tidak mewarisi contentColor otomatis dari Scaffold
 manapun — dua fix independen, saling melengkapi, 0 tumpang tindih.
+
+## Batch25 — Backup-before-delete (ROADMAP Fase B item 7, 4 file)
+Audit dulu: ROADMAP.md Fase B item 5 (duplicate detection) & 6 (blur
+auto-flag) TERNYATA sudah diimplementasi sejak batch sebelumnya
+(`MediaScanner.findNearDuplicates`/`findBlurryPhotos`, terpasang di
+HomeScreen section "Smart Detection" — persis yang terlihat di screenshot
+user sebelumnya). Roadmap tidak pernah diupdate untuk mencatat ini —
+dikoreksi jadi ✅ di Batch25 ini (dokumentasi, bukan kerja baru).
+
+Item 7 (Backup-before-permanent-delete) dibangun baru:
+- **`BackupHelper.kt`** (baru) — copy tiap item ke
+  `Pictures|Movies/GalleryCleaner/Backup/` sebelum delete. MediaStore
+  insert (API 29+, pola sama `CrashLogger`), fallback File I/O langsung
+  (API 24-28, pola sama `MoveHelper`/`CrashLogger` legacy path). Deteksi
+  video vs image via `contentResolver.getType(uri)` (bukan field baru di
+  `MediaItem` — tidak menyentuh model data). Best-effort per item
+  (try/catch, gagal 1 file tidak pernah membatalkan delete keseluruhan).
+- **`SettingsStore.kt`** — `backupBeforeDeleteEnabledFlow` +
+  `setBackupBeforeDeleteEnabled`, default false (opt-in, bukan silent
+  default — storage-usage behavior harus sepengetahuan user).
+- **`SettingsScreen.kt`** — section baru "Backup" (antara Trash dan
+  Notifications), 1 toggle row, pola identik toggle lain di layar ini.
+- **`MainActivity.kt`** (edit parsial, protected asset) — `performPermanentDeletion`
+  dipecah: fungsi baru `proceedWithPermanentDeletion` (badan asli, tidak
+  diubah logikanya) DIDEKLARASIKAN DULU, baru `performPermanentDeletion`
+  (nama publik yang dipanggil TrashScreen tetap sama — 0 breaking change
+  di call site) yang sekarang cek `backupBeforeDeleteEnabled`: kalau aktif,
+  jalankan `BackupHelper.backupBeforeDelete` di `Dispatchers.IO` dulu, baru
+  lanjut ke `proceedWithPermanentDeletion` di Main thread; kalau tidak
+  aktif, langsung lanjut seperti sebelumnya. Urutan deklarasi ini SENGAJA
+  mengikuti pelajaran Batch18 (`applyOrganizeResult`/`organizeRequestLauncher`):
+  local function di Kotlin harus sudah dideklarasikan SEBELUM titik
+  pemakaiannya — termasuk di dalam lambda bersarang — kalau tidak jadi
+  "Unresolved reference" saat build.
+
+**Trade-off yang didokumentasikan (bukan bug)**: backup dijalankan SEBELUM
+delete request API 30+ diluncurkan (bukan setelah user konfirmasi), karena
+itu satu-satunya titik source `uri` dijamin masih terbaca — begitu delete
+sukses, sumbernya sudah hilang. Konsekuensinya: kalau user cancel dialog
+sistem, salinan backup tetap ada (dianggap tidak berbahaya — cadangan
+ekstra yang tidak dipakai, bukan kerugian).
