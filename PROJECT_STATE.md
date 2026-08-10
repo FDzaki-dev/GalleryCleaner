@@ -1,9 +1,46 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
+v33 — Batch33 (UX clarity: kenapa row "Agustus 2026" tidak nampilin folder seperti "Biggest space hogs" — folder-summary di GroupRow + caption Group By)
+
+## Batch33 — Folder-Context Clarity (2 file: HomeScreenFolderRow.kt, HomeScreenSections.kt)
+User kirim screenshot "Biggest space hogs" (nampilin subtitle nama folder
+per file, mis. "Private"/"GIF"/"Camera") vs "All Photos" grouped by Month
+(cuma nampilin "135 items", tanpa folder). Nanya kenapa beda. Dijelasin
+dulu (bukan bug — beda level data: file individual vs kumpulan lintas
+folder), lalu diminta "Dirombak. Agar user awam pun tetap tahu fungsinya".
+
+**`HomeScreenFolderRow.kt` `GroupRow`**: tambah baris folder-summary di
+bawah "N items" — HANYA muncul kalau `group.items.map{it.bucketName}
+.distinct().size > 1` (jadi di mode Album selalu skip, karena judul baris
+sudah = nama folder itu sendiri, redundant kalau ditambah lagi). Format:
+ikon folder kecil + "Camera, WhatsApp Images" (≤2 folder) atau "Camera,
+WhatsApp Images +3 more" (>2, `maxLines=1` + ellipsis, row height tidak
+berubah walau foldernya banyak). Ini langsung menjawab pertanyaan user di
+UI-nya sendiri — row Bulan sekarang KELIATAN kalau isinya lintas folder,
+bukan diam-diam beda tanpa penjelasan.
+
+**`HomeScreenSections.kt` `FilterRow`**: caption 1 baris di bawah label
+"GROUP BY", teks berubah sesuai mode aktif ("One row per month, pooling
+photos from every folder" / "One row per folder, exactly as it exists on
+your device") — supaya konsepnya kejelasan DI DEPAN, sebelum user perlu
+menebak-nebak dari hasil scroll-nya sendiri. Sengaja tidak menyebut
+istilah teknis ("bucketName"/"MediaStore") — bahasa awam sesuai
+permintaan.
+
+**Tidak disentuh**: `SmartCategoryRow` (Quick Clean: Screenshots/Large
+files) — juga lintas folder secara alami, tapi nama kategorinya sendiri
+("Screenshots") sudah cukup menjelaskan diri, di luar cakupan pertanyaan
+user (yang spesifik soal Month vs Biggest space hogs).
+
+**Verifikasi**: brace/paren balanced 0/0 full sweep. 1 typo paren di
+comment (bukan kode — tidak mempengaruhi kompilasi) ketauan lewat sweep
+ini juga, dibetulkan sebelum commit.
+
+## Versi Historis
 v32 — Batch32 (Debug: fix crash OOM `crash_20260810_134626` di ImageCompressor + Polish: success/Undo feedback di semua aksi destruktif)
 
-## Catatan koreksi (Batch32): header "Versi Saat Ini" file ini sempat
+## Catatan koreksi (dari Batch32): header "Versi Saat Ini" file ini sempat
 tertinggal di v28 walau `CHANGELOG.md` dan kode sebenarnya sudah di v31
 (Batch29 Share+persist fix, Batch30 DangerButton refactor, Batch31
 permission dead-end fix — commit di luar chat ini via Termux, dokumentasi

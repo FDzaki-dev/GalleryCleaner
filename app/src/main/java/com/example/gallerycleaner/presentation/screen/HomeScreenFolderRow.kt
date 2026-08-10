@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -66,6 +67,20 @@ internal fun GroupRow(
     val done = fraction >= 1f && group.items.isNotEmpty()
     val displayName = label ?: group.key
 
+    // Folder-summary line — only shown when the group actually spans more
+    // than one folder. In Album mode this is always exactly 1 (the row's
+    // own title IS the folder), so it's naturally skipped there — nothing
+    // extra to render. In Month mode a row routinely pools photos from
+    // several folders (Camera, WhatsApp, Screenshots, ...) with no single
+    // folder to name, which is exactly what made a Month row look
+    // unexplained next to "Biggest space hogs" (that card lists individual
+    // files, each with its own one true folder) — a person unfamiliar with
+    // the app had no way to tell why one screen shows folder names and the
+    // other doesn't. Surfacing which folders actually contributed makes
+    // that difference legible without needing to already understand
+    // Month-vs-Album as a concept.
+    val distinctFolders = remember(group.items) { group.items.map { it.bucketName }.distinct() }
+
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = 0.dp,
@@ -92,6 +107,25 @@ internal fun GroupRow(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (distinctFolders.size > 1) {
+                    Spacer(Modifier.height(2.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.Folder,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            folderSummaryText(distinctFolders),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
 
             // Custom in-app name, independent of whatever the device's own
@@ -133,6 +167,16 @@ internal fun GroupRow(
         )
     }
 }
+
+/** "Camera, WhatsApp Images" for 2, "Camera, WhatsApp Images +3 more" for
+ *  more than 2 — short enough to fit a single line next to the folder icon
+ *  without needing the row to grow taller for a long list of names. */
+private fun folderSummaryText(folders: List<String>): String =
+    if (folders.size <= 2) {
+        folders.joinToString(", ")
+    } else {
+        "${folders.take(2).joinToString(", ")} +${folders.size - 2} more"
+    }
 
 @Composable
 internal fun RenameFolderDialog(

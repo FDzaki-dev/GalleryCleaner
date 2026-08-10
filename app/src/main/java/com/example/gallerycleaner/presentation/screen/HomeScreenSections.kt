@@ -442,7 +442,25 @@ internal fun FilterRow(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp, bottom = 14.dp)) {
+        // Plain-language explanation of what the two modes actually mean —
+        // added alongside GroupRow's per-row folder summary (same fix,
+        // same root cause). "Month" pools photos from many folders into
+        // one row with no single folder to name, which read as
+        // unexplained/inconsistent next to "Album" (one row = one real
+        // folder) and "Biggest space hogs" (individual files, each with
+        // its own folder). This caption gives the concept up front; the
+        // per-row summary confirms it in practice once a Month row shows.
+        Text(
+            if (groupMode == GroupMode.MONTH) {
+                "One row per month, pooling photos from every folder"
+            } else {
+                "One row per folder, exactly as it exists on your device"
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+            modifier = Modifier.padding(top = 2.dp)
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp, bottom = 14.dp)) {
             GroupMode.values().forEach { mode ->
                 PillChip(
                     label = mode.label,
