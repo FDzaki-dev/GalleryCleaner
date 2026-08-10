@@ -1,7 +1,46 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v25 — Batch25 (ROADMAP Fase B: Backup-before-delete + audit koreksi duplicate/blur detection)
+v26 — Batch26 (Appearance section: RadioButton 3-way → 2 toggle Switch, mengikuti pola Row+Switch section lain)
+
+## Batch26 — Appearance Toggle Rearchitecture (1 file: SettingsScreen.kt)
+Permintaan user (via screenshot Settings): "Rombak arsitektur di sektor
+theme. Dari yang awalnya button 1 arah jadi toggle on-off (semua opsi
+disama ratakan) yang menyesuaikan dengan mode 'light/dark system'".
+
+**Sebelum**: `ThemeMode.values().forEach { SettingsRadioRow(...) }` — 3
+RadioButton (Match system/Light/Dark) single-select, satu-satunya section
+berbentuk radio-list di layar Settings (semua section lain di bawahnya
+pakai `Row` + `Switch`), jadi menonjol berbeda ("button 1 arah").
+
+**Sesudah**: 2 `Row`+`Switch` toggle, "disama ratakan" ke pola visual yang
+sama dengan Backup/Notifications/Swiping/Feedback/Privacy:
+- **"Match system"** — `checked = (themeMode == ThemeMode.SYSTEM)`. ON →
+  `setThemeMode(SYSTEM)`, brightness ikut `isSystemInDarkTheme()` LIVE
+  (recompose otomatis saat sistem ganti tema, resolusi sama seperti
+  `MainActivity.kt` sudah lakukan sejak awal — tidak diubah). OFF →
+  resolve ke `DARK` atau `LIGHT` konkret berdasarkan status sistem SAAT
+  toggle dimatikan (`systemDark` dibaca di composition scope yang sama),
+  supaya tidak ada lompatan visual mendadak di momen switch-off.
+- **"Dark mode"** — `checked = resolvedDark` (`systemDark` kalau Match
+  system ON, else `themeMode == DARK`). `enabled = !matchSystem`: saat
+  Match system ON, toggle ini nonaktif TAPI tetap mencerminkan status
+  sistem real-time (bukan disembunyikan) — subtitle berubah jadi
+  "Currently following the system setting." Saat Match system OFF, toggle
+  aktif dan langsung `setThemeMode(DARK/LIGHT)`.
+
+**Dihapus**: composable `SettingsRadioRow` (private fun, satu-satunya
+caller adalah section Appearance yang baru saja diganti — di-grep dulu
+sebelum hapus, tidak dipakai di file lain kecuali `RadioButton` murni di
+`SwipeScreenControls.kt` yang tidak tersentuh/berbeda konteks).
+
+**Tidak diubah**: `SettingsStore.kt` (`ThemeMode` enum tetap SYSTEM/LIGHT/
+DARK, key DataStore & default `DARK` untuk install lama — persis sama),
+`MainActivity.kt` (resolusi `themeModeFlow` → `darkTheme: Boolean` untuk
+`GalleryCleanerTheme` tidak disentuh), `Theme.kt` (tidak disentuh sama
+sekali). Ini murni perubahan presentasi UI di satu file, 0 perubahan
+skema/behavior data layer.
+
 
 ## Glassmorphism Component Cascade (Batch22, Atomic Change — 9 file)
 Permintaan user: 1 batch atomic change berisi SEMUA bagian yang belum

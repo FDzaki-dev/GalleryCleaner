@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -126,16 +127,84 @@ fun SettingsScreen(
         ) {
             item { SettingsSectionLabel("Appearance") }
             item {
+                // Batch26 — rearsitektur: 3-way RadioButton (Match system /
+                // Light / Dark, one-directional single-select) diganti 2
+                // toggle Switch "disama ratakan" ke pola Row+Switch yang
+                // sudah dipakai konsisten di semua section lain di layar
+                // ini (Backup/Notifications/Swiping/Feedback/Privacy di
+                // bawah) — sebelumnya Appearance adalah satu-satunya
+                // section berbentuk radio-list, bukan toggle, jadi terasa
+                // beda sendiri di tengah layar yang isinya toggle semua.
+                //
+                // "Match system" ON  -> ThemeMode.SYSTEM, brightness ikut
+                //   `isSystemInDarkTheme()` live (MainActivity sudah baca
+                //   ini persis sama seperti sebelumnya, lihat komentar di
+                //   Theme.kt). Toggle "Dark mode" di bawahnya jadi
+                //   read-only (enabled=false) tapi tetap mencerminkan
+                //   status sistem saat ini secara real-time — bukan
+                //   disembunyikan — supaya user tetap lihat "oh sekarang
+                //   lagi dark karena sistem", bukan tiba-tiba blank.
+                // "Match system" OFF -> resolve ke ThemeMode konkret
+                //   (DARK/LIGHT) berdasarkan status sistem SAAT toggle
+                //   dimatikan, supaya tidak ada lompatan visual mendadak
+                //   di momen switch-off; setelah itu user bebas atur
+                //   manual lewat toggle "Dark mode" di bawahnya.
+                val systemDark = isSystemInDarkTheme()
+                val matchSystem = themeMode == ThemeMode.SYSTEM
+                val resolvedDark = if (matchSystem) systemDark else themeMode == ThemeMode.DARK
+
                 Column(Modifier.fillMaxWidth()) {
-                    ThemeMode.values().forEach { mode ->
-                        SettingsRadioRow(
-                            label = when (mode) {
-                                ThemeMode.SYSTEM -> "Match system"
-                                ThemeMode.LIGHT -> "Light"
-                                ThemeMode.DARK -> "Dark"
-                            },
-                            selected = themeMode == mode,
-                            onClick = { scope.launch { settingsStore.setThemeMode(mode) } }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Match system", style = MaterialTheme.typography.bodyLarge)
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                "Follow this device's light/dark setting automatically.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = matchSystem,
+                            onCheckedChange = { on ->
+                                scope.launch {
+                                    settingsStore.setThemeMode(
+                                        if (on) ThemeMode.SYSTEM
+                                        else if (systemDark) ThemeMode.DARK else ThemeMode.LIGHT
+                                    )
+                                }
+                            }
+                        )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Dark mode", style = MaterialTheme.typography.bodyLarge)
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                if (matchSystem) "Currently following the system setting."
+                                else "Off uses light appearance.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = resolvedDark,
+                            enabled = !matchSystem,
+                            onCheckedChange = { on ->
+                                scope.launch {
+                                    settingsStore.setThemeMode(if (on) ThemeMode.DARK else ThemeMode.LIGHT)
+                                }
+                            }
                         )
                     }
                 }
@@ -331,21 +400,6 @@ private fun SettingsSectionLabel(text: String) {
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
     )
-}
-
-@Composable
-private fun SettingsRadioRow(label: String, selected: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 10.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        RadioButton(selected = selected, onClick = onClick)
-        Spacer(Modifier.width(8.dp))
-        Text(label, style = MaterialTheme.typography.bodyLarge)
-    }
 }
 
 /** Describes one selectable color style for the swatch card below. The two
