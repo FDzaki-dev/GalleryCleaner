@@ -743,3 +743,14 @@ oversight. Diekstrak jadi `DangerButton` (ui/components) untuk hilangkan
 crash dialog TIDAK termasuk (pola beda, sengaja dibiarkan simpel).
 
 
+
+## Batch31 — Permanently-denied permission fix (1 file)
+`PermissionScreen`'s "Grant access" was a dead end after a real denial
+(Android won't re-show its own dialog on re-request once denied).
+`MainActivity.kt`: `ActivityCompat.shouldShowRequestPermissionRationale`
+check after the launcher result → `permissionPermanentlyDenied` flag →
+`PermissionScreen` switches to "Open Settings"
+(`Settings.ACTION_APPLICATION_DETAILS_SETTINGS`). `ON_RESUME` observer
+added (same pattern as app-lock's) to re-check permission state when
+returning from that Settings screen, so granting it there is picked up
+immediately, no relaunch needed.

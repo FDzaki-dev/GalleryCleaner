@@ -7,9 +7,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -33,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
@@ -311,10 +314,52 @@ fun AppRoot(
             }
         )
     }
+    // Batch31: "Grant access" doing nothing after a real denial is a
+    // classic generic-app gap — once the system permission dialog has been
+    // shown and denied once, Android won't show it again on a plain
+    // re-request; `shouldShowRequestPermissionRationale` returning false
+    // for a still-ungranted permission AFTER a request has actually fired
+    // is the standard signal for that ("permanently denied", which despite
+    // the name also covers plain "denied twice" on many OEM skins, not
+    // just an explicit "Don't ask again" tap). The ONLY way forward from
+    // there is the app's own Settings screen — this flag drives showing
+    // that path instead of a dead-end button.
+    var permissionPermanentlyDenied by remember { mutableStateOf(false) }
+    val activity = context as? android.app.Activity
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { results -> hasPermission = results.values.all { it } }
+    ) { results ->
+        hasPermission = results.values.all { it }
+        if (!hasPermission && activity != null) {
+            permissionPermanentlyDenied = requiredPermissions().any { perm ->
+                ContextCompat.checkSelfPermission(context, perm) != PackageManager.PERMISSION_GRANTED &&
+                    !ActivityCompat.shouldShowRequestPermissionRationale(activity, perm)
+            }
+        }
+    }
+
+    // Re-check on ON_RESUME so coming back from the system Settings screen
+    // (after the user manually flips the permission there) picks up the
+    // change immediately — without this, the app would keep showing
+    // PermissionScreen until a full relaunch, even though access was
+    // actually just granted.
+    run {
+        val lifecycleOwner = LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val observer = LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    val granted = requiredPermissions().all {
+                        ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+                    }
+                    hasPermission = granted
+                    if (granted) permissionPermanentlyDenied = false
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        }
+    }
 
     var allMedia by remember { mutableStateOf<List<MediaItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
@@ -797,7 +842,15 @@ fun AppRoot(
             label = "screen-transition"
         ) { screen ->
             when (screen) {
-                Screen.Permission -> PermissionScreen(onRequest = { permissionLauncher.launch(requiredPermissions()) })
+                Screen.Permission -> PermissionScreen(
+                    permanentlyDenied = permissionPermanentlyDenied,
+                    onRequest = { permissionLauncher.launch(requiredPermissions()) },
+                    onOpenSettings = {
+                        context.startActivity(
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+                        )
+                    }
+                )
                 Screen.Onboarding -> OnboardingScreen(
                     onDone = { scope.launch { settingsStore.setHasSeenOnboarding(true) } }
                 )
@@ -936,7 +989,11 @@ fun AppRoot(
 }
 
 @Composable
-private fun PermissionScreen(onRequest: () -> Unit) {
+private fun PermissionScreen(
+    permanentlyDenied: Boolean = false,
+    onRequest: () -> Unit,
+    onOpenSettings: () -> Unit = {}
+) {
     Column(
         modifier = Modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -948,15 +1005,19 @@ private fun PermissionScreen(onRequest: () -> Unit) {
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            "Gallery Cleaner needs access to your photos to help you swipe through and declutter.",
+            if (permanentlyDenied) {
+                "Photo access was denied. Enable it from this app's system Settings to continue."
+            } else {
+                "Gallery Cleaner needs access to your photos to help you swipe through and declutter."
+            },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(28.dp))
         GlassButton(
-            text = "Grant access",
+            text = if (permanentlyDenied) "Open Settings" else "Grant access",
             modifier = Modifier.fillMaxWidth(),
-            onClick = onRequest
+            onClick = if (permanentlyDenied) onOpenSettings else onRequest
         )
     }
 }
