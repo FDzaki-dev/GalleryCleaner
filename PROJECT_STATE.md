@@ -1,6 +1,90 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
+v32 — Batch32 (Debug: fix crash OOM `crash_20260810_134626` di ImageCompressor + Polish: success/Undo feedback di semua aksi destruktif)
+
+## Catatan koreksi (Batch32): header "Versi Saat Ini" file ini sempat
+tertinggal di v28 walau `CHANGELOG.md` dan kode sebenarnya sudah di v31
+(Batch29 Share+persist fix, Batch30 DangerButton refactor, Batch31
+permission dead-end fix — commit di luar chat ini via Termux, dokumentasi
+header-nya saja yang tidak ke-update). Dikonfirmasi lewat kode (grep
+`DangerButton`/`shouldShowRequestPermissionRationale`/`ACTION_SEND` — semua
+sudah ada) sebelum lanjut, supaya batch ini tidak menimpa balik pekerjaan
+v29-v31. Penomoran versi diloncat ke v32 (bukan v29) untuk menghindari
+tabrakan dengan section "Batch29" historis yang sudah ada di bawah.
+
+## Batch32 — OOM Crash Fix + Success/Undo Snackbar Polish (3 file)
+User upload crash log `crash_20260810_134626_b98c4a79...txt` +
+`GalleryCleaner-main.zip`, minta fokus "debugging, polish UI/UX, detail
+kecil aplikasi generik yang belum diterapkan". Debug Priority diikuti:
+crash log dianalisis dulu sebelum minta Logcat/ADB (tidak perlu, log-nya
+cukup).
+
+**Bug #1 (root cause OOM, `ImageCompressor.kt`)** — Stack trace crash
+sendiri (`com.mediatek.boostfwk...FrameIdentify`, alokasi 32 byte) BUKAN
+penyebabnya — itu cuma alokasi kecil apa saja yang kebetulan jalan
+persis setelah heap sudah penuh. Penyebab sebenarnya:
+`compressInPlace()` decode JPEG di RESOLUSI PENUH (`BitmapFactory.
+decodeStream(stream)` tanpa `Options` sama sekali) ke `ARGB_8888` (4
+byte/pixel). Device di crash log (Infinix X6855, MediaTek) kemungkinan
+kamera 108MP — satu foto = ~12000x9000 = ~430MB SATU bitmap, cukup
+sendirian menghabiskan heap 512MB (`largeHeap`). Ditambah lagi
+`OutOfMemoryError` `extends Error` bukan `Exception`, jadi `catch (e:
+Exception)` yang ada TIDAK PERNAH menangkapnya — begitu terjadi, app
+langsung crash total, persis seperti log.
+- Fix: baca `bounds` dulu (`inJustDecodeBounds=true`, murah, tidak alokasi
+  pixel buffer). Kalau pixel count > 24 megapixel
+  (`LARGE_IMAGE_PIXEL_THRESHOLD`), decode pakai `RGB_565` (2 byte/pixel)
+  bukan `ARGB_8888` — tetap RESOLUSI PENUH (janji dokumentasi lama "tidak
+  downscale" tetap dipegang), cuma bit-depth yang turun untuk kasus
+  ekstrem, imperceptible setelah re-encode JPEG quality 80.
+- Fix #2 (independen dari #1, sama pentingnya): `catch (e:
+  OutOfMemoryError)` ditambahkan eksplisit di 2 titik (decode + write) —
+  device dengan heap lebih kecil atau file rusak/header bogus tetap bisa
+  OOM walau sudah di-cap; sekarang gagal per-foto (`Result.Failed`) bukan
+  crash total.
+- Hardening tambahan (`MediaScanner.kt` `decodeSampledBitmap` — pola
+  BitmapFactory tanpa OOM-guard yang sama, dipakai blur/near-dup scan):
+  tambah `catch (e: OutOfMemoryError)`. Bukan penyebab crash ini (sudah
+  pakai `inSampleSize`, jauh lebih aman), murni defensive backstop untuk
+  header korup.
+
+**Polish — Success/Undo feedback (`MainActivity.kt`, "detail kecil
+aplikasi generik")**: audit `showSnackbar` (13 titik) menemukan SEMUANYA
+cuma pesan GAGAL — 0 konfirmasi sukses di seluruh app untuk delete
+permanen, organize/move, restore dari trash, maupun commit swipe→trash.
+Silent success itu sendiri adalah gap generik dibanding app file-manager
+manapun (Google Photos/Files by Google selalu kasih konfirmasi + Undo
+kalau reversible). Ditambahkan di 5 titik:
+- `deleteRequestLauncher` (API 30+) & `proceedWithPermanentDeletion`
+  (legacy, pre-30): "Deleted N photos — freed X MB" (irreversible, tidak
+  ada Undo — MediaStore tidak punya un-delete).
+- 2 jalur "Organize"/move (`organizeRequestLauncher` API30+ & loop legacy
+  di `performOrganize`): "Moved N photos to <folder>", pesan gagal-parsial
+  lama tetap tampil menyusul kalau ada yang gagal.
+- `onRestore` (TrashScreen "Restore"): "N photos restored" (tidak perlu
+  Undo — restore sendiri sudah jadi undo-nya trash).
+- `onFinishWithDeletions` (commit sesi Swipe → trash) — SATU-SATUNYA yang
+  dikasih tombol **Undo** di Snackbar-nya (`actionLabel="Undo"`,
+  `SnackbarDuration.Long`): ini aksi reversible (beda dari delete
+  permanen), `trashStore.remove(ids)` adalah invers persis dari
+  `addToTrash(ids)` barusan, `activeMedia`/`trashItems` sudah reaktif
+  jadi tidak perlu patch `allMedia` manual.
+
+**Tidak disentuh**: per-swipe "Undo last swipe" (`SwipeScreen.kt`, tombol
+↩ di action bar) sudah ada sejak lama — dicek dulu supaya tidak
+duplikat/konflik dengan Undo Snackbar baru (dua hal beda: satu untuk 1
+swipe yang belum di-commit, satu untuk seluruh sesi yang SUDAH di-commit
+ke trash).
+
+**Verifikasi**: brace/paren balanced 0/0 di SEMUA file `.kt` (full sweep).
+Protected assets tidak tersentuh. Codebase asal (`GalleryCleaner-main.zip`
+baru, v28) dipakai sebagai source of truth — bukan sesi lama di chat ini
+(Hirarki Konteks: Chat Saat Ini > PROJECT_STATE.md), karena repo GitHub
+sudah maju lebih jauh (v28: tema Skeuomorphism-lite) lewat commit di luar
+chat ini via Termux.
+
+## Versi Historis
 v28 — Batch28 (Skeuo-lite retuning: root-cause fix atas "efek timbul gak kerasa" — gradient fill + specular corner glow + border kontras 2x, arsitektur Batch27 tidak berubah)
 
 ## Batch28 — Skeuo-lite Visibility Fix (2 file: SkeuoLiteTokens.kt, SkeuoModifier.kt)

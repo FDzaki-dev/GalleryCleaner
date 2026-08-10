@@ -54,14 +54,55 @@ object ImageCompressor {
      *  single "balanced" default rather than a per-photo dial — matching
      *  every other bulk action in this app (bulk delete, bulk trash),
      *  which act on a whole selection at once rather than one dial per
-     *  item. */
+     *  item.
+     *
+     *  Bug fix (crash log `crash_20260810_134626`): this used to call
+     *  `BitmapFactory.decodeStream(stream)` with zero options — full
+     *  resolution, default `ARGB_8888` (4 bytes/pixel), no cap. A 108MP
+     *  photo (common on MediaTek/Transsion camera stacks, confirmed by the
+     *  crash's device model) is ~12000x9000 — that's one ~430MB
+     *  allocation, on its own big enough to exhaust a 512MB `largeHeap`.
+     *  The crash's own stack trace (MediaTek `BoostFwk`, unrelated 32-byte
+     *  allocation) wasn't the cause — it's just whatever tiny allocation
+     *  happened to run right after the heap was already full from this.
+     *  Confirmed by the `OutOfMemoryError` never being caught here either:
+     *  it `extends Error`, not `Exception`, so the old `catch (e:
+     *  Exception)` below let it fall straight through and kill the app —
+     *  same failure mode the crash log shows.
+     *
+     *  Fix keeps the documented "never downscale resolution" promise for
+     *  the vast majority of photos, and only changes decode *bit depth*
+     *  (not dimensions) for the rare oversized outlier: bounds are read
+     *  first (cheap — no pixel buffer allocated), and only pixel counts
+     *  above [LARGE_IMAGE_PIXEL_THRESHOLD] fall back to `RGB_565` (2
+     *  bytes/pixel, half the memory) instead of `ARGB_8888`. JPEGs have no
+     *  alpha channel to lose either way, and `RGB_565`'s minor color-depth
+     *  reduction is imperceptible once re-encoded as JPEG at quality 80 —
+     *  a fully reasonable trade against actually crashing the app.
+     *  `OutOfMemoryError` is now also caught explicitly as a last resort
+     *  (a device with an even smaller heap, or a genuinely corrupt/bogus
+     *  image header, can still exceed this) — reported as [Result.Failed]
+     *  for that one photo instead of taking the whole app down. */
     fun compressInPlace(context: Context, item: MediaItem, quality: Int = 80): Result {
         if (!isCompressible(item)) return Result.Skipped
 
         val bitmap = try {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             context.contentResolver.openInputStream(item.uri)?.use { stream ->
-                BitmapFactory.decodeStream(stream)
+                BitmapFactory.decodeStream(stream, null, bounds)
             }
+            val pixelCount = bounds.outWidth.toLong() * bounds.outHeight.toLong()
+            val options = BitmapFactory.Options().apply {
+                if (pixelCount > LARGE_IMAGE_PIXEL_THRESHOLD) {
+                    inPreferredConfig = Bitmap.Config.RGB_565
+                }
+            }
+            context.contentResolver.openInputStream(item.uri)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, options)
+            }
+        } catch (e: OutOfMemoryError) {
+            Log.e("ImageCompressor", "OOM decoding ${item.uri} (${item.displayName})", e)
+            null
         } catch (e: Exception) {
             Log.e("ImageCompressor", "Gagal decode: ${item.uri}", e)
             null
@@ -76,6 +117,9 @@ object ImageCompressor {
             }
         } catch (e: RecoverableSecurityException) {
             Result.NeedsPermission(e.userAction.actionIntent.intentSender)
+        } catch (e: OutOfMemoryError) {
+            Log.e("ImageCompressor", "OOM writing ${item.uri}", e)
+            Result.Failed
         } catch (e: Exception) {
             Log.e("ImageCompressor", "Gagal menulis: ${item.uri}", e)
             Result.Failed
@@ -83,6 +127,14 @@ object ImageCompressor {
             bitmap.recycle()
         }
     }
+
+    /** ~24 megapixels — comfortably above what the large majority of phone
+     *  cameras shoot (most flagships top out around 12-50MP), but well
+     *  below the 100MP+ sensors some MediaTek/Transsion devices ship,
+     *  which is exactly the case that crashed. At `ARGB_8888` that's
+     *  ~96MB for one bitmap — still hefty but survivable; the 108MP case
+     *  above this threshold would otherwise be ~430MB. */
+    private const val LARGE_IMAGE_PIXEL_THRESHOLD = 24_000_000L
 
     /** Returns the new file size in bytes, or null if the write failed for
      *  a reason other than a recoverable permission gap (that case is

@@ -565,6 +565,11 @@ fun AppRoot(
                 trashStore.remove(items.map { it.id })
                 statsStore.recordDeletion(items.sumOf { it.sizeBytes }, items.size)
             }
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    "Deleted ${items.size} photo${if (items.size == 1) "" else "s"} — freed ${formatBytes(items.sumOf { it.sizeBytes })}"
+                )
+            }
         } else if (items != null) {
             scope.launch {
                 snackbarHostState.showSnackbar("Gagal menghapus file atau izin ditolak")
@@ -675,6 +680,13 @@ fun AppRoot(
                     trashStore.remove(deletedIds)
                     statsStore.recordDeletion(deleted.sumOf { it.sizeBytes }, deleted.size)
                 }
+                if (deleted.isNotEmpty()) {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            "Deleted ${deleted.size} photo${if (deleted.size == 1) "" else "s"} — freed ${formatBytes(deleted.sumOf { it.sizeBytes })}"
+                        )
+                    }
+                }
                 if (failed.isNotEmpty()) {
                     scope.launch {
                         snackbarHostState.showSnackbar("Gagal menghapus ${failed.size} file. Periksa izin.")
@@ -756,6 +768,11 @@ fun AppRoot(
                 }.toSet()
                 withContext(Dispatchers.Main) {
                     applyOrganizeResult(movedIds, targetFolder)
+                    if (movedIds.isNotEmpty()) {
+                        snackbarHostState.showSnackbar(
+                            "Moved ${movedIds.size} photo${if (movedIds.size == 1) "" else "s"} to $targetFolder"
+                        )
+                    }
                     if (movedIds.size < items.size) {
                         snackbarHostState.showSnackbar("Gagal memindahkan ${items.size - movedIds.size} file")
                     }
@@ -811,8 +828,15 @@ fun AppRoot(
                     if (sender != null) {
                         pendingOrganizeRetry = items.filterNot { it.id in movedIds } to targetFolder
                         organizeRequestLauncher.launch(IntentSenderRequest.Builder(sender).build())
-                    } else if (movedIds.size < items.size) {
-                        snackbarHostState.showSnackbar("Gagal memindahkan ${items.size - movedIds.size} file")
+                    } else {
+                        if (movedIds.isNotEmpty()) {
+                            snackbarHostState.showSnackbar(
+                                "Moved ${movedIds.size} photo${if (movedIds.size == 1) "" else "s"} to $targetFolder"
+                            )
+                        }
+                        if (movedIds.size < items.size) {
+                            snackbarHostState.showSnackbar("Gagal memindahkan ${items.size - movedIds.size} file")
+                        }
                     }
                 }
             }
@@ -859,7 +883,14 @@ fun AppRoot(
                     trashedAtMillis = trashedItems.associate { it.id to it.trashedAtMillis },
                     expiryDays = trashRetentionDays,
                     onBack = { showTrash = false },
-                    onRestore = { ids -> scope.launch { trashStore.remove(ids) } },
+                    onRestore = { ids ->
+                        scope.launch {
+                            trashStore.remove(ids)
+                            snackbarHostState.showSnackbar(
+                                "${ids.size} photo${if (ids.size == 1) "" else "s"} restored"
+                            )
+                        }
+                    },
                     onDeletePermanently = { ids ->
                         performPermanentDeletion(trashItems.filter { it.id in ids })
                     }
@@ -891,7 +922,23 @@ fun AppRoot(
                     onFinishWithDeletions = { deletions ->
                         scope.launch {
                             try {
-                                trashStore.addToTrash(deletions.map { it.id })
+                                val ids = deletions.map { it.id }
+                                trashStore.addToTrash(ids)
+                                if (ids.isNotEmpty()) {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "${ids.size} photo${if (ids.size == 1) "" else "s"} moved to trash",
+                                        actionLabel = "Undo",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                    // Reversible unlike permanent delete above (no
+                                    // Undo shown there) — trashStore.remove() is
+                                    // the exact inverse of addToTrash() just
+                                    // above, activeMedia/trashItems recompute
+                                    // reactively from it, no allMedia patch needed.
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        trashStore.remove(ids)
+                                    }
+                                }
                             } catch (e: Exception) {
                                 snackbarHostState.showSnackbar("Gagal memproses data swipe")
                             }

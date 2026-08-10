@@ -151,6 +151,17 @@ object MediaScanner {
                 android.graphics.BitmapFactory.decodeStream(it, null, options)
             }
         }
+    } catch (e: OutOfMemoryError) {
+        // Same class of bug as ImageCompressor's fix: this already caps
+        // dimensions via inSampleSize, so it's inherently far safer than
+        // the old unguarded full-res decode was — but OutOfMemoryError
+        // extends Error, not Exception, so it was still silently falling
+        // through the catch below uncaught before this was added. A single
+        // corrupt/bogus image header (implausible outWidth/outHeight) is
+        // enough to trigger it despite the sampling logic above, so this
+        // stays as a defensive backstop even though decodeSampledBitmap
+        // wasn't the crash's actual cause.
+        null
     } catch (e: Exception) {
         null
     }
