@@ -30,6 +30,8 @@ private val HAS_SEEN_ONBOARDING_KEY = booleanPreferencesKey("has_seen_onboarding
 private val RANDOM_MODE_ENABLED_KEY = booleanPreferencesKey("random_mode_enabled")
 private val CLEANUP_GOAL_BYTES_KEY = longPreferencesKey("cleanup_goal_bytes")
 private val BACKUP_BEFORE_DELETE_ENABLED_KEY = booleanPreferencesKey("backup_before_delete_enabled")
+private val GROUP_MODE_KEY = stringPreferencesKey("group_mode")
+private val SORT_OPTION_KEY = stringPreferencesKey("sort_option")
 
 /** Default cleanup goal (ROADMAP Fase A item 3): 2 GB. Arbitrary but
  *  reasonable starting target — big enough to feel worth working toward,
@@ -179,5 +181,32 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setBackupBeforeDeleteEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[BACKUP_BEFORE_DELETE_ENABLED_KEY] = enabled }
+    }
+
+    /** Batch29 polish: Home's "GROUP BY"/"SORT BY" filter row (`FilterRow`
+     *  in HomeScreenSections.kt) was previously backed by plain
+     *  `remember { mutableStateOf(...) }` in MainActivity — a real app
+     *  would expect this choice to survive a relaunch, same as every other
+     *  preference on this screen. Defaults match the previous in-memory
+     *  defaults exactly (MONTH/DATE) so existing behavior is unchanged
+     *  until someone actually picks something else. */
+    val groupModeFlow: Flow<GroupMode> = context.settingsDataStore.data.map { prefs ->
+        prefs[GROUP_MODE_KEY]?.let { raw ->
+            runCatching { GroupMode.valueOf(raw) }.getOrNull()
+        } ?: GroupMode.MONTH
+    }
+
+    suspend fun setGroupMode(mode: GroupMode) {
+        context.settingsDataStore.edit { prefs -> prefs[GROUP_MODE_KEY] = mode.name }
+    }
+
+    val sortOptionFlow: Flow<SortOption> = context.settingsDataStore.data.map { prefs ->
+        prefs[SORT_OPTION_KEY]?.let { raw ->
+            runCatching { SortOption.valueOf(raw) }.getOrNull()
+        } ?: SortOption.DATE
+    }
+
+    suspend fun setSortOption(option: SortOption) {
+        context.settingsDataStore.edit { prefs -> prefs[SORT_OPTION_KEY] = option.name }
     }
 }

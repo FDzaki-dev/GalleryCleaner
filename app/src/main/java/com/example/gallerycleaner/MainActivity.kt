@@ -41,6 +41,7 @@ import com.example.gallerycleaner.ui.components.GlassButton
 import com.example.gallerycleaner.ui.theme.GalleryCleanerTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.PrintWriter
@@ -319,6 +320,21 @@ fun AppRoot(
     var isLoading by remember { mutableStateOf(false) }
     var groupMode by remember { mutableStateOf(GroupMode.MONTH) }
     var sortOption by remember { mutableStateOf(SortOption.DATE) }
+    // Batch29: load the persisted choice once at startup. A plain
+    // `collectAsState` isn't used here (unlike appTheme/randomModeEnabled)
+    // because `groupMode`/`sortOption` are mutated directly in several
+    // places below (SwipeScreen's own sort menu, Home's FilterRow) — kept
+    // as local `var`s exactly as before, this just seeds their initial
+    // value instead of always starting at MONTH/DATE regardless of what
+    // was last chosen. Persisting the loaded value straight back would
+    // create a redundant DataStore write on every cold start for no
+    // reason, so this reads once and never writes here — writes only
+    // happen where the user actually changes the setting (see
+    // onGroupModeChange/onSortChange below).
+    LaunchedEffect(Unit) {
+        groupMode = settingsStore.groupModeFlow.first()
+        sortOption = settingsStore.sortOptionFlow.first()
+    }
     var selectedGroup by remember { mutableStateOf<MediaGroup?>(null) }
     var showTrash by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
@@ -817,7 +833,7 @@ fun AppRoot(
                     // SwipeScreen also changes what Home shows next time,
                     // which matches how every other shared setting in this
                     // app already behaves (groupMode, randomModeEnabled).
-                    onSortChange = { sortOption = it },
+                    onSortChange = { sortOption = it; scope.launch { settingsStore.setSortOption(it) } },
                     onBack = { selectedGroup = null },
                     onFinishWithDeletions = { deletions ->
                         scope.launch {
@@ -854,8 +870,8 @@ fun AppRoot(
                     onRenameFolder = { groupKey, newLabel ->
                         scope.launch { folderLabelStore.setLabel(groupKey, newLabel) }
                     },
-                    onGroupModeChange = { groupMode = it },
-                    onSortChange = { sortOption = it },
+                    onGroupModeChange = { groupMode = it; scope.launch { settingsStore.setGroupMode(it) } },
+                    onSortChange = { sortOption = it; scope.launch { settingsStore.setSortOption(it) } },
                     onGroupClick = { group ->
                         // Reshuffled fresh on every entry rather than once and
                         // cached — see randomModeEnabledFlow's doc comment for

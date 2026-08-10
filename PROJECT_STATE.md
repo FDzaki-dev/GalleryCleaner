@@ -702,3 +702,33 @@ itu satu-satunya titik source `uri` dijamin masih terbaca — begitu delete
 sukses, sumbernya sudah hilang. Konsekuensinya: kalau user cancel dialog
 sistem, salinan backup tetap ada (dianggap tidak berbahaya — cadangan
 ekstra yang tidak dipakai, bukan kerugian).
+
+## Batch29 — Debugging + UX polish pass (4 file)
+Audit menyeluruh (bukan permintaan fitur spesifik) untuk cari bug tersisa +
+"detail kecil aplikasi generik yang belum diterapkan". Grep sweep: TODO/FIXME
+(0 hasil), empty catch block (0), `contentDescription = null` (5, semua
+diaudit satu-satu), Share/ACTION_SEND (0 — gap nyata), pull-to-refresh (0 —
+gap nyata tapi tidak dikerjakan, lihat alasan di bawah), sort/group state
+(ditemukan: in-memory only, bug nyata).
+
+Dikerjakan:
+1. `SettingsStore.kt` + `MainActivity.kt` — `groupMode`/`sortOption` sekarang
+   persist ke DataStore (sebelumnya reset ke Month/Date tiap relaunch).
+2. `SwipeScreen.kt` — tombol Share (baru, 0 sebelumnya), pakai `MediaItem.uri`
+   langsung, tidak perlu FileProvider.
+3. `SwipeScreenCard.kt` — `FileInfoDialog` diperkaya (Album/Date taken/
+   Dimensions/Path ditambah, `ID` mentah dihapus), pakai field `MediaItem`
+   yang sudah ada.
+4. `SwipeScreenCard.kt` — `FullscreenViewer` image `contentDescription`
+   null → `item.displayName` (aksesibilitas).
+
+Sengaja belum dikerjakan (didokumentasikan, bukan terlewat):
+- **Pull-to-refresh gesture** di Home — API M3 `PullToRefreshBox` stabil
+  butuh `compose-bom` > `2024.06.00` (versi project saat ini). Tidak
+  dipasang tanpa bisa compile-test di sandbox (no network/gradle) — risiko
+  break build lebih besar dari manfaatnya untuk 1 gesture tambahan padahal
+  tombol refresh manual sudah ada sebagai fallback yang berfungsi.
+- `GlassButton` cascade ke seluruh `Button`/`TextButton` M3 — item lama
+  sejak Batch14/21, masih terbuka, di luar fokus "debugging + detail kecil"
+  batch ini (itu perubahan visual besar, bukan polish/bugfix).
+

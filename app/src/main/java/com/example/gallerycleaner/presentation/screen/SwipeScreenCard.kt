@@ -20,6 +20,9 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -165,7 +168,7 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
                     // it's just wasted heap.
                     .size(2400)
                     .build(),
-                contentDescription = null,
+                contentDescription = item.displayName,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize()
             )
@@ -175,20 +178,39 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
 
 @Composable
 internal fun FileInfoDialog(item: MediaItem, onDismiss: () -> Unit) {
+    val dateFormat = remember { SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("File Info") },
         text = {
             Column {
-                Text("Name: ${item.displayName}")
-                Text("Size: ${formatBytes(item.sizeBytes)}")
-                Text("ID: ${item.id}")
+                FileInfoRow("Name", item.displayName)
+                FileInfoRow("Album", item.bucketName)
+                FileInfoRow("Date taken", dateFormat.format(Date(item.dateTakenMillis)))
+                FileInfoRow("Size", formatBytes(item.sizeBytes))
+                if (item.width > 0 && item.height > 0) {
+                    FileInfoRow("Dimensions", "${item.width} × ${item.height}")
+                }
+                FileInfoRow("Path", item.relativePath)
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("OK") }
         }
     )
+}
+
+@Composable
+private fun FileInfoRow(label: String, value: String) {
+    Row(modifier = Modifier.padding(vertical = 3.dp)) {
+        Text(
+            label,
+            modifier = Modifier.width(96.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(value, style = MaterialTheme.typography.bodyMedium)
+    }
 }
 
 

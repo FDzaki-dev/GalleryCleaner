@@ -1,5 +1,6 @@
 package com.example.gallerycleaner
 
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animate
 import androidx.compose.foundation.background
@@ -10,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.filled.ViewCarousel
@@ -182,6 +184,18 @@ fun SwipeScreen(
                 },
                 actions = {
                     if (viewMode == SwipeViewMode.Swipe) {
+                        if (currentItem != null) {
+                            IconButton(onClick = {
+                                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = context.contentResolver.getType(currentItem.uri) ?: "image/*"
+                                    putExtra(Intent.EXTRA_STREAM, currentItem.uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(Intent.createChooser(sendIntent, null))
+                            }) {
+                                Icon(Icons.Filled.Share, contentDescription = "Share photo")
+                            }
+                        }
                         if (currentItem != null) {
                             IconButton(onClick = { showInfo = true }) {
                                 Text("ⓘ", style = MaterialTheme.typography.titleMedium)
