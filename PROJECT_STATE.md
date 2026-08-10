@@ -732,3 +732,14 @@ Sengaja belum dikerjakan (didokumentasikan, bukan terlewat):
   sejak Batch14/21, masih terbuka, di luar fokus "debugging + detail kecil"
   batch ini (itu perubahan visual besar, bukan polish/bugfix).
 
+## Batch30 — DangerButton extraction (audit correction, 4 file)
+Klaim "GlassButton belum cascade" di Batch29 TERNYATA sudah usang — audit
+ulang menemukan Compress/Organize/Restore semua sudah `GlassButton`. Sisa
+3 `Button` mentah (Clean up / Delete N selected / Delete permanently)
+dikonfirmasi SENGAJA solid `colorScheme.secondary` (prinsip sama PillChip
+"selected" — destructive action butuh sinyal tegas, bukan kaca), bukan
+oversight. Diekstrak jadi `DangerButton` (ui/components) untuk hilangkan
+3x duplikasi identik. 0 perubahan visual, murni DRY. `MainActivity.kt`
+crash dialog TIDAK termasuk (pola beda, sengaja dibiarkan simpel).
+
+

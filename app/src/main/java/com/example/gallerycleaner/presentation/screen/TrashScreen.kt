@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.gallerycleaner.ui.components.DangerButton
 import com.example.gallerycleaner.ui.components.GlassButton
 import com.example.gallerycleaner.ui.components.GlassCard
 
@@ -102,14 +103,11 @@ fun TrashScreen(
                             modifier = Modifier.weight(1f),
                             onClick = { onRestore(selected.toList()); selected.clear() }
                         )
-                        Button(
-                            onClick = { onDeletePermanently(selected.toList()) },
+                        DangerButton(
+                            text = "Delete permanently",
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondary,
-                                contentColor = Color(0xFF1A0E0C)
-                            )
-                        ) { Text("Delete permanently") }
+                            onClick = { onDeletePermanently(selected.toList()) }
+                        )
                     }
                 }
             }

@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.gallerycleaner.ui.components.DangerButton
 import com.example.gallerycleaner.ui.components.GlassCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -63,15 +64,7 @@ internal fun ExpiryBanner(count: Int, expiryDays: Int, onClean: () -> Unit) {
                 )
             }
             Spacer(Modifier.width(12.dp))
-            Button(
-                onClick = onClean,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor = Color(0xFF1A0E0C)
-                )
-            ) {
-                Text("Clean up")
-            }
+            DangerButton(text = "Clean up", onClick = onClean)
         }
     }
 }

@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import com.example.gallerycleaner.ui.components.DangerButton
 import com.example.gallerycleaner.ui.components.GlassButton
 import com.example.gallerycleaner.ui.components.GlassCard
 
@@ -154,15 +155,7 @@ internal fun GridSelectContent(
                         GlassButton(text = "Organize ${selected.size}", onClick = onOrganizeSelected)
                     }
                     Spacer(Modifier.width(12.dp))
-                    Button(
-                        onClick = onDeleteSelected,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary,
-                            contentColor = Color(0xFF1A0E0C)
-                        )
-                    ) {
-                        Text("Delete ${selected.size} selected")
-                    }
+                    DangerButton(text = "Delete ${selected.size} selected", onClick = onDeleteSelected)
                 }
             }
         }
