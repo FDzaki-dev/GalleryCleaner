@@ -1,7 +1,93 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v26 — Batch26 (Appearance section: RadioButton 3-way → 2 toggle Switch, mengikuti pola Row+Switch section lain)
+v27 — Batch27 (Amber Reserve: full material-language swap glass → skeuomorphism-lite, bukan recolor)
+
+## Batch27 — Amber Reserve → Skeuomorphism-lite (Atomic Change — 8 file: 3 baru + 5 edit)
+Permintaan user: "ganti total 'Amber Reserve' jadi theme 'Skeuomorphism-lite'
+yang bisa jadi baseline theme seperti 'Glassmorphism' default tanpa
+menghapus yang sudah ada (wajib berubah konfigurasi nya. Bukan pallet
+warna murahan)". Melebihi batch limit 10 file dikecualikan sebagai bukan
+masalah (8 file, di bawah limit) tapi tetap 1 Atomic Change kohesif: satu
+axis arsitektur baru (`MaterialStyle`) yang WAJIB ditambahkan bersamaan
+supaya konsisten di semua komponen sekaligus.
+
+**Root masalah yang diperbaiki**: sebelum batch ini, `AppTheme` (Signature/
+Amber Reserve/Indigo Noir) HANYA mengontrol `ColorScheme` M3 — ketiganya
+memakai `GlassCard`/`GlassButton`/`Modifier.glassPanel()` yang SAMA persis
+(translucent frosted glass). Jadi "Amber Reserve" secara arsitektur adalah
+Signature yang dicat ulang espresso/brass — persis "pallet warna murahan"
+yang disebut user di prompt, bukan theme berbeda sungguhan.
+
+**Perbaikan (axis baru, terpisah dari warna)**: file baru
+`MaterialStyle.kt` — enum `MaterialStyle { GLASS, SKEUO_LITE }` +
+`fun materialStyleFor(appTheme): MaterialStyle` (SIGNATURE→GLASS,
+AMBER_RESERVE→SKEUO_LITE, INDIGO_NOIR→GLASS — Indigo Noir SENGAJA
+dipertahankan GLASS, tidak diminta user, 0 regresi) + CompositionLocal
+`LocalMaterialStyle` (default GLASS, supaya composable manapun yang belum
+sempat baca provider tetap render persis seperti sebelum batch ini).
+`Theme.kt` → `GalleryCleanerTheme` wrap `content` dengan
+`CompositionLocalProvider(LocalMaterialStyle provides materialStyleFor(appTheme))`
+di SATU titik, bukan di-pass manual ke tiap composable.
+
+**Token & modifier baru (paralel ke `MidnightGlassTokens.kt`/
+`GlassModifier.kt`, BUKAN mengedit keduanya)**: `SkeuoLiteTokens.kt`
+(object `SkeuoLite` — fill OPAQUE/matte pakai `EspressoSurfaceRaised`
+yang sudah ada, bukan gradient translucent; shadow warna hangat
+near-black `0xFF0B0906` bukan `VoidDeep` biru dingin milik glass; bevel
+border 2-stop brass-highlight→shadow, plus varian `*Pressed` yang
+ARAH-nya dibalik untuk efek deboss, bukan cuma gelapin warna). Varian
+light-mode disertakan (`PanelFillLight` dst, pola sama seperti
+`MidnightGlass.Ice*`) untuk konsistensi meski belum ada call site yang
+threading dark/light flag ke component (keterbatasan yang sama persis
+sudah ada di sistem glass — didokumentasikan di komentar `GlassModifier.kt`
+lama, tidak diperbaiki di batch ini karena di luar cakupan permintaan).
+`SkeuoModifier.kt` — `Modifier.skeuoPanel()`/`Modifier.skeuoInset()`,
+teknik SAMA (shadow+fill+border, tanpa `Modifier.blur`, tetap
+`minSdk=24`-safe) tapi nilai beda: shape default `12.dp` (vs glass
+`18.dp`, kartu ledger lebih "tegas" dari kaca), fill `Color` solid (bukan
+`Brush`), border lebih tebal (`1.5.dp` vs `1.dp`).
+
+**Bukan resurrection sistem lama**: `SkeuoLiteTokens.kt`/`SkeuoModifier.kt`
+BUKAN mengembalikan `SkeuoMidnightTokens.kt`/`SkeuoMidnightModifier.kt`/
+`MidnightSkeuoButton.kt`/`MidnightSkeuoSlot.kt` yang dihapus permanen
+Batch21 (metallic multi-layer, debossed slot berat) — "lite" di namanya
+sengaja: 1 fill solid + 1 shadow arah + 1 border gradient, budget
+komponen SAMA seperti glassPanel, cuma beda nilai.
+
+**Komponen dibuat theme-aware (bukan di-duplicate per tema)**:
+- `GlassCard.kt` — baca `LocalMaterialStyle.current`, branch
+  `.glassPanel(...)` vs `.skeuoPanel()`. API publik TIDAK berubah (masih
+  `GlassCard(modifier, shape, elevation, contentPadding, onClick, enabled) { }`)
+  — SEMUA 6 file caller (`HomeScreenSections.kt`, `HomeScreenFolderRow.kt`,
+  `SwipeScreenGrid.kt`, `TrashScreen.kt`, dll.) 0 perubahan, otomatis ikut
+  material style aktif.
+- `GlassButton.kt` — branch penuh dua render path. Mekanisme feedback
+  tekan BEDA, bukan cuma warna: Glass = glow label + border lebih terang
+  (tidak berubah). Skeuo-lite = swap `skeuoPanel()`→`skeuoInset()` penuh
+  saat `isPressed` (shadow hilang, fill+bevel berbalik arah — deboss
+  sungguhan, bukan simulasi opacity). API publik tidak berubah, 7 call
+  site existing 0 perubahan.
+- `SwipeScreenControls.kt` `InfoChip` — satu-satunya raw
+  `Modifier.glassPanel()` call site DI LUAR GlassCard/GlassButton (chip
+  kecil di atas foto preview, override elevation/border sendiri, lihat
+  Batch22). Dibuat theme-aware juga (branch style sama), supaya Amber
+  Reserve benar-benar 100% material-swap, bukan "kartu & tombol diganti,
+  1 chip kecil kelewatan tetap kaca".
+
+**Tidak diubah (di luar cakupan, sengaja)**: `SettingsStore.kt`/`AppTheme`
+enum (masih `SIGNATURE, AMBER_RESERVE, INDIGO_NOIR`, 0 migrasi data),
+`Theme.kt` `colorSchemeFor`/`AmberReserveDark`/`AmberReserveLight` (M3
+`ColorScheme` Amber Reserve tetap sama — dipakai untuk fallback
+Card/Sheet M3 biasa, terpisah dari `SkeuoLite` object), `MainActivity.kt`
+root `Surface`/`glassBackdrop` logic (Amber Reserve sudah `glassBackdrop
+== null` sejak Batch22 — flat backdrop ini justru PAS untuk skeuomorphic:
+panel timbul butuh kanvas matte datar, bukan glow gradient, jadi tidak
+perlu disentuh). `SettingsScreen.kt` — hanya 1 baris deskripsi kartu
+Amber Reserve diupdate ("Espresso skeuomorphism-lite — raised brass-bevel
+panels, not glass."), swatch warna/label/preview color tidak diubah.
+
+## Batch26 — Appearance Toggle Rearchitecture (1 file: SettingsScreen.kt)
 
 ## Batch26 — Appearance Toggle Rearchitecture (1 file: SettingsScreen.kt)
 Permintaan user (via screenshot Settings): "Rombak arsitektur di sektor

@@ -13,21 +13,41 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.gallerycleaner.ui.theme.LocalMaterialStyle
+import com.example.gallerycleaner.ui.theme.MaterialStyle
 
 /**
- * Drop-in glass container — the Midnight Blue Glassmorphism equivalent of a
- * Material `Card`. Use this anywhere a floating panel/card look is wanted
- * (dashboard tiles, list rows, dialogs) to pick up the theme's dominant
- * frosted-glass visual instead of a flat Material surface.
+ * Drop-in floating-panel container — the shared `Card` equivalent for
+ * every color style. Use this anywhere a floating panel/card look is
+ * wanted (dashboard tiles, list rows, dialogs).
+ *
+ * Batch27: this composable is now the single branch point between the two
+ * material languages the app supports. It reads [LocalMaterialStyle] (set
+ * once per color style in `GalleryCleanerTheme`, see `MaterialStyle.kt`)
+ * and renders either `Modifier.glassPanel()` (Signature/Indigo Noir —
+ * translucent frosted glass, unchanged from before this batch) or
+ * `Modifier.skeuoPanel()` (Amber Reserve — opaque matte raised bevel, new
+ * this batch). No call site anywhere in the app (`HomeScreenSections.kt`,
+ * `TrashScreen.kt`, etc.) changed to make this happen — they all still
+ * just call `GlassCard { ... }` and get whichever material the active
+ * theme maps to.
+ *
+ * [shape]/[elevation] defaults intentionally stay glass's values
+ * (`RoundedCornerShape(18.dp)`/`12.dp`) for source compatibility with
+ * every existing call site — when [MaterialStyle.SKEUO_LITE] is active,
+ * `skeuoPanel` is called with ITS OWN defaults (`12.dp` corner/`8.dp`
+ * elevation) rather than these, so Amber Reserve still gets its intended
+ * tighter/flatter bevel look without any call site needing to pass
+ * different values in for that theme.
  *
  * [onClick] (Batch22): optional, mirrors the old `Surface(...).clickable{}`
  * pattern this replaces across the app's dashboard/list panels. Deliberately
- * applied to the modifier chain AFTER [glassPanel] (not folded into the
- * caller-supplied [modifier], which is applied BEFORE glassPanel) — same
- * order [GlassButton] already uses, so the ripple/indication paints on top
- * of the glass fill instead of being drawn under it and hidden. [enabled]
- * covers callers that need to suppress the tap while a scan/action is
- * in flight (e.g. `ScanTriggerRow`) without hiding the card entirely.
+ * applied to the modifier chain AFTER the panel modifier (not folded into
+ * the caller-supplied [modifier], which is applied BEFORE it) — same order
+ * [GlassButton] already uses, so the ripple/indication paints on top of the
+ * panel fill instead of being drawn under it and hidden. [enabled] covers
+ * callers that need to suppress the tap while a scan/action is in flight
+ * (e.g. `ScanTriggerRow`) without hiding the card entirely.
  */
 @Composable
 fun GlassCard(
@@ -39,9 +59,15 @@ fun GlassCard(
     enabled: Boolean = true,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val style = LocalMaterialStyle.current
     Box(
         modifier = modifier
-            .glassPanel(shape = shape, elevation = elevation)
+            .let {
+                when (style) {
+                    MaterialStyle.GLASS -> it.glassPanel(shape = shape, elevation = elevation)
+                    MaterialStyle.SKEUO_LITE -> it.skeuoPanel()
+                }
+            }
             .let { if (onClick != null) it.clickable(enabled = enabled, onClick = onClick) else it }
             .padding(contentPadding)
     ) {

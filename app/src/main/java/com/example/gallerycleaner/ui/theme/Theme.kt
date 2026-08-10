@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import com.example.gallerycleaner.AppTheme
 
 // small local alias to avoid importing android.graphics.Color by mistake
@@ -170,9 +171,17 @@ fun GalleryCleanerTheme(
     appTheme: AppTheme = AppTheme.SIGNATURE,
     content: @Composable () -> Unit
 ) {
-    MaterialTheme(
-        colorScheme = colorSchemeFor(appTheme, darkTheme),
-        typography = GalleryTypography,
-        content = content
-    )
+    // Batch27: provide the resolved MaterialStyle once, here, alongside the
+    // ColorScheme — see MaterialStyle.kt for why this is a separate axis
+    // from color. GlassCard/GlassButton (and anything reading
+    // LocalMaterialStyle in future) pick this up automatically; no other
+    // call site in the app needed to change for Amber Reserve to switch
+    // material language.
+    CompositionLocalProvider(LocalMaterialStyle provides materialStyleFor(appTheme)) {
+        MaterialTheme(
+            colorScheme = colorSchemeFor(appTheme, darkTheme),
+            typography = GalleryTypography,
+            content = content
+        )
+    }
 }

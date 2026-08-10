@@ -428,7 +428,7 @@ private val THEME_STYLES = listOf(
     ThemeStyle(
         appTheme = AppTheme.AMBER_RESERVE,
         label = "Amber Reserve",
-        description = "Espresso surfaces, brass & oxblood accents.",
+        description = "Espresso skeuomorphism-lite — raised brass-bevel panels, not glass.",
         previewBg = EspressoBg,
         swatchKeep = BrassKeep,
         swatchDelete = OxbloodDelete

@@ -18,6 +18,9 @@ import androidx.compose.ui.unit.dp
 import com.example.gallerycleaner.ui.components.GlassButton
 import com.example.gallerycleaner.ui.components.GlassCard
 import com.example.gallerycleaner.ui.components.glassPanel
+import com.example.gallerycleaner.ui.components.skeuoPanel
+import com.example.gallerycleaner.ui.theme.LocalMaterialStyle
+import com.example.gallerycleaner.ui.theme.MaterialStyle
 
 @Composable
 internal fun InfoBar(item: MediaItem, position: Int, total: Int) {
@@ -34,15 +37,28 @@ internal fun InfoBar(item: MediaItem, position: Int, total: Int) {
 
 @Composable
 private fun InfoChip(text: String) {
-    // Small glass pill (Batch22, was Surface(surfaceVariant)) — thinner
-    // border/lower elevation than GlassCard's defaults since this sits
-    // directly over the photo preview, not as a standalone panel.
+    // Small pill overlay on the photo preview — thinner border/lower
+    // elevation than GlassCard/skeuoPanel defaults since this sits
+    // directly over the image, not as a standalone panel (Batch22, was
+    // Surface(surfaceVariant)). Batch27: made material-style-aware like
+    // GlassCard/GlassButton, since this is the one raw glassPanel() call
+    // site outside those two components (see PROJECT_STATE Batch27) — for
+    // Amber Reserve to be a genuine full material swap this chip needed
+    // the same treatment, not just the cards/buttons.
+    val style = LocalMaterialStyle.current
     Box(
-        modifier = Modifier.glassPanel(
-            shape = RoundedCornerShape(8.dp),
-            elevation = 3.dp,
-            borderWidth = 0.5.dp
-        )
+        modifier = when (style) {
+            MaterialStyle.GLASS -> Modifier.glassPanel(
+                shape = RoundedCornerShape(8.dp),
+                elevation = 3.dp,
+                borderWidth = 0.5.dp
+            )
+            MaterialStyle.SKEUO_LITE -> Modifier.skeuoPanel(
+                shape = RoundedCornerShape(6.dp),
+                elevation = 2.dp,
+                borderWidth = 1.dp
+            )
+        }
     ) {
         Text(
             text,
