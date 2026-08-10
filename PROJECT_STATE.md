@@ -1,7 +1,56 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## Versi Saat Ini
-v27 — Batch27 (Amber Reserve: full material-language swap glass → skeuomorphism-lite, bukan recolor)
+v28 — Batch28 (Skeuo-lite retuning: root-cause fix atas "efek timbul gak kerasa" — gradient fill + specular corner glow + border kontras 2x, arsitektur Batch27 tidak berubah)
+
+## Batch28 — Skeuo-lite Visibility Fix (2 file: SkeuoLiteTokens.kt, SkeuoModifier.kt)
+Permintaan user (dengan screenshot Amber Reserve hasil Batch27): "Efek
+timbul skeuomorphism-lite gak kerasa sama sekali. Malah lebih mirip ganti
+pallet warna murahan seperti yang saya sebut tadi".
+
+**Diagnosis root cause** (dari screenshot, bukan tebakan): `PanelFill`
+Batch27 adalah SATU warna flat (`EspressoSurfaceRaised`), dan
+`ShadowColor` adalah near-black yang di-drop-shadow di atas backdrop
+espresso yang JUGA near-black — shadow gelap di atas background gelap
+= nyaris tidak terlihat sama sekali secara visual. Yang tersisa sebagai
+"beda" secara visual hanya warna border — persis "pallet warna murahan"
+yang user sebut, meskipun secara ARSITEKTUR (`MaterialStyle`/`skeuoPanel`/
+`GlassCard` theme-aware) sudah benar-benar berbeda dari glass sejak
+Batch27. Diagnosis: benar secara arsitektur, salah tuning nilai visual.
+
+**Fix (3 bagian, tetap "shadow+fill+border", tidak nambah teknik/`Modifier.blur`
+baru)**:
+1. `PanelFillGradient` — fill sekarang gradient diagonal (terang di
+   pojok kiri-atas → gelap di pojok kanan-bawah), bukan flat color.
+   Ini cue paling besar yang hilang: permukaan objek timbul sendiri
+   punya gradasi cahaya lintas permukaannya, terlepas dari shadow di
+   bawahnya.
+2. `SpecularHighlight` — BARU: glow lembut brass/putih di pojok
+   kiri-atas panel (`Brush.radialGradient`, dilapis sebagai
+   `.background(brush=specular, shape=shape)` KEDUA setelah fill dasar,
+   sebelum border, di `skeuoPanel`). Ini cue yang SAMA SEKALI HILANG di
+   Batch27 — fill+shadow doang selalu terbaca "kotak dengan border",
+   corner-catch inilah yang terbaca "permukaan melengkung/timbul yang
+   memantulkan cahaya".
+3. `BevelGradient` kontras dinaikkan ~2x (highlight alpha 0x8A→0xF0,
+   shadow alpha 0x66→0xB3) + `borderWidth` default `1.5.dp`→`2.dp` di
+   `SkeuoModifier.kt`, supaya bevel edge langsung terbaca, bukan cuma
+   outline tipis generik.
+
+**Pressed/inset state** (`skeuoInset`): fill gradient dan bevel SAMA-SAMA
+dibalik arahnya (bukan cuma warna beda), plus specular DIHILANGKAN sama
+sekali (slot terbenam tidak memantulkan cahaya ke pengamat) — 3 pembalikan
+sekaligus inilah yang menjual "ketekan masuk", bukan cuma "warna beda".
+
+**Tidak diubah**: `MaterialStyle.kt` (axis GLASS/SKEUO_LITE, mapping
+per-AppTheme), `GlassCard.kt`/`GlassButton.kt`/`SwipeScreenControls.kt`
+`InfoChip` (semua sudah theme-aware sejak Batch27, tetap panggil
+`skeuoPanel()`/`skeuoInset()` dengan API yang sama — HANYA isi token di
+dalamnya yang di-retune, jadi 0 file caller lain perlu disentuh lagi).
+`ShadowColor` dipertahankan (masih berkontribusi sebagai cue sekunder di
+siluet bawah-kanan panel), tapi didokumentasikan eksplisit BUKAN lagi
+sinyal utama "timbul" — itu sekarang dibawa oleh gradient fill + specular
++ bevel bersama-sama.
 
 ## Batch27 — Amber Reserve → Skeuomorphism-lite (Atomic Change — 8 file: 3 baru + 5 edit)
 Permintaan user: "ganti total 'Amber Reserve' jadi theme 'Skeuomorphism-lite'

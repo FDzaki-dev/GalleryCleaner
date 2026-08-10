@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v28_Batch28 — 2026-08-10
+- **Skeuo-lite visibility fix** (2 files: `SkeuoLiteTokens.kt`, `SkeuoModifier.kt`) — user feedback with screenshots: the raised effect wasn't reading at all, looked like a plain recolor. Root cause: Batch27's fill was one flat color and the drop shadow was near-black on an already near-black backdrop, i.e. invisible.
+- Fill is now a diagonal 2-stop gradient (`PanelFillGradient`, light top-left → dark bottom-right) instead of a flat color.
+- New `SpecularHighlight`: a soft corner glow layered as a second clipped background pass on top of the base fill — the missing cue that makes a panel read as a curved/raised surface rather than "a box with a border".
+- Bevel border contrast roughly doubled and default width bumped `1.5.dp` → `2.dp`.
+- Pressed/inset state (`skeuoInset`) now reverses both the fill gradient and the bevel direction, and drops the specular highlight entirely (a recessed slot doesn't reflect light back) — three reversals together, not just a color swap, sell "pushed in".
+- No architecture change from Batch27 — `MaterialStyle` axis, theme-aware `GlassCard`/`GlassButton`/`InfoChip` all untouched; this is a values-only retune of the tokens those components already call.
+
 ## v27_Batch27 — 2026-08-10
 - **Amber Reserve: full material-language swap (glass → skeuomorphism-lite), not a recolor** (Atomic Change, 8 files — 3 new, 5 edited). Root problem: `AppTheme` previously only controlled M3 `ColorScheme` — all 3 themes rendered through the same `GlassCard`/`GlassButton`/`glassPanel` (translucent frosted glass), so "Amber Reserve" was architecturally Signature repainted espresso/brass.
 - New `MaterialStyle.kt`: `MaterialStyle { GLASS, SKEUO_LITE }` enum + `materialStyleFor(AppTheme)` mapping (Signature/Indigo Noir stay `GLASS`, unchanged/0 regression; Amber Reserve moves to `SKEUO_LITE`) + `LocalMaterialStyle` CompositionLocal, provided once in `GalleryCleanerTheme` (`Theme.kt`).
