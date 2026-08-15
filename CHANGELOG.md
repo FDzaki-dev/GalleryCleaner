@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 🔗 Rilis Terbaru
+APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/OWNER/GalleryCleaner/releases/latest** (ganti `OWNER` dengan username GitHub kamu)
+
+## v34_Batch34 — 2026-08-15
+- **Docs cleanup** (4 file: README.md, CHANGELOG.md, PROJECT_STATE.md, ROADMAP.md). Shortcut GitHub Release (`/releases/latest`) ditambahkan di posisi paling atas tiap file. Bug urutan diperbaiki: entri v23/v24/v25 yang sebelumnya nyasar di paling bawah CHANGELOG dipindah ke posisi kronologisnya (antara v26 dan v22) — urutan sekarang strict newest-first v34→v1. PROJECT_STATE.md direstrukturisasi total: dedup 2× header `Batch26` duplikat, dedup 2× section `Protected Assets` identik, hapus beberapa divider "Versi Historis" yang isinya 100% redundan, fix 1 paragraf yang salah ke-parse sebagai heading. 0 file kode/protected asset disentuh. Detail lengkap: `PROJECT_STATE.md` Batch34.
+
 ## v33_Batch33 — 2026-08-10
 - **UX clarity fix** (2 files: `HomeScreenFolderRow.kt`, `HomeScreenSections.kt`). User asked why "Biggest space hogs" shows each file's folder name as a subtitle while the Month-grouped "All Photos" list only shows an item count — a fair question: a Month row pools photos from many different folders with no single folder to name, unlike a top-5-files card where each entry has exactly one folder. Not a bug, but genuinely unexplained in the UI. Follow-up: "Dirombak. Agar user awam pun tetap tahu fungsinya" (overhaul it so even a layperson understands).
 - `GroupRow`: added a folder-summary line under the item count, shown only when a group actually spans more than one folder (`distinctFolders.size > 1` — naturally never fires in Album mode, where the row's own title already is the folder). Small folder icon + up to 2 names, "+N more" beyond that, single line with ellipsis so row height never grows.
@@ -59,6 +65,16 @@
 
 ## v26_Batch26 — 2026-08-10
 - **Appearance section rearchitected** (`SettingsScreen.kt`): 3-way `RadioButton` list ("Match system"/"Light"/"Dark", one-directional single-select) replaced with 2 `Switch` toggle rows, matching the `Row`+`Switch` pattern used by every other section on this screen (Backup/Notifications/Swiping/Feedback/Privacy). "Match system" toggle: ON → `ThemeMode.SYSTEM` (brightness follows `isSystemInDarkTheme()` live, same resolution MainActivity already had). "Dark mode" toggle below it: disabled (read-only) while Match system is ON but still mirrors live system state; editable and drives `ThemeMode.DARK`/`LIGHT` directly when Match system is OFF. Turning Match system OFF resolves to a concrete mode based on the system state at that instant, avoiding a visual jump. `SettingsRadioRow` composable removed (no longer used anywhere else). Zero DataStore/schema changes — `ThemeMode` enum and persistence untouched, this is UI-only.
+
+## v25_Batch25 — 2026-08-10
+- ROADMAP: koreksi audit — duplicate detection (Similar photos) & blur auto-flag (Blurry photos) ternyata sudah live sejak batch sebelumnya, cuma belum ditandai ✅ di ROADMAP.md.
+- New: "Backup before delete" (Settings > Backup, default off) — copy foto/video ke Pictures|Movies/GalleryCleaner/Backup sebelum permanent-delete. Best-effort, tidak pernah memblokir delete yang diminta user.
+
+## v24_Batch24 — 2026-08-10
+- Fix: teks hitam tak terbaca di Settings (radio "Match system"/Light/Dark, judul color-style Signature/Amber/Indigo, judul toggle Cleaning reminders/Random clean mode/Swipe haptics/App lock) — root cause: Scaffold `containerColor = Color.Transparent` (Batch22) membuat `contentColor` default M3 jadi Unspecified→hitam. Fix: `contentColor = MaterialTheme.colorScheme.onBackground` eksplisit di 5 Scaffold (Settings/Home/Onboarding/Swipe/Trash).
+
+## v23_Batch23 — 2026-08-10
+- Fix: `GlassCard` teks judul (Blurry photos, Similar photos, nama bulan/album, dsb) tampil hitam/tak terbaca di atas panel kaca gelap — `Box` internal tidak pernah menyediakan `LocalContentColor` (beda dari M3 `Surface`), jadi `Text()` tanpa `color=` eksplisit jatuh ke default keras Compose (Color.Black). Diperbaiki 1 titik pusat: `CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface)` di `GlassCard.kt`. Semua Text() yang sudah set warna eksplisit (subtitle onSurfaceVariant, "Scan" primary, dll) tidak terpengaruh — 0 regresi.
 
 ## v22_Batch22 — 2026-08-10
 - **Atomic Change** (glassmorphism component cascade, 9 file — exceeds normal 10-file/1-module limit, justified: same `Surface(color=surface/surfaceVariant, shape=RoundedCornerShape(20.dp))` pattern repeated across the app must be swapped together or not at all, otherwise half the screens read as glass and half as flat, which looks like a bug rather than a design).
@@ -175,13 +191,3 @@
 ## v1_Batch1 — 2026-08-09
 - Fix: `app/build.gradle.kts` missing closing brace `}` di blok validasi `RELEASE_KEY_PASSWORD` (baris 58-62) → menyebabkan `Expecting '}'` di line 123 dan build CI gagal total.
 - Add: `.github/workflows/build.yml` step build sekarang menyimpan output ke `test-result-<branch>-attempt-<run_attempt>.log` dan upload otomatis sebagai GitHub Actions artifact jika build gagal (`if: failure()`).
-
-## v23 — Batch23
-- Fix: `GlassCard` teks judul (Blurry photos, Similar photos, nama bulan/album, dsb) tampil hitam/tak terbaca di atas panel kaca gelap — `Box` internal tidak pernah menyediakan `LocalContentColor` (beda dari M3 `Surface`), jadi `Text()` tanpa `color=` eksplisit jatuh ke default keras Compose (Color.Black). Diperbaiki 1 titik pusat: `CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface)` di `GlassCard.kt`. Semua Text() yang sudah set warna eksplisit (subtitle onSurfaceVariant, "Scan" primary, dll) tidak terpengaruh — 0 regresi.
-
-## v24 — Batch24
-- Fix: teks hitam tak terbaca di Settings (radio "Match system"/Light/Dark, judul color-style Signature/Amber/Indigo, judul toggle Cleaning reminders/Random clean mode/Swipe haptics/App lock) — root cause: Scaffold `containerColor = Color.Transparent` (Batch22) membuat `contentColor` default M3 jadi Unspecified→hitam. Fix: `contentColor = MaterialTheme.colorScheme.onBackground` eksplisit di 5 Scaffold (Settings/Home/Onboarding/Swipe/Trash).
-
-## v25 — Batch25
-- ROADMAP: koreksi audit — duplicate detection (Similar photos) & blur auto-flag (Blurry photos) ternyata sudah live sejak batch sebelumnya, cuma belum ditandai ✅ di ROADMAP.md.
-- New: "Backup before delete" (Settings > Backup, default off) — copy foto/video ke Pictures|Movies/GalleryCleaner/Backup sebelum permanent-delete. Best-effort, tidak pernah memblokir delete yang diminta user.

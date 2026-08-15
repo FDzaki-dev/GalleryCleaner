@@ -1,46 +1,43 @@
-# Gallery Cleaner (starter project)
+# Gallery Cleaner
 
 A swipe-to-clean gallery app: swipe left to delete, right to keep. Organizes
 your photos/videos by month or album, remembers where you left off in each
 group, and lets you sort by date, size, or name.
 
-## Why this is source code, not a ready .apk
+## 🔗 Download the latest APK
 
-This was built in a sandbox without the Android SDK / build tools installed
-and without internet access to fetch them, so it can't be compiled into an
-installable `.apk` here. The good news: turning this into an APK on your own
-machine takes about 2 minutes.
+**[github.com/OWNER/GalleryCleaner/releases/latest](https://github.com/OWNER/GalleryCleaner/releases/latest)**
+(replace `OWNER` with your GitHub username) — signed, installable APK,
+rebuilt and published automatically every time changes are pushed to
+`main`. No Android Studio needed, just download and tap to install (enable
+"install from unknown sources" if prompted).
 
-## How to build the installable APK
-
-1. Install **Android Studio** (free): https://developer.android.com/studio
-2. Open Android Studio → **Open** → select this `GalleryCleaner` folder.
-3. Let it sync (it will auto-download Gradle and dependencies the first time —
-   this needs internet access once).
-4. Click the green **Run ▶** button with a device/emulator connected, **or**
-   go to `Build → Build Bundle(s) / APK(s) → Build APK(s)` to just get the
-   `.apk` file (it'll show up under `app/build/outputs/apk/debug/`).
-5. Copy that `.apk` to your phone and install it (enable "install from
-   unknown sources" if prompted).
-
-## What's implemented
+## ✨ What's implemented
 
 - Media permission request (Android 13+ granular, older versions fallback)
 - Loads all photos & videos from the device via `MediaStore`
 - Group by **Month** or **Album**, sort by **Date / Size / Name**
-- Swipe-card UI (drag left = delete, drag right = keep)
-- Progress per group is saved (via Jetpack DataStore) so reopening a group
+- Swipe-card UI (drag left = delete, drag right = keep) with a 3rd action,
+  **Organize**, to move photos to a folder while swiping
+- Random clean mode, cleanup goal with progress bar, per-group resume
+- Smart detection: near-duplicate photos & blurry photos (on-device, no
+  upload), optional backup-before-delete
+- App lock (PIN/biometric), 3 full theme styles, built-in crash logger
+- Progress per group is saved (Jetpack DataStore) so reopening a group
   picks up where you left off
 - Batch delete using the proper Android 11+ `MediaStore.createDeleteRequest`
   system confirmation (with a direct-delete fallback for older Android)
 
-## Building it entirely from your phone (via GitHub Actions)
+See `CHANGELOG.md` for the full, newest-first history of every change, and
+`PROJECT_STATE.md` for current status + what's next.
 
-This project already includes `.github/workflows/build.yml`, which builds
-the APK in the cloud automatically every time you push. You never need
-Android Studio or a computer — GitHub's servers do the compiling.
+## 🛠 Building it yourself
 
-**Android phone (recommended: Termux app):**
+This project includes `.github/workflows/build.yml`, which builds the APK
+in the cloud automatically on every push — GitHub's servers do the
+compiling, you never need Android Studio or a computer.
+
+**Android phone (Termux, recommended):**
 1. Install **Termux** from F-Droid or Play Store.
 2. In Termux:
    ```
@@ -66,39 +63,31 @@ Android Studio or a computer — GitHub's servers do the compiling.
    ```
    When prompted for a password, paste the token from step 4 (not your
    GitHub password).
-6. On github.com, open your repo → **Actions** tab. You'll see "Build APK"
-   running (takes ~3-6 minutes).
-7. When it finishes, tap into the run → scroll to **Artifacts** →
-   download the artifact (named like `GalleryCleaner-v1.0.42-a1b2c3d.apk`,
-   matching this build's version and commit). It's a zip containing one
-   `.apk` with that same name.
-8. Unzip it on your phone and tap the `.apk` to install (allow "install
-   from unknown sources" if asked).
+6. On github.com, open your repo → **Actions** tab — "Build APK" runs
+   automatically (~3-6 minutes). When it finishes, check the repo's
+   sidebar → **Releases** for the signed `.apk`, ready to download and
+   install directly (see the shortcut at the top of this README).
 
 **iPhone:** use the **Working Copy** app instead of Termux — it can unzip,
 commit, and push to GitHub directly from its own file browser, with the
 same steps 3–4 above for creating the repo/token.
 
-Every time you push a change, GitHub automatically rebuilds the APK for you.
+**On a computer, with Android Studio:**
+1. Install **Android Studio** (free): https://developer.android.com/studio
+2. Open Android Studio → **Open** → select this `GalleryCleaner` folder.
+3. Let it sync (auto-downloads Gradle and dependencies the first time —
+   needs internet access once).
+4. Click **Run ▶** with a device/emulator connected, or
+   `Build → Build Bundle(s) / APK(s) → Build APK(s)` to just get the
+   `.apk` (shows up under `app/build/outputs/apk/debug/`).
 
-## Ideas for next steps
+Every time you push a change, GitHub automatically rebuilds and republishes
+the APK for you.
 
-- App name/icon: currently placeholder ("Gallery Cleaner" + simple icon) —
-  change `app_name` in `res/values/strings.xml` and swap
-  `res/drawable/ic_launcher.xml` for your own branding
-- Random cleanup mode
-- A stats/summary screen (photos cleaned, storage freed)
-- Move-to-folder while swiping
+## 💡 Ideas for next steps
 
+- Multi-language support (Spanish, Portuguese-BR)
+- One-time-purchase premium tier
+- Play Store readiness (privacy policy, Data Safety form, screenshots)
 
-## Build note (fixed v2)
-
-The release workflow now verifies the generated APK with `apksigner` before uploading it. R8/resource shrinking is disabled temporarily to eliminate release-only stripping issues while the app is being validated. For consistent updates across different machines, configure one persistent release keystore through GitHub Actions secrets.
-
-
-## v1.1.0 user-facing update
-
-### Biggest space hogs
-The Home dashboard now immediately surfaces the five largest active media files. A tap opens them for review through the existing cleaning flow, so users can identify what is consuming storage without manually searching through albums.
-
-Release signing configuration remains external to the repository and continues to use the permanent GitHub Actions release keystore secrets.
+See `PROJECT_STATE.md` → "Belum Dikerjakan" for the up-to-date pending list.

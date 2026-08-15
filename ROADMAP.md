@@ -1,5 +1,11 @@
 # ROADMAP — GalleryCleaner vs "Sponge - Gallery Cleaner"
 
+## 🔗 Rilis Terbaru
+APK signed terbaru: **https://github.com/OWNER/GalleryCleaner/releases/latest** (ganti `OWNER` dengan username GitHub kamu)
+
+## Status Ringkas (terbaru)
+✅ Fase A (gap fungsional inti) selesai 4/4 — Batch20. ✅ Fase B (AI on-device) selesai 3/3 — Batch25. ⏳ Fase C (reliability/visual) & Fase D (jangkauan pasar) belum dimulai — lihat `PROJECT_STATE.md` → "Belum Dikerjakan" untuk detail terkini.
+
 Dibuat Batch15 (2026-08-09). Tolok ukur: **Sponge - Gallery Cleaner**
 (`com.prismtree.sponge`, prismtree, live sejak Juli 2023, ~780rb download,
 ~510 install/hari, rating 5.0 di listing pihak ketiga). Riset via web
