@@ -6,8 +6,8 @@ group, and lets you sort by date, size, or name.
 
 ## 🔗 Download the latest APK
 
-**[github.com/OWNER/GalleryCleaner/releases/latest](https://github.com/OWNER/GalleryCleaner/releases/latest)**
-(replace `OWNER` with your GitHub username) — signed, installable APK,
+**[github.com/FDzaki-dev/GalleryCleaner/releases/latest](https://github.com/FDzaki-dev/GalleryCleaner/releases/latest)**
+ — signed, installable APK,
 rebuilt and published automatically every time changes are pushed to
 `main`. No Android Studio needed, just download and tap to install (enable
 "install from unknown sources" if prompted).

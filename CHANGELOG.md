@@ -1,7 +1,10 @@
 # CHANGELOG
 
 ## 🔗 Rilis Terbaru
-APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/OWNER/GalleryCleaner/releases/latest** (ganti `OWNER` dengan username GitHub kamu)
+APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
+
+## v35_Batch35 — 2026-08-15
+- Docs (4 file): shortcut GitHub Release diisi repo asli `github.com/FDzaki-dev/GalleryCleaner` (sebelumnya placeholder `OWNER`, 404 saat di-tap). 0 kode disentuh.
 
 ## v34_Batch34 — 2026-08-15
 - **Docs cleanup** (4 file: README.md, CHANGELOG.md, PROJECT_STATE.md, ROADMAP.md). Shortcut GitHub Release (`/releases/latest`) ditambahkan di posisi paling atas tiap file. Bug urutan diperbaiki: entri v23/v24/v25 yang sebelumnya nyasar di paling bawah CHANGELOG dipindah ke posisi kronologisnya (antara v26 dan v22) — urutan sekarang strict newest-first v34→v1. PROJECT_STATE.md direstrukturisasi total: dedup 2× header `Batch26` duplikat, dedup 2× section `Protected Assets` identik, hapus beberapa divider "Versi Historis" yang isinya 100% redundan, fix 1 paragraf yang salah ke-parse sebagai heading. 0 file kode/protected asset disentuh. Detail lengkap: `PROJECT_STATE.md` Batch34.

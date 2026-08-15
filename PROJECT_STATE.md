@@ -1,11 +1,11 @@
 # PROJECT_STATE — GalleryCleaner
 
 ## 🔗 Rilis Terbaru
-- GitHub Release (APK signed, siap install, muncul di sidebar repo): **https://github.com/OWNER/GalleryCleaner/releases/latest** — ganti `OWNER` dengan username GitHub kamu setelah repo dibuat (Kotak A/Termux).
+- GitHub Release (APK signed, siap install, muncul di sidebar repo): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v34 — Batch34 (Dokumentasi dirapikan total: dedup section/header duplikat, urutan terbaru-di-atas ditegakkan di README/CHANGELOG/PROJECT_STATE/ROADMAP, shortcut GitHub Release ditambahkan di 4 file dokumentasi)
+v35 — Batch35 (Shortcut GitHub Release diisi repo asli: github.com/FDzaki-dev/GalleryCleaner, placeholder `OWNER` dihapus dari 4 file dokumentasi)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **ROADMAP Fase C item 9** — Phase-1b package restructure (flat → real sub-package `com.example.gallerycleaner.data.media` dst.) — masih pending, butuh compiler/CI nyata per-layer, tidak tersedia di sandbox ini.
@@ -24,6 +24,9 @@ v34 — Batch34 (Dokumentasi dirapikan total: dedup section/header duplikat, uru
 
 ## Riwayat Batch (terbaru → terlama)
 Detail Batch2–4 belum granular di file ini — lihat `CHANGELOG.md` (urutan sama, terbaru di atas).
+
+### Batch35 — Isi Repo Asli ke Shortcut GitHub Release (4 file)
+User konfirmasi repo: `https://github.com/FDzaki-dev/GalleryCleaner`. Placeholder `OWNER` (sengaja generik di Batch34 karena repo belum tentu dibuat) diganti `FDzaki-dev` di README.md/CHANGELOG.md/PROJECT_STATE.md/ROADMAP.md — 4 link sekarang mengarah ke `github.com/FDzaki-dev/GalleryCleaner/releases/latest` yang valid begitu rilis pertama ter-publish. 0 file kode disentuh.
 
 ### Batch34 — Rapikan Dokumentasi + Shortcut GitHub Release (4 file: README.md, CHANGELOG.md, PROJECT_STATE.md, ROADMAP.md)
 Permintaan user: rapikan dokumentasi sampai "welcome able", terbaru wajib di urutan paling atas di setiap lini dokumentasi, tambah shortcut ke GitHub Release APK terbaru.
