@@ -97,15 +97,20 @@ fun NeumorphSurface(
                 }
             }
     ) {
-        // NOTE: `matchParentSize()` is a `BoxScope` extension (not a
-        // `Modifier` one) — called bare here relying on this lambda's
-        // implicit `BoxScope` receiver (this whole block runs inside the
-        // outer `Box{ }` above), then `.offset()`/`.shadow()` chain onto
-        // the `Modifier` it returns.
+        // NOTE (fixed after CI run160 failure — see PROJECT_STATE.md
+        // Batch37): `matchParentSize()` is declared INSIDE `interface
+        // BoxScope` as `fun Modifier.matchParentSize(): Modifier` — it
+        // needs BOTH an explicit `Modifier` extension receiver (so it must
+        // be written `Modifier.matchParentSize()`, same as any other
+        // modifier) AND an implicit `BoxScope` dispatch receiver (supplied
+        // automatically here, since this whole block runs inside the outer
+        // `Box { }` above). A bare `matchParentSize()` — no `Modifier.`
+        // prefix — only supplies the second half and fails to resolve;
+        // that was the actual compile error CI caught.
         if (!pressed) {
             // Dark shadow — bottom-right (depth)
             Box(
-                matchParentSize()
+                Modifier.matchParentSize()
                     .offset(x = shadowOffset, y = shadowOffset)
                     .shadow(
                         elevation = shadowElevation,
@@ -117,7 +122,7 @@ fun NeumorphSurface(
             )
             // Light shadow — top-left (highlight)
             Box(
-                matchParentSize()
+                Modifier.matchParentSize()
                     .offset(x = -shadowOffset, y = -shadowOffset)
                     .shadow(
                         elevation = shadowElevation,
@@ -130,7 +135,7 @@ fun NeumorphSurface(
         }
         // Flat fill, no gradient, no border/bevel — the "pure" surface itself.
         Box(
-            matchParentSize()
+            Modifier.matchParentSize()
                 .background(color = if (pressed) pressedFillColor else fillColor, shape = shape)
         )
         Box(modifier = Modifier.padding(contentPadding), content = content)

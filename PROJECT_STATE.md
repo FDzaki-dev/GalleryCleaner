@@ -5,7 +5,7 @@
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v36 — Batch36 (Amber Reserve full redesign: Skeuomorphism-lite → Pure Neumorphism, palet navy/brass eksplisit dari user, 8 file)
+v37 — Batch37 (Fix build failure run160: `matchParentSize()` di `NeumorphSurface.kt` butuh prefix `Modifier.` eksplisit, 1 file)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **Cleanup pending approval (Batch36)** — `SkeuoLiteTokens.kt` + `SkeuoModifier.kt` sekarang 100% unreferenced oleh `MaterialStyle`/tema manapun (`AMBER_RESERVE` pindah ke `NEUMORPH`), tapi TIDAK dihapus batch ini (butuh izin eksplisit user per aturan project). Ikut jadi dead-once-approved: 13 `val` warna lama di `Color.kt` (`EspressoSurface`, `EspressoOutline`, `IvoryText`, `IvoryTextSecondary`, `BrassKeep`, `BrassKeepDim`, `BrassKeepOnLight`, `CreamBg`, `CreamSurfaceRaised`, `CreamOutline`, `EspressoTextPrimary`, `EspressoTextSecondary`, `EspressoBg`) yang cuma dipakai `SkeuoLiteTokens.kt`. Juga ditemukan (bukan dari batch ini, sudah mati dari sebelumnya): `EspressoSurfaceRaised`, `OxbloodDeleteDim` — 0 referensi di manapun. Semua di-flag di sini, tunggu izin user sebelum hapus.
@@ -25,6 +25,15 @@ v36 — Batch36 (Amber Reserve full redesign: Skeuomorphism-lite → Pure Neumor
 
 ## Riwayat Batch (terbaru → terlama)
 Detail Batch2–4 belum granular di file ini — lihat `CHANGELOG.md` (urutan sama, terbaru di atas).
+
+### Batch37 — Fix Build Failure run160 (1 file: NeumorphSurface.kt)
+User upload log CI: `log-fail_main_run160-attempt1_4a1b7b9_log.zip`. `:app:compileReleaseKotlin` FAILED, 3× "Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: public abstract fun Modifier.matchParentSize(): Modifier defined in androidx.compose.foundation.layout.BoxScope" — persis di 3 pemanggilan `matchParentSize()` dalam Batch36 (`NeumorphSurface.kt:108,120,133`).
+
+**Root cause**: `matchParentSize()` dideklarasikan DI DALAM `interface BoxScope` sebagai `fun Modifier.matchParentSize(): Modifier` — perlu DUA hal sekaligus: extension receiver `Modifier` (harus ditulis eksplisit `Modifier.matchParentSize()`, sama seperti modifier lain) DAN dispatch receiver implisit `BoxScope` (otomatis tersedia karena dipanggil di dalam `Box { }`). Batch36 salah asumsi — dokumentasi internal (comment) yang saya tulis sendiri bilang "dipanggil bare karena implicit BoxScope receiver", tapi itu cuma benar untuk separuh syarat (dispatch receiver), bukan separuhnya lagi (extension receiver `Modifier` tetap wajib eksplisit). Fix: `matchParentSize()` → `Modifier.matchParentSize()` di ketiga titik pemanggilan, comment diperbaiki supaya gak mengulang kesalahan yang sama di batch depan.
+
+**Tidak ada perubahan lain** — 3 layer shadow/fill di `NeumorphSurface.kt` (dark shadow, light shadow, flat fill) strukturnya sama persis, cuma prefix `Modifier.` yang ditambahkan. 0 file lain disentuh, 0 protected asset disentuh.
+
+**Verifikasi manual** (belum ada compiler di sandbox ini): brace/paren balance re-checked (6/6, 54/54 — naik dari 52 karena 2 karakter tambahan `Modifier.` × 3, wajar). Compile sesungguhnya masih nunggu CI — kalau masih merah, upload log-fail berikutnya.
 
 ### Batch36 — Amber Reserve: Skeuomorphism-lite → Pure Neumorphism (8 file: 2 baru + 6 edit)
 Permintaan eksplisit user: redesign Amber Reserve jadi **"eksplisit" Neumorphism murni, tanpa rekayasa ngide sendiri, tanpa hybrid baseline bersama theme lain**, dengan komposisi warna WCAG-compliant yang sudah ditentukan (60% `#0F172A` Deep Navy / 30% `#1E293B` Navy Card / 10% `#D4AF37` Classic Brass, teks `#F8FAFC` di atas Navy, teks `#0F172A` di dalam tombol Brass).

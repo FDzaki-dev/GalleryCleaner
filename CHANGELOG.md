@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v37_Batch37 — 2026-08-16
+- **Fix build failure run160** (1 file: `NeumorphSurface.kt`). `matchParentSize()` (3× dari Batch36) gagal resolve — perlu prefix `Modifier.` eksplisit meski dipanggil dalam scope `BoxScope` (dispatch receiver implisit ≠ extension receiver, keduanya wajib). 0 file lain disentuh. Detail: `PROJECT_STATE.md` Batch37.
+
 ## v36_Batch36 — 2026-08-16
 - **Amber Reserve full redesign** (8 file: 2 baru + 6 edit): Skeuomorphism-lite (Batch27/28) → **Pure Neumorphism**, palet eksplisit dari user (60% `#0F172A` Deep Navy / 30% `#1E293B` Navy Card / 10% `#D4AF37` Classic Brass). Baru: `NeumorphTokens.kt`, `NeumorphSurface.kt` (dual independently-offset shadow, flat fill, tanpa border/gradient — resep 100% berbeda dari `glassPanel`/`skeuoPanel`, tanpa alias token dari keduanya). `MaterialStyle.NEUMORPH` ditambahkan (`SKEUO_LITE` tetap ada di enum, unused). `Theme.kt`/`GlassCard.kt`/`GlassButton.kt`/`SwipeScreenControls.kt`/`SettingsScreen.kt` diupdate. Kontras diverifikasi: 17.06:1 / 13.98:1 / 8.49:1 (semua lolos AAA). Light-mode diderivasi mekanis (hue sama, lightness dinaikkan) — tidak ada spec light dari user. Detail lengkap + rationale teknis: `PROJECT_STATE.md` Batch36.
 
