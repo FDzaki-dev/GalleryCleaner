@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.example.gallerycleaner.ui.theme.LocalMaterialStyle
 import com.example.gallerycleaner.ui.theme.MaterialStyle
 import com.example.gallerycleaner.ui.theme.MidnightGlass
+import com.example.gallerycleaner.ui.theme.Neumorph
 import com.example.gallerycleaner.ui.theme.SkeuoLite
 
 /**
@@ -34,10 +36,15 @@ import com.example.gallerycleaner.ui.theme.SkeuoLite
  * - **Glass** (unchanged): press = brighter glow-tinted label + warmer
  *   border gradient. Floating glass doesn't get physically "pushed", so
  *   feedback reads as a light/glow change.
- * - **Skeuo-lite** (new): press = `skeuoPanel` → `skeuoInset` swap, i.e.
- *   the shadow disappears and the fill/bevel reverse to the recessed
- *   variant — the button visually depresses into the surface, like a
- *   real embossed key, then springs back on release.
+ * - **Skeuo-lite** (unused as of Batch36 — see `MaterialStyle.kt`): press
+ *   = `skeuoPanel` → `skeuoInset` swap, shadow disappears and fill/bevel
+ *   reverse to the recessed variant.
+ * - **Neumorph** (Batch36, Amber Reserve): press = both offset shadow
+ *   layers disappear and the flat fill swaps from [Neumorph.ClassicBrass]
+ *   to [Neumorph.ClassicBrassPressed] (a darkened derivative of the same
+ *   hue, not a new color) — same "shadow gone + fill swap" mechanism as
+ *   skeuo-lite's press feedback, via `NeumorphSurface`'s `pressed` param
+ *   instead of a manual `skeuoPanel`/`skeuoInset` modifier swap.
  */
 @Composable
 fun GlassButton(
@@ -100,6 +107,36 @@ fun GlassButton(
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.4.sp
                 )
+            }
+        }
+        MaterialStyle.NEUMORPH -> {
+            // Batch36: Brass fill (the spec's "10% Accent — khusus tombol
+            // CTA utama") rather than NeumorphSurface's NavyCard default —
+            // this IS the CTA. Text is Neumorph.TextOnBrass unconditionally
+            // (pressed or not), per the spec's explicit WCAG button-text
+            // rule — unlike Glass/Skeuo-lite above, there's no "pressed
+            // color" swap for the TEXT here, only the surface swaps.
+            NeumorphSurface(
+                modifier = modifier.height(52.dp),
+                shape = RoundedCornerShape(16.dp),
+                pressed = isPressed,
+                fillColor = Neumorph.ClassicBrass,
+                pressedFillColor = Neumorph.ClassicBrassPressed,
+                shadowElevation = 6.dp,
+                shadowOffset = 4.dp,
+                contentPadding = 0.dp,
+                onClick = onClick,
+                interactionSource = interactionSource // indication=null handled inside NeumorphSurface
+            ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = text,
+                        color = Neumorph.TextOnBrass,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.4.sp
+                    )
+                }
             }
         }
     }

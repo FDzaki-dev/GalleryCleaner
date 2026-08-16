@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.gallerycleaner.ui.components.GlassButton
 import com.example.gallerycleaner.ui.components.GlassCard
+import com.example.gallerycleaner.ui.components.NeumorphSurface
 import com.example.gallerycleaner.ui.components.glassPanel
 import com.example.gallerycleaner.ui.components.skeuoPanel
 import com.example.gallerycleaner.ui.theme.LocalMaterialStyle
@@ -45,7 +46,26 @@ private fun InfoChip(text: String) {
     // site outside those two components (see PROJECT_STATE Batch27) — for
     // Amber Reserve to be a genuine full material swap this chip needed
     // the same treatment, not just the cards/buttons.
+    // Batch36: NEUMORPH branches to NeumorphSurface (a composable, not a
+    // Modifier — see its doc comment) with an early return, same pattern
+    // GlassCard.kt uses, since it can't join the `when` below.
     val style = LocalMaterialStyle.current
+    if (style == MaterialStyle.NEUMORPH) {
+        NeumorphSurface(
+            shape = RoundedCornerShape(6.dp),
+            shadowElevation = 3.dp,
+            shadowOffset = 2.dp,
+            contentPadding = 0.dp
+        ) {
+            Text(
+                text,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+            )
+        }
+        return
+    }
     Box(
         modifier = when (style) {
             MaterialStyle.GLASS -> Modifier.glassPanel(
@@ -58,6 +78,7 @@ private fun InfoChip(text: String) {
                 elevation = 2.dp,
                 borderWidth = 1.dp
             )
+            MaterialStyle.NEUMORPH -> Modifier // unreachable — handled by the early return above
         }
     ) {
         Text(

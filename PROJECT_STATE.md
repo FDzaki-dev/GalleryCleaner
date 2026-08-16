@@ -5,9 +5,10 @@
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v35 — Batch35 (Shortcut GitHub Release diisi repo asli: github.com/FDzaki-dev/GalleryCleaner, placeholder `OWNER` dihapus dari 4 file dokumentasi)
+v36 — Batch36 (Amber Reserve full redesign: Skeuomorphism-lite → Pure Neumorphism, palet navy/brass eksplisit dari user, 8 file)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
+- **Cleanup pending approval (Batch36)** — `SkeuoLiteTokens.kt` + `SkeuoModifier.kt` sekarang 100% unreferenced oleh `MaterialStyle`/tema manapun (`AMBER_RESERVE` pindah ke `NEUMORPH`), tapi TIDAK dihapus batch ini (butuh izin eksplisit user per aturan project). Ikut jadi dead-once-approved: 13 `val` warna lama di `Color.kt` (`EspressoSurface`, `EspressoOutline`, `IvoryText`, `IvoryTextSecondary`, `BrassKeep`, `BrassKeepDim`, `BrassKeepOnLight`, `CreamBg`, `CreamSurfaceRaised`, `CreamOutline`, `EspressoTextPrimary`, `EspressoTextSecondary`, `EspressoBg`) yang cuma dipakai `SkeuoLiteTokens.kt`. Juga ditemukan (bukan dari batch ini, sudah mati dari sebelumnya): `EspressoSurfaceRaised`, `OxbloodDeleteDim` — 0 referensi di manapun. Semua di-flag di sini, tunggu izin user sebelum hapus.
 - **ROADMAP Fase C item 9** — Phase-1b package restructure (flat → real sub-package `com.example.gallerycleaner.data.media` dst.) — masih pending, butuh compiler/CI nyata per-layer, tidak tersedia di sandbox ini.
 - **ROADMAP Fase C item 8** (keputusan cascade `MidnightSkeuoButton`) — **superseded/tidak relevan lagi**: sistem Midnight Skeuo dihapus total sejak Batch21 (diganti Glassmorphism), lalu Batch27 memperkenalkan `SkeuoLite` terpisah untuk Amber Reserve. Tidak perlu keputusan lanjutan.
 - **ROADMAP Fase D (belum dimulai)**: multi-bahasa (minimal ES + PT-BR), monetisasi premium one-time-purchase, Play Store readiness (privacy policy URL, Data Safety form, screenshot set, ASO description).
@@ -24,6 +25,33 @@ v35 — Batch35 (Shortcut GitHub Release diisi repo asli: github.com/FDzaki-dev/
 
 ## Riwayat Batch (terbaru → terlama)
 Detail Batch2–4 belum granular di file ini — lihat `CHANGELOG.md` (urutan sama, terbaru di atas).
+
+### Batch36 — Amber Reserve: Skeuomorphism-lite → Pure Neumorphism (8 file: 2 baru + 6 edit)
+Permintaan eksplisit user: redesign Amber Reserve jadi **"eksplisit" Neumorphism murni, tanpa rekayasa ngide sendiri, tanpa hybrid baseline bersama theme lain**, dengan komposisi warna WCAG-compliant yang sudah ditentukan (60% `#0F172A` Deep Navy / 30% `#1E293B` Navy Card / 10% `#D4AF37` Classic Brass, teks `#F8FAFC` di atas Navy, teks `#0F172A` di dalam tombol Brass).
+
+**Kepatuhan ke "tanpa ngide sendiri"**: semua warna baru berasal dari SALAH SATU dari (a) hex persis yang diberikan user, tanpa modifikasi, atau (b) derivasi mekanis dari hex itu (alpha-blend untuk teks sekunder, HLS-lightness-shift untuk varian pressed/light-mode — formula didokumentasikan per-value di `NeumorphTokens.kt`), atau (c) hitam/putih murni untuk pasangan shadow (teknik neumorphism standar, bukan hue baru). 0 warna dipilih bebas.
+
+**Kepatuhan ke "tanpa hybrid baseline"**: `NeumorphTokens.kt` (baru) TIDAK meng-alias satupun token dari `SkeuoLiteTokens.kt`/`Color.kt`-nya Amber Reserve lama (beda dari `SkeuoLite` yang dulu alias `AccentBrass = BrassKeep`) — 100% standalone. Teknik render (`NeumorphSurface.kt`, baru) juga resep berbeda total: dual shadow independen (bukan 1 ambient shadow), fill flat solid (bukan gradient), TANPA border/bevel sama sekali (beda dari `glassPanel`/`skeuoPanel` yang selalu punya border) — lihat tabel perbandingan di doc comment `NeumorphSurface.kt`.
+
+**Kendala teknis yang mendorong desain**: `Modifier.shadow()` (primitif yang dipakai `glassPanel`/`skeuoPanel`) cuma bisa 1 shadow dari elevasi Z, TIDAK bisa offset X/Y independen — secara struktural gak bisa bikin 2 shadow neumorphism (terang kiri-atas + gelap kanan-bawah). Solusi: 2 layer `Box` terpisah, masing-masing `.offset()` + `.shadow()` sendiri — primitif yang SAMA yang sudah dipakai `glassPanel`/`skeuoPanel`, cuma disusun sebagai 2 layer bukan 1 chain. Konsekuensi: `NeumorphSurface` adalah `@Composable` (seperti `GlassCard`), BUKAN `Modifier.neumorphPanel()` extension (beda dari `glassPanel`/`skeuoPanel`) — gak bisa masuk pola `.let { when(style) ... }` yang sama, jadi 3 call site (`GlassCard`, `GlassButton`, `InfoChip`) branch NEUMORPH via early-`return` SEBELUM masuk modifier-chain lama, bukan di dalam `when` yang sama.
+
+**Caveat platform, didokumentasikan bukan disembunyikan**: `ambientColor`/`spotColor` custom di `Modifier.shadow()` cuma render sesuai tint di API 28+; di API24-27 fallback ke shadow hitam default. Untuk `glassPanel`/`skeuoPanel` ini tak kasat mata (tint mereka udah dekat-hitam). Untuk shadow terang (putih, neumorphism ini) di API24-27 akan salah render jadi shadow gelap kedua — degradasi visual kecil di device di bawah `minSdk=24`... eh, di ATAS `minSdk` tapi di bawah API28 (rentang shrinking di 2026). Flagged, tidak memblokir implementasi (`glassPanel`/`skeuoPanel` sudah terima tradeoff API-level yang serupa).
+
+**File (8)**:
+1. `ui/theme/NeumorphTokens.kt` (BARU) — palet + shadow pair + turunan pressed/light-mode, semua terderivasi/eksplisit (lihat di atas).
+2. `ui/components/NeumorphSurface.kt` (BARU) — composable dual-shadow, no-border, no-gradient.
+3. `ui/theme/MaterialStyle.kt` — tambah `MaterialStyle.NEUMORPH`, `AMBER_RESERVE` pindah dari `SKEUO_LITE`→`NEUMORPH`. `SKEUO_LITE` TETAP ada di enum (unused, bukan dihapus).
+4. `ui/theme/Theme.kt` — `AmberReserveDark`/`AmberReserveLight` baca dari `Neumorph.*`. `secondary`/`error` (Oxblood/Delete) TIDAK diubah — di luar cakupan spec user, konsisten aturan project (Keep/Delete semantic color selalu di luar spec visual manapun).
+5. `ui/components/GlassCard.kt` — early-return branch NEUMORPH → `NeumorphSurface`.
+6. `ui/components/GlassButton.kt` — early-return branch NEUMORPH → `NeumorphSurface` dengan `fillColor=ClassicBrass` (CTA), teks selalu `TextOnBrass` (sesuai rule WCAG user, tidak ada swap warna teks saat pressed, cuma fill yang swap).
+7. `presentation/screen/SwipeScreenControls.kt` (`InfoChip`) — early-return branch NEUMORPH, sama pola dengan `GlassCard`.
+8. `presentation/screen/SettingsScreen.kt` — deskripsi + preview swatch theme picker Amber Reserve diupdate ke Neumorphism; import `BrassKeep`/`EspressoBg` yang jadi tak terpakai dihapus.
+
+**Light mode**: TIDAK diberikan spec-nya oleh user (spec cuma untuk dark). Didekati mekanis: hue yang sama dari 3 hex yang diberikan, lightness dinaikkan di ruang HLS (teknik yang SAMA yang project ini sudah 3× pakai untuk pasangan dark/light tema lain: Espresso→Cream, Indigo→Lilac, Void→Ice) — bukan palet baru yang tak terkait. Ditandai sebagai default, terbuka dikoreksi kalau user kasih spec light mode sendiri.
+
+**Verifikasi kontras (dihitung, bukan estimasi)**: TextPrimary vs DeepNavy = 17.06:1. TextPrimary vs NavyCard = 13.98:1. TextOnBrass vs ClassicBrass = 8.49:1. Semua jauh di atas AA (4.5:1), bahkan lolos AAA (7:1) — klaim WCAG di spec user terverifikasi benar.
+
+**Tidak diverifikasi (tidak ada compiler di sandbox ini, konsisten batch-batch sebelumnya)**: build aktual. Verifikasi lewat GitHub Actions CI setelah push — cek brace/paren balance + exhaustiveness `when(style)` sudah dilakukan manual (lihat commit ini), tapi type-check Compose sesungguhnya nunggu CI.
 
 ### Batch35 — Isi Repo Asli ke Shortcut GitHub Release (4 file)
 User konfirmasi repo: `https://github.com/FDzaki-dev/GalleryCleaner`. Placeholder `OWNER` (sengaja generik di Batch34 karena repo belum tentu dibuat) diganti `FDzaki-dev` di README.md/CHANGELOG.md/PROJECT_STATE.md/ROADMAP.md — 4 link sekarang mengarah ke `github.com/FDzaki-dev/GalleryCleaner/releases/latest` yang valid begitu rilis pertama ter-publish. 0 file kode disentuh.

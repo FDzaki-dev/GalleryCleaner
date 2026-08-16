@@ -78,34 +78,44 @@ private val SignatureLight = lightColorScheme(
     onError = androidx.compose.ui.graphics.Color(0xFFFFFFFF)
 )
 
+// Batch36 — full redesign: Amber Reserve's ColorScheme now reads
+// exclusively from `Neumorph` (NeumorphTokens.kt), not the old
+// Espresso*/Brass*/Ivory*/Cream* tokens (those still exist in Color.kt,
+// referenced by the now-unused SkeuoLiteTokens.kt — see MaterialStyle.kt
+// doc for why those aren't deleted this batch). Delete/error stays
+// OxbloodDelete/OxbloodDeleteOnLight, UNCHANGED — the user's new
+// palette spec covers background/structural/accent/text only, and
+// Keep/Delete semantic colors are explicitly out of scope of any visual
+// theme spec per this project's standing rule (see the override note
+// above `SignatureDark`/every prior full-theme-rewrite batch).
 private val AmberReserveDark = darkColorScheme(
-    primary = BrassKeep,
-    onPrimary = Color0F,
+    primary = Neumorph.ClassicBrass,
+    onPrimary = Neumorph.TextOnBrass,
     secondary = OxbloodDelete,
     onSecondary = Color0F,
-    background = EspressoBg,
-    onBackground = IvoryText,
-    surface = EspressoSurface,
-    onSurface = IvoryText,
-    surfaceVariant = EspressoSurfaceRaised,
-    onSurfaceVariant = IvoryTextSecondary,
-    outline = EspressoOutline,
+    background = Neumorph.DeepNavy,
+    onBackground = Neumorph.TextPrimary,
+    surface = Neumorph.NavyCard,
+    onSurface = Neumorph.TextPrimary,
+    surfaceVariant = Neumorph.NavyCard,
+    onSurfaceVariant = Neumorph.TextSecondary,
+    outline = Neumorph.NavyCard,
     error = OxbloodDelete,
     onError = Color0F
 )
 
 private val AmberReserveLight = lightColorScheme(
-    primary = BrassKeepOnLight,
-    onPrimary = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
+    primary = Neumorph.BrassOnLight,
+    onPrimary = Neumorph.TextOnBrass,
     secondary = OxbloodDeleteOnLight,
     onSecondary = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
-    background = CreamBg,
-    onBackground = EspressoTextPrimary,
-    surface = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
-    onSurface = EspressoTextPrimary,
-    surfaceVariant = CreamSurfaceRaised,
-    onSurfaceVariant = EspressoTextSecondary,
-    outline = CreamOutline,
+    background = Neumorph.LightBg,
+    onBackground = Neumorph.TextPrimaryOnLight,
+    surface = Neumorph.LightCard,
+    onSurface = Neumorph.TextPrimaryOnLight,
+    surfaceVariant = Neumorph.LightCard,
+    onSurfaceVariant = Neumorph.TextSecondaryOnLight,
+    outline = Neumorph.LightCard,
     error = OxbloodDeleteOnLight,
     onError = androidx.compose.ui.graphics.Color(0xFFFFFFFF)
 )

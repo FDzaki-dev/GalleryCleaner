@@ -28,10 +28,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.example.gallerycleaner.ui.theme.BrassKeep
 import com.example.gallerycleaner.ui.theme.DustyRoseDelete
-import com.example.gallerycleaner.ui.theme.EspressoBg
 import com.example.gallerycleaner.ui.theme.IndigoBg
+import com.example.gallerycleaner.ui.theme.Neumorph
 import com.example.gallerycleaner.ui.theme.OxbloodDelete
 import com.example.gallerycleaner.ui.theme.PeriwinkleKeep
 import com.example.gallerycleaner.ui.theme.SageKeep
@@ -428,9 +427,11 @@ private val THEME_STYLES = listOf(
     ThemeStyle(
         appTheme = AppTheme.AMBER_RESERVE,
         label = "Amber Reserve",
-        description = "Espresso skeuomorphism-lite — raised brass-bevel panels, not glass.",
-        previewBg = EspressoBg,
-        swatchKeep = BrassKeep,
+        // Batch36 redesign: was "Espresso skeuomorphism-lite — raised
+        // brass-bevel panels, not glass." (Batch27/28) — now pure Soft UI.
+        description = "Deep navy neumorphism — soft dual-shadow panels, no border, no glass.",
+        previewBg = Neumorph.DeepNavy,
+        swatchKeep = Neumorph.ClassicBrass,
         swatchDelete = OxbloodDelete
     ),
     ThemeStyle(

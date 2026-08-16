@@ -21,16 +21,24 @@ import com.example.gallerycleaner.ui.theme.MaterialStyle
  * every color style. Use this anywhere a floating panel/card look is
  * wanted (dashboard tiles, list rows, dialogs).
  *
- * Batch27: this composable is now the single branch point between the two
+ * Batch27: this composable is the single branch point between the
  * material languages the app supports. It reads [LocalMaterialStyle] (set
  * once per color style in `GalleryCleanerTheme`, see `MaterialStyle.kt`)
- * and renders either `Modifier.glassPanel()` (Signature/Indigo Noir —
- * translucent frosted glass, unchanged from before this batch) or
- * `Modifier.skeuoPanel()` (Amber Reserve — opaque matte raised bevel, new
- * this batch). No call site anywhere in the app (`HomeScreenSections.kt`,
- * `TrashScreen.kt`, etc.) changed to make this happen — they all still
- * just call `GlassCard { ... }` and get whichever material the active
- * theme maps to.
+ * and renders `Modifier.glassPanel()` (Signature/Indigo Noir — translucent
+ * frosted glass), `Modifier.skeuoPanel()` (unused as of Batch36, see
+ * `MaterialStyle.kt`), or — Batch36 — `NeumorphSurface` (Amber Reserve —
+ * pure dual-shadow soft-UI). No call site anywhere in the app
+ * (`HomeScreenSections.kt`, `TrashScreen.kt`, etc.) changed to make this
+ * happen or the Batch36 redesign happen — they all still just call
+ * `GlassCard { ... }` and get whichever material the active theme maps to.
+ *
+ * Batch36: [MaterialStyle.NEUMORPH] branches BEFORE the `Box`/modifier-
+ * chain construction below (early `return`), not inside the `.let { when
+ * ... } ` — `NeumorphSurface` needs two independently-offset shadow layers
+ * (see its doc comment), which can't be expressed as one linear `Modifier`
+ * chain the way `glassPanel`/`skeuoPanel` can. Everything else about this
+ * function (params, [onClick]/[enabled] semantics, the `LocalContentColor`
+ * fix from Batch23) is identical either way.
  *
  * [shape]/[elevation] defaults intentionally stay glass's values
  * (`RoundedCornerShape(18.dp)`/`12.dp`) for source compatibility with
@@ -60,12 +68,28 @@ fun GlassCard(
     content: @Composable BoxScope.() -> Unit
 ) {
     val style = LocalMaterialStyle.current
+
+    if (style == MaterialStyle.NEUMORPH) {
+        NeumorphSurface(
+            modifier = modifier,
+            contentPadding = contentPadding,
+            onClick = onClick,
+            enabled = enabled
+        ) {
+            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+                content()
+            }
+        }
+        return
+    }
+
     Box(
         modifier = modifier
             .let {
                 when (style) {
                     MaterialStyle.GLASS -> it.glassPanel(shape = shape, elevation = elevation)
                     MaterialStyle.SKEUO_LITE -> it.skeuoPanel()
+                    MaterialStyle.NEUMORPH -> it // unreachable — handled by the early return above
                 }
             }
             .let { if (onClick != null) it.clickable(enabled = enabled, onClick = onClick) else it }
