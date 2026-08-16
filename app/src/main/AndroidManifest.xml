@@ -15,6 +15,9 @@
          *normal* permission — granted automatically at install, no runtime
          prompt, same as READ/WRITE_EXTERNAL_STORAGE above. -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Batch39 (Audit Gap P0 #4): App Lock's BiometricPrompt. Normal
+         permission, granted automatically at install — no runtime prompt. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <application
         android:name=".GalleryCleanerApp"

@@ -121,4 +121,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("io.coil-kt:coil-gif:2.6.0")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
+    // Batch39 (Audit Gap P0 #4): real BiometricPrompt for App Lock,
+    // replacing the deprecated KeyguardManager.createConfirmDeviceCredentialIntent().
+    implementation("androidx.biometric:biometric:1.1.0")
 }

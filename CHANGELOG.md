@@ -3,6 +3,12 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v39_Batch39 — 2026-08-16
+- **Audit Gap P0 #4 fix** (4 file: 2 protected asset edit parsial + 2 edit): App Lock diganti dari `KeyguardManager.createConfirmDeviceCredentialIntent()` (deprecated, cuma layar PIN/pattern/password — "biometric" di README/Settings selama ini cuma klaim) ke `androidx.biometric.BiometricPrompt` sungguhan (`BIOMETRIC_STRONG or DEVICE_CREDENTIAL`, fallback otomatis). `MainActivity` base class `ComponentActivity`→`FragmentActivity` (widening aman, syarat host `BiometricPrompt`). +1 dependency (`androidx.biometric:biometric:1.1.0`), +1 permission normal (`USE_BIOMETRIC`). README diperjelas match implementasi baru; `SettingsScreen.kt` sudah akurat, tidak diubah. Stage 2 dari audit `GalleryCleaner_v37_Audit_Gap_Final.md`. Detail: `PROJECT_STATE.md` Batch39.
+
+## v38_Batch38 — 2026-08-16
+- **Audit Gap P0 #3 fix** (2 file: 1 baru + 1 edit): `TrashExpiryWorker.kt` baru — notifikasi harian saat item Trash lewat retention setting (silent auto-delete TERBUKTI mustahil di scoped storage — `MediaStore.createDeleteRequest()` wajib foreground Activity + dialog user, lihat `TrashStore.kt`'s doc). Deep-link ke `TrashScreen` via `ACTION_VIEW_TRASH` yang sudah ada. Selalu terjadwal (bukan opt-in), `MainActivity.onCreate` +3 baris. 0 dependency/permission baru. Stage 1 dari audit `GalleryCleaner_v37_Audit_Gap_Final.md` (20 temuan, dikerjakan bertahap). Detail: `PROJECT_STATE.md` Batch38.
+
 ## v37_Batch37 — 2026-08-16
 - **Fix build failure run160** (1 file: `NeumorphSurface.kt`). `matchParentSize()` (3× dari Batch36) gagal resolve — perlu prefix `Modifier.` eksplisit meski dipanggil dalam scope `BoxScope` (dispatch receiver implisit ≠ extension receiver, keduanya wajib). 0 file lain disentuh. Detail: `PROJECT_STATE.md` Batch37.
 

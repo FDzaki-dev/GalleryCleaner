@@ -1,7 +1,6 @@
 package com.example.gallerycleaner
 
 import android.Manifest
-import android.app.KeyguardManager
 import android.app.RecoverableSecurityException
 import android.content.Context
 import android.content.Intent
@@ -12,12 +11,13 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.Settings
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.example.gallerycleaner.ui.components.GlassButton
@@ -56,7 +57,16 @@ import java.io.StringWriter
 private const val ACTION_VIEW_TRASH = "com.example.gallerycleaner.ACTION_VIEW_TRASH"
 private const val ACTION_OPEN_SETTINGS = "com.example.gallerycleaner.ACTION_OPEN_SETTINGS"
 
-class MainActivity : ComponentActivity() {
+// FragmentActivity, not ComponentActivity — Batch39 (Audit Gap P0 #4):
+// androidx.biometric.BiometricPrompt's constructor requires a
+// FragmentActivity host (it shows its auth UI as an internal
+// DialogFragment). Safe swap: androidx.fragment's FragmentActivity has
+// extended androidx.activity's ComponentActivity since Fragment 1.3.0,
+// so every ComponentActivity API this file already relies on (setContent,
+// rememberLauncherForActivityResult, getSystemService, ...) keeps working
+// unchanged — this is strictly a widening of the base class, not a
+// behavioral change to anything else in the file.
+class MainActivity : FragmentActivity() {
 
     private lateinit var progressStore: ProgressStore
     private lateinit var trashStore: TrashStore
@@ -111,6 +121,12 @@ class MainActivity : ComponentActivity() {
         folderLabelStore = FolderLabelStore(applicationContext)
         settingsStore = SettingsStore(applicationContext)
 
+        // Batch38 — Audit Gap P0 #3: always-on (not opt-in, see
+        // TrashExpiryWorker's class doc for why), idempotent via KEEP
+        // policy so this being called on every cold start/process restart
+        // never resets an already-ticking daily check.
+        TrashExpiryWorker.schedule(applicationContext)
+
         setContent {
             val themeMode by settingsStore.themeModeFlow.collectAsState(initial = ThemeMode.DARK)
             val appTheme by settingsStore.appThemeFlow.collectAsState(initial = AppTheme.SIGNATURE)
@@ -157,14 +173,64 @@ class MainActivity : ComponentActivity() {
                     // real process death — which is fine, a fresh process
                     // start is exactly when re-locking is wanted.
                     var isUnlocked by rememberSaveable { mutableStateOf(false) }
-                    val keyguardManager = remember {
-                        getSystemService(KeyguardManager::class.java)
+                    // Batch39 (Audit Gap P0 #4): androidx.biometric
+                    // BiometricPrompt, not KeyguardManager's
+                    // createConfirmDeviceCredentialIntent(). The old API is
+                    // deprecated (was @Suppress("DEPRECATION")'d here
+                    // before) and only ever showed the device's PIN/
+                    // pattern/password screen — biometric wasn't a real
+                    // option, just README's word for it. This is the
+                    // actual fix, not a docs-only correction: allowing
+                    // BIOMETRIC_STRONG or DEVICE_CREDENTIAL means the
+                    // system now offers a fingerprint/face prompt first,
+                    // with automatic fallback to the device's screen lock
+                    // when biometrics aren't enrolled or fail — matching
+                    // what README/Settings already claimed all along.
+                    val biometricManager = remember { BiometricManager.from(this@MainActivity) }
+                    val promptInfo = remember {
+                        BiometricPrompt.PromptInfo.Builder()
+                            .setTitle("Unlock GalleryCleaner")
+                            .setSubtitle("Confirm your screen lock to continue")
+                            // No setNegativeButtonText(): mutually exclusive
+                            // with DEVICE_CREDENTIAL below — the system
+                            // supplies its own cancel affordance instead.
+                            .setAllowedAuthenticators(
+                                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                            )
+                            .build()
                     }
-                    val confirmCredentialLauncher = rememberLauncherForActivityResult(
-                        ActivityResultContracts.StartActivityForResult()
-                    ) { result ->
-                        if (result.resultCode == android.app.Activity.RESULT_OK) isUnlocked = true
+                    val biometricExecutor = remember { ContextCompat.getMainExecutor(this@MainActivity) }
+                    val biometricPrompt = remember {
+                        BiometricPrompt(
+                            this@MainActivity,
+                            biometricExecutor,
+                            object : BiometricPrompt.AuthenticationCallback() {
+                                override fun onAuthenticationSucceeded(
+                                    result: BiometricPrompt.AuthenticationResult
+                                ) {
+                                    isUnlocked = true
+                                }
+                                // onAuthenticationError / onAuthenticationFailed:
+                                // deliberately no-op. Staying locked and
+                                // leaving AppLockScreen's Unlock button as
+                                // the retry path is correct here — e.g. a
+                                // user-initiated cancel is reported through
+                                // onAuthenticationError and must not be
+                                // treated as a failure state to recover
+                                // from automatically.
+                            }
+                        )
                     }
+                    // Single source of truth for "is there anything valid
+                    // to authenticate against right now" — used both to
+                    // gate auto-prompting below and to decide the fail-open
+                    // branch, so the two can never disagree.
+                    fun canUseBiometricUnlock(): Boolean =
+                        biometricManager.canAuthenticate(
+                            BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                                BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                        ) == BiometricManager.BIOMETRIC_SUCCESS
 
                     // Re-lock exactly on a genuine backgrounding (home
                     // button, app switcher, etc.) — never on a rotation.
@@ -193,18 +259,13 @@ class MainActivity : ComponentActivity() {
                         appLockEnabled == null -> Unit
                         appLockEnabled == true && !isUnlocked -> {
                             LaunchedEffect(Unit) {
-                                val km = keyguardManager
-                                if (km != null && km.isDeviceSecure) {
-                                    @Suppress("DEPRECATION")
-                                    val intent = km.createConfirmDeviceCredentialIntent(
-                                        "Unlock GalleryCleaner",
-                                        "Confirm your screen lock to continue"
-                                    )
-                                    if (intent != null) confirmCredentialLauncher.launch(intent)
+                                if (canUseBiometricUnlock()) {
+                                    biometricPrompt.authenticate(promptInfo)
                                 } else {
                                     // The device's screen lock was removed
-                                    // after this setting was turned on —
-                                    // there's no valid credential left to
+                                    // (and no biometric is enrolled) after
+                                    // this setting was turned on — there's
+                                    // no valid credential left to
                                     // authenticate against, so holding the
                                     // gallery locked here would strand the
                                     // person with no way back in. Fail
@@ -217,14 +278,8 @@ class MainActivity : ComponentActivity() {
                             }
                             AppLockScreen(
                                 onUnlockClick = {
-                                    val km = keyguardManager
-                                    if (km != null && km.isDeviceSecure) {
-                                        @Suppress("DEPRECATION")
-                                        val intent = km.createConfirmDeviceCredentialIntent(
-                                            "Unlock GalleryCleaner",
-                                            "Confirm your screen lock to continue"
-                                        )
-                                        if (intent != null) confirmCredentialLauncher.launch(intent)
+                                    if (canUseBiometricUnlock()) {
+                                        biometricPrompt.authenticate(promptInfo)
                                     }
                                 }
                             )

@@ -22,7 +22,9 @@ rebuilt and published automatically every time changes are pushed to
 - Random clean mode, cleanup goal with progress bar, per-group resume
 - Smart detection: near-duplicate photos & blurry photos (on-device, no
   upload), optional backup-before-delete
-- App lock (PIN/biometric), 3 full theme styles, built-in crash logger
+- App lock: biometric prompt (fingerprint/face) with automatic fallback to
+  your device's PIN/pattern/password, 3 full theme styles, built-in crash
+  logger
 - Progress per group is saved (Jetpack DataStore) so reopening a group
   picks up where you left off
 - Batch delete using the proper Android 11+ `MediaStore.createDeleteRequest`
