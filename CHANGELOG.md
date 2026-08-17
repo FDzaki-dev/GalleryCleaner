@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v41_Batch41 — 2026-08-17
+- **HOTFIX** (1 file): CI build gagal (`compileReleaseKotlin`, run163) — `GalleryCleanerApp.kt` import `coil.video.VideoFrameDecoder` (package salah, sisa dari Batch40 tanpa compiler untuk validasi). Fix: `coil.decode.VideoFrameDecoder` (dikonfirmasi dari dokumentasi resmi Coil). Dependency `coil-video:2.6.0` & logika lain Batch40 sudah benar, tidak diubah.
+
 ## v40_Batch40 — 2026-08-17
 - **Audit Gap P0 #1 fix** (8 file): video sekarang benar-benar bagian dari library — `MediaDataSource` query `MediaStore.Video.Media` selain `Images.Media` (progresif + full-load), `MediaItem` dapat field `mediaType`/`durationMillis`, manifest+runtime permission `READ_MEDIA_VIDEO` (API33+), thumbnail video via Coil `VideoFrameDecoder` (+dependency `coil-video:2.6.0`, didaftarkan sekali di `GalleryCleanerApp` → otomatis berlaku semua layar lewat `MediaPreview.kt`), play-badge visual di `MediaPreview.kt`. `MediaScanner`'s blur/near-dup difilter image-only (efisiensi; exact-duplicate tetap generic, otomatis cover video). Delete/trash/organize/share sudah type-agnostic dari awal, gak perlu diubah. Sengaja belum: duration label, tap-to-play, filter tipe media di UI — lihat `PROJECT_STATE.md` Batch40. Stage 3 dari audit `GalleryCleaner_v37_Audit_Gap_Final.md`.
 

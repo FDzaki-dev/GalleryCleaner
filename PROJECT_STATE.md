@@ -5,7 +5,7 @@
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v40 — Batch40 (Audit Gap P0 #1: video sekarang benar-benar ke-scan — `MediaDataSource` query `MediaStore.Video.Media`, `READ_MEDIA_VIDEO`, thumbnail via Coil `VideoFrameDecoder`, 8 file)
+v41 — Batch41 (HOTFIX Batch40: CI build gagal, import `VideoFrameDecoder` salah package — 1 file)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **AUDIT GAP TRACKER (mulai Batch38)** — user upload `GalleryCleaner_v37_Audit_Gap_Final.md`, 20 temuan P0/P1/P2. Dikerjakan bertahap per batch (bukan 1 batch raksasa — di luar batas 10-file/batch project ini). Status:
@@ -33,6 +33,13 @@ v40 — Batch40 (Audit Gap P0 #1: video sekarang benar-benar ke-scan — `MediaD
 
 ## Riwayat Batch (terbaru → terlama)
 Detail Batch2–4 belum granular di file ini — lihat `CHANGELOG.md` (urutan sama, terbaru di atas).
+
+### Batch41 — HOTFIX: CI build gagal dari Batch40 (1 file)
+User upload log CI gagal (`log-fail_main_run163-attempt1_594aa57.log`). Root cause tunggal: `GalleryCleanerApp.kt` import `coil.video.VideoFrameDecoder` — package itu SALAH untuk Coil 2.x. Dicek via web search ke dokumentasi/changelog resmi Coil: kelas ini ada di `coil.decode.VideoFrameDecoder` (di bawah `coil-video` artifact, tapi package-nya tetap `coil.decode`, bukan `coil.video`). Ini murni salah tebak nama package waktu Batch40 ditulis tanpa compiler untuk validasi — dependency `coil-video:2.6.0` di `build.gradle.kts` sendiri sudah benar, cuma importnya yang keliru.
+
+**Fix**: `import coil.video.VideoFrameDecoder` → `import coil.decode.VideoFrameDecoder`. Cuma 1 baris, 1 file. Tidak ada perubahan lain — dependency, registrasi `add(VideoFrameDecoder.Factory())`, dan seluruh logika Batch40 lainnya sudah benar dan tidak disentuh.
+
+**Verifikasi manual**: brace balance `GalleryCleanerApp.kt` 7/7. Grep bersih: 0 sisa referensi `coil.video` di seluruh project. Package `coil.decode.VideoFrameDecoder` dikonfirmasi dari dokumentasi API resmi Coil (coil-kt.github.io) dan changelog resmi — bukan tebakan kedua tanpa sumber.
 
 ### Batch40 — Audit Gap P0 #1: Video jadi bagian nyata library (8 file)
 Stage 3 dari audit tracker. P0 #1: "video secara praktis 0% didukung" — `MediaDataSource` cuma query `MediaStore.Images.Media`, manifest cuma minta `READ_MEDIA_IMAGES`, `MediaItem` gak punya pembeda tipe media.

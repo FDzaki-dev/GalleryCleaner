@@ -6,9 +6,9 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
+import coil.decode.VideoFrameDecoder
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
-import coil.video.VideoFrameDecoder
 
 /**
  * Without this, Coil only knows how to decode still images — pointing it at
