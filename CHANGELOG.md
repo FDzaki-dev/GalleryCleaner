@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v42_Batch42 — 2026-08-17
+- **Audit Gap P0 #2 fix** (1 file): investigasi dulu — UI copy (`TrashScreen.kt`, `SettingsScreen.kt`) sudah akurat, README gak pernah klaim "trash", jadi bukan bug UX. Fix: perkuat doc comment `TrashStore.kt` biar eksplisit bilang ini bukan `MediaStore.createTrashRequest()` (real OS trash, API30+), dan dokumentasikan kenapa itu sengaja belum diadopsi (perubahan arsitektur: query MediaStore via `MATCH_TRASHED`, flow untrash terpisah, sinkronisasi state) — dicatat sebagai kandidat batch terpisah di masa depan, bukan dikerjakan sekarang. Stage 4 dari audit `GalleryCleaner_v37_Audit_Gap_Final.md`.
+
 ## v41_Batch41 — 2026-08-17
 - **HOTFIX** (1 file): CI build gagal (`compileReleaseKotlin`, run163) — `GalleryCleanerApp.kt` import `coil.video.VideoFrameDecoder` (package salah, sisa dari Batch40 tanpa compiler untuk validasi). Fix: `coil.decode.VideoFrameDecoder` (dikonfirmasi dari dokumentasi resmi Coil). Dependency `coil-video:2.6.0` & logika lain Batch40 sudah benar, tidak diubah.
 

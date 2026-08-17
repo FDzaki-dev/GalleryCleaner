@@ -33,6 +33,26 @@ data class TrashedItem(val id: Long, val trashedAtMillis: Long)
  * "auto-expiry" here means: items past the threshold are flagged via
  * [expiredItemIdsFlow] so the UI can prompt the user to confirm the delete
  * with one tap, rather than the item quietly sitting in trash forever.
+ *
+ * Audit Gap P0 #2 (Batch42): "Trash" here is this app's own bookkeeping —
+ * an id+timestamp review queue in DataStore — not a move into MediaStore's
+ * real OS-level trash (`MediaStore.createTrashRequest()`, API 30+, which
+ * flags a file's `IS_TRASHED` column so it's hidden from normal queries and
+ * eligible for the *system's* recovery/cleanup, without this app's local
+ * bookkeeping in the loop at all). This is a deliberate choice, not an
+ * oversight: it's the same "Recently Deleted" pattern most gallery/photo
+ * apps use (soft-delete + countdown + restore, all app-managed) — the
+ * user-facing copy this data feeds (TrashScreen's "Trash (N)"/"Empty
+ * Trash"/"Delete permanently", Settings' "flag items in Trash for cleanup
+ * after:") already describes exactly this and nothing more, so there's no
+ * gap between what's promised and what's implemented. Adopting the real
+ * MediaStore trash API instead would be a genuine architecture change, not
+ * a small fix: it needs items re-queried from MediaStore with
+ * `MATCH_TRASHED` to populate TrashScreen (rather than reading them from
+ * here), a separate untrash flow, and a story for items trashed by some
+ * *other* app showing up unexpectedly in this one's queue — worth
+ * revisiting as its own dedicated batch if OS-level trash integration
+ * becomes a real product requirement, not bundled into this one.
  */
 class TrashStore(private val context: Context) {
 
