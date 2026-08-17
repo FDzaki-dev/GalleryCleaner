@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v43_Batch43 — 2026-08-17
+- **Permintaan user** (1 file protected asset, edit parsial): nama file APK GitHub Release diubah dari `GalleryCleaner-v1.0.44-Release.apk` jadi `GalleryCleaner-v1.0.{run_number}.apk` — suffix "-Release" dihapus (pola sekarang `{App}-v{version}.apk`, sesuai contoh app lain "PromptVault"). Akar masalah versi "stuck"/mismatch (nama file bilang v1.0.44, tag release bilang v1.0.165) DIKONFIRMASI: 2 skema angka beda (`git rev-list --count HEAD` vs `github.run_number`) buat 1 hal yang sama — bukan manual bump yang lupa di-update. Fix: keduanya sekarang pakai `$GITHUB_RUN_NUMBER`, jadi nama file & tag release selalu sinkron permanen. Detail: `PROJECT_STATE.md` Batch43.
+
 ## v42_Batch42 — 2026-08-17
 - **Audit Gap P0 #2 fix** (1 file): investigasi dulu — UI copy (`TrashScreen.kt`, `SettingsScreen.kt`) sudah akurat, README gak pernah klaim "trash", jadi bukan bug UX. Fix: perkuat doc comment `TrashStore.kt` biar eksplisit bilang ini bukan `MediaStore.createTrashRequest()` (real OS trash, API30+), dan dokumentasikan kenapa itu sengaja belum diadopsi (perubahan arsitektur: query MediaStore via `MATCH_TRASHED`, flow untrash terpisah, sinkronisasi state) — dicatat sebagai kandidat batch terpisah di masa depan, bukan dikerjakan sekarang. Stage 4 dari audit `GalleryCleaner_v37_Audit_Gap_Final.md`.
 

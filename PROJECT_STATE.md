@@ -5,7 +5,7 @@
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v42 — Batch42 (Audit Gap P0 #2: "Trash" bukan trash filesystem — investigasi + klarifikasi, 1 file)
+v43 — Batch43 (permintaan user: nama file APK Release — hilangkan suffix "-Release" + fix akar masalah versi "stuck", 1 file protected asset)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **AUDIT GAP TRACKER (mulai Batch38)** — user upload `GalleryCleaner_v37_Audit_Gap_Final.md`, 20 temuan P0/P1/P2. Dikerjakan bertahap per batch (bukan 1 batch raksasa — di luar batas 10-file/batch project ini). Status:
@@ -31,6 +31,23 @@ v42 — Batch42 (Audit Gap P0 #2: "Trash" bukan trash filesystem — investigasi
 
 ## Riwayat Batch (terbaru → terlama)
 Detail Batch2–4 belum granular di file ini — lihat `CHANGELOG.md` (urutan sama, terbaru di atas).
+
+### Batch43 — Fix nama file APK Release + akar masalah versi "stuck" (1 file protected asset, edit parsial)
+Permintaan user (2 screenshot GitHub Release: `GalleryCleaner v1.0.165` filename APK `GalleryCleaner-v1.0.44-Release.apk`, dibandingkan contoh app lain "PromptVault" yang filename-nya `PromptVault-v7.2.0.apk` — polos, tanpa suffix "-Release", dan angka versinya SAMA PERSIS dengan tag release).
+
+**Konfirmasi akar masalah** (ini yang user duga "manual version bump stuck" — sudah pernah di-flag Batch20 tapi sengaja gak disentuh waktu itu karena di luar permintaan saat itu): `.github/workflows/build.yml` punya DUA skema angka versi berbeda buat 1 hal yang sama:
+- Tag/nama GitHub Release: `v1.0.${{ github.run_number }}` — auto-increment per run CI.
+- Nama file APK (`VERSION_NAME` di step "Rename APK"): `1.0.$(git rev-list --count HEAD)` — total commit count.
+
+Dua counter ini BUKAN manual/stuck, tapi auto-generate dari sumber berbeda yang secara alami saling drift (re-run CI, workflow_dispatch, atau banyak commit di-batch jadi 1 push semua bikin `run_number` maju lebih cepat dari `commit count`) — makanya tag bisa di v1.0.165 sementara nama file APK-nya masih v1.0.44.
+
+**Fix**: `VERSION_NAME` sekarang pakai `$GITHUB_RUN_NUMBER` (env var bawaan Actions, sumber yang SAMA kayak tag) — bukan `git rev-list --count HEAD` lagi. Jadi nama file APK & tag/nama release SELALU sama persis dari sekarang, permanen (bukan cuma dibenerin sekali). Suffix "-Release" dihapus total, hasil akhir: `GalleryCleaner-v1.0.${{ run_number }}.apk` — pola persis `{App}-v{version}.apk` kayak contoh PromptVault, dan angka run number itu sendiri yang jadi pembeda tiap build (dulu tugas ini dipegang kata "Release" yang statis/gak informatif).
+
+**Riwayat terkait**: ini iterasi ke-2 dari penamaan file APK — Batch20 sebelumnya sudah pernah ganti dari `-{SHORT_SHA hash acak}.apk` → `-Release.apk` (permintaan user waktu itu: predictable/readable, bukan hash acak). Batch20 JUGA udah nemuin mismatch VERSION_NAME vs tag di catatannya sendiri, tapi sengaja gak diutak-atik karena di luar scope permintaan saat itu — baru dikerjakan sekarang karena user eksplisit minta.
+
+**File**: `.github/workflows/build.yml` (protected, edit parsial — cuma step "Rename APK", 2 baris logic diganti + komentar penjelas; build steps lain, secrets, keystore, signature verification, Release publishing sama sekali tidak disentuh).
+
+**Verifikasi manual**: grep bersih, 0 sisa referensi `git rev-list --count` atau `-Release.apk` di workflow. `$GITHUB_RUN_NUMBER` sudah proven-pattern di file ini sendiri (dipakai identik di step "Build signed release APK" buat nama `LOG_FILE`, jadi bukan syntax baru yang belum teruji). Efek baru baru kelihatan di run CI berikutnya (nama file APK & tag release berikutnya bakal sama persis, contoh: `GalleryCleaner-v1.0.166.apk` + tag `v1.0.166`).
 
 ### Batch42 — Audit Gap P0 #2: "Trash" bukan trash filesystem — investigasi + klarifikasi (1 file)
 Stage 4 dari audit tracker. P0 #2: "`TrashStore.kt` hanya nyimpen id+timestamp di DataStore... secara UX ini lebih tepat disebut virtual review queue / pending deletion... semantics harus dipertegas atau implementasi trash sebenarnya dibuat."

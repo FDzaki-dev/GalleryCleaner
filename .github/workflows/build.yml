@@ -116,8 +116,23 @@ jobs:
         run: |
           set -euo pipefail
 
-          VERSION_NAME="1.0.$(git rev-list --count HEAD)"
-          OUT_NAME="GalleryCleaner-v${VERSION_NAME}-Release.apk"
+          # VERSION_NAME used to be "1.0.$(git rev-list --count HEAD)" — a
+          # DIFFERENT counter than the release tag/name just below
+          # ("v1.0.${{ github.run_number }}"). Total commit count and CI
+          # run number drift apart over time (re-runs, workflow_dispatch,
+          # multiple commits batched into one push all bump run_number
+          # without matching 1:1 to commit count), which is exactly why the
+          # APK was showing v1.0.44 while the GitHub Release right next to
+          # it already said v1.0.165 — not a forgotten manual bump, two
+          # independent auto-generated numbers that were never the same
+          # thing. Now both use $GITHUB_RUN_NUMBER, so the APK filename and
+          # the release tag/name always match, by construction, permanently.
+          VERSION_NAME="1.0.${GITHUB_RUN_NUMBER}"
+          # No "-Release" suffix — matches the plain "{App}-v{version}.apk"
+          # convention (e.g. PromptVault-v7.2.0.apk), and the run number
+          # already embedded in VERSION_NAME is what makes each build's
+          # filename unique, the same job "-Release" used to do.
+          OUT_NAME="GalleryCleaner-v${VERSION_NAME}.apk"
 
           cp \
             app/build/outputs/apk/release/app-release.apk \
