@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v40_Batch40 — 2026-08-17
+- **Audit Gap P0 #1 fix** (8 file): video sekarang benar-benar bagian dari library — `MediaDataSource` query `MediaStore.Video.Media` selain `Images.Media` (progresif + full-load), `MediaItem` dapat field `mediaType`/`durationMillis`, manifest+runtime permission `READ_MEDIA_VIDEO` (API33+), thumbnail video via Coil `VideoFrameDecoder` (+dependency `coil-video:2.6.0`, didaftarkan sekali di `GalleryCleanerApp` → otomatis berlaku semua layar lewat `MediaPreview.kt`), play-badge visual di `MediaPreview.kt`. `MediaScanner`'s blur/near-dup difilter image-only (efisiensi; exact-duplicate tetap generic, otomatis cover video). Delete/trash/organize/share sudah type-agnostic dari awal, gak perlu diubah. Sengaja belum: duration label, tap-to-play, filter tipe media di UI — lihat `PROJECT_STATE.md` Batch40. Stage 3 dari audit `GalleryCleaner_v37_Audit_Gap_Final.md`.
+
 ## v39_Batch39 — 2026-08-16
 - **Audit Gap P0 #4 fix** (4 file: 2 protected asset edit parsial + 2 edit): App Lock diganti dari `KeyguardManager.createConfirmDeviceCredentialIntent()` (deprecated, cuma layar PIN/pattern/password — "biometric" di README/Settings selama ini cuma klaim) ke `androidx.biometric.BiometricPrompt` sungguhan (`BIOMETRIC_STRONG or DEVICE_CREDENTIAL`, fallback otomatis). `MainActivity` base class `ComponentActivity`→`FragmentActivity` (widening aman, syarat host `BiometricPrompt`). +1 dependency (`androidx.biometric:biometric:1.1.0`), +1 permission normal (`USE_BIOMETRIC`). README diperjelas match implementasi baru; `SettingsScreen.kt` sudah akurat, tidak diubah. Stage 2 dari audit `GalleryCleaner_v37_Audit_Gap_Final.md`. Detail: `PROJECT_STATE.md` Batch39.
 

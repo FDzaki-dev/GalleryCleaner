@@ -3,6 +3,10 @@
 
     <!-- Android 13+ granular media permission -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Batch40 (Audit Gap P0 #1): video is now a real part of the scanned
+         library (MediaDataSource queries MediaStore.Video.Media too), so
+         this is requested alongside READ_MEDIA_IMAGES on API 33+. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <!-- Older Android versions -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />

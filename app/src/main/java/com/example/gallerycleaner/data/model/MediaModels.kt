@@ -3,6 +3,12 @@ package com.example.gallerycleaner
 import android.net.Uri
 import androidx.compose.runtime.Immutable
 
+// Batch40 (Audit Gap P0 #1): distinguishes what MediaDataSource actually
+// queried the item from (MediaStore.Images.Media vs MediaStore.Video.Media)
+// — not derived from file extension/MIME sniffing, since the collection
+// queried is already an unambiguous, zero-cost source of truth.
+enum class MediaType { IMAGE, VIDEO }
+
 // @Immutable is a promise to the Compose compiler, not just documentation.
 // MediaItem carries an android.net.Uri field — a platform class the
 // compiler can't see inside, so its default (conservative) stability
@@ -28,7 +34,18 @@ data class MediaItem(
     val bucketName: String, // album name
     val width: Int,
     val height: Int,
-    val relativePath: String // folder path, e.g. "DCIM/Camera/"
+    val relativePath: String, // folder path, e.g. "DCIM/Camera/"
+    // Batch40 (Audit Gap P0 #1): defaulted, not a new required param — the
+    // one real construction site (MediaDataSource.queryMediaPage) always
+    // passes it explicitly with a named arg, same as every other field
+    // here; the default just means this doesn't become a source-breaking
+    // change for any future call site (test fixtures, previews, etc.) that
+    // only cares about images.
+    val mediaType: MediaType = MediaType.IMAGE,
+    // 0 for images (and for videos where MediaStore couldn't report a
+    // duration) — never null, so callers can treat "0" as the one
+    // "unknown/not applicable" case instead of null-checking everywhere.
+    val durationMillis: Long = 0L
 )
 
 enum class SortOption(val label: String) {

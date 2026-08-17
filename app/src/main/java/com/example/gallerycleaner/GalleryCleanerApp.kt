@@ -8,13 +8,17 @@ import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
+import coil.video.VideoFrameDecoder
 
 /**
  * Without this, Coil only knows how to decode still images — pointing it at
  * an animated GIF's content URI produces a garbled/frozen preview instead of
  * a real animated thumbnail. Registering the gif decoder here fixes that
  * everywhere in the app (home screen cover, swipe cards, trash grid) via the
- * one shared loader.
+ * one shared loader. VideoFrameDecoder (Batch40, Audit Gap P0 #1) does the
+ * same job for video URIs — without it, Coil has no decoder that can handle
+ * a video content URI at all, and every video thumbnail across the app
+ * would fail to load silently.
  *
  * Memory cache is capped to an explicit percentage rather than left at
  * Coil's default. Coil's default sizes the cache off *available* app
@@ -52,6 +56,7 @@ class GalleryCleanerApp : Application(), ImageLoaderFactory {
                 } else {
                     add(GifDecoder.Factory())
                 }
+                add(VideoFrameDecoder.Factory())
             }
             .memoryCache {
                 MemoryCache.Builder(this)

@@ -191,8 +191,17 @@ object MediaScanner {
      * a scan nobody's watching anymore.
      */
     suspend fun findBlurryPhotos(context: Context, items: List<MediaItem>): List<MediaItem> {
+        // Batch40 (Audit Gap P0 #1): images only. decodeSampledBitmap
+        // already fails safely (returns null, silently skipped) if handed
+        // a video URI — BitmapFactory can't decode a video container — so
+        // this filter isn't required for correctness, only to avoid
+        // opening every video file in the library just to watch that
+        // decode fail. Blur is a photo-focus concept anyway; a genuinely
+        // out-of-focus video isn't something this Laplacian-variance
+        // heuristic is meant to catch.
+        val photosOnly = items.filter { it.mediaType == MediaType.IMAGE }
         val result = mutableListOf<MediaItem>()
-        items.forEachIndexed { index, item ->
+        photosOnly.forEachIndexed { index, item ->
             if (index % YIELD_EVERY == 0) kotlinx.coroutines.yield()
             val variance = laplacianVariance(context, item.uri) ?: return@forEachIndexed
             if (variance < BLUR_VARIANCE_THRESHOLD) result += item
@@ -270,8 +279,14 @@ object MediaScanner {
      * cancellable.
      */
     suspend fun findNearDuplicates(context: Context, items: List<MediaItem>, threshold: Int = 5): List<MediaGroup> {
+        // Batch40 (Audit Gap P0 #1): images only, same rationale as
+        // findBlurryPhotos above — averageHash()'s decodeSampledBitmap
+        // already skips videos safely on its own, this just avoids the
+        // wasted attempt. "Similar photos" clustering isn't a meaningful
+        // concept across two videos (or a video/photo pair) either way.
+        val photosOnly = items.filter { it.mediaType == MediaType.IMAGE }
         val hashed = mutableListOf<Pair<MediaItem, Long>>()
-        items.forEachIndexed { index, item ->
+        photosOnly.forEachIndexed { index, item ->
             if (index % YIELD_EVERY == 0) kotlinx.coroutines.yield()
             averageHash(context, item.uri)?.let { hashed += item to it }
         }

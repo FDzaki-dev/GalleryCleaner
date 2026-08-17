@@ -323,9 +323,14 @@ private data class DerivedMediaState(
     val trashReclaimableBytes: Long = 0L
 )
 
+// Batch40 (Audit Gap P0 #1): READ_MEDIA_VIDEO added alongside
+// READ_MEDIA_IMAGES — video is now genuinely scanned (MediaDataSource
+// queries MediaStore.Video.Media too), so requesting only the images
+// permission would silently leave every video invisible to the app on
+// API 33+ even though the query code expects to see them.
 private fun requiredPermissions(): Array<String> =
     if (Build.VERSION.SDK_INT >= 33) {
-        arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+        arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
     } else {
         arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
