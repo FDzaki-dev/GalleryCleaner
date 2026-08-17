@@ -126,6 +126,13 @@ dependencies {
     // for free, no per-screen changes needed.
     implementation("io.coil-kt:coil-video:2.6.0")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
+    // Batch44 (Audit Gap P1 #5): efficient incremental-append for
+    // progressive gallery loading (MainActivity's `allMedia`). Pinned to
+    // 0.3.8, NOT the newest release — 0.4.0+ requires Kotlin >=2.1.20,
+    // this project is on Kotlin 1.9.24 (see build.gradle.kts), so a newer
+    // version would fail dependency resolution. 0.3.8 only requires
+    // Kotlin >=1.9.21, safely under this project's version.
+    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8")
     // Batch39 (Audit Gap P0 #4): real BiometricPrompt for App Lock,
     // replacing the deprecated KeyguardManager.createConfirmDeviceCredentialIntent().
     implementation("androidx.biometric:biometric:1.1.0")

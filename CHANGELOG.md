@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v44_Batch44 — 2026-08-17
+- **Audit Gap P1 #5 fix** (2 file): `MainActivity`'s progressive gallery loading (`allMedia = allMedia + page`) bikin full List copy tiap page — O(n²) total di library besar. Fix: `allMedia` jadi `PersistentList<MediaItem>` (`kotlinx.collections.immutable:0.3.8` — dipin, bukan versi terbaru, karena project di Kotlin 1.9.24 dan versi 0.4.0+ butuh Kotlin ≥2.1.20), `.addAll(page)` pakai structural sharing bukan full-copy. `SnapshotStateList` DIPERTIMBANGKAN tapi ditolak (reference-nya stabil selamanya, bikin `LaunchedEffect(allMedia,...)` cuma jalan sekali — risiko regresi terlalu tinggi tanpa compiler/device buat validasi). 3 titik reassignment lain (`filterNot`/`map` di handler Delete/Organize) ditambah `.toPersistentList()` biar tipe cocok. Stage 5 dari audit `GalleryCleaner_v37_Audit_Gap_Final.md` — mulai P1 setelah 4/4 P0 tuntas. Detail: `PROJECT_STATE.md` Batch44.
+
 ## v43_Batch43 — 2026-08-17
 - **Permintaan user** (1 file protected asset, edit parsial): nama file APK GitHub Release diubah dari `GalleryCleaner-v1.0.44-Release.apk` jadi `GalleryCleaner-v1.0.{run_number}.apk` — suffix "-Release" dihapus (pola sekarang `{App}-v{version}.apk`, sesuai contoh app lain "PromptVault"). Akar masalah versi "stuck"/mismatch (nama file bilang v1.0.44, tag release bilang v1.0.165) DIKONFIRMASI: 2 skema angka beda (`git rev-list --count HEAD` vs `github.run_number`) buat 1 hal yang sama — bukan manual bump yang lupa di-update. Fix: keduanya sekarang pakai `$GITHUB_RUN_NUMBER`, jadi nama file & tag release selalu sinkron permanen. Detail: `PROJECT_STATE.md` Batch43.
 

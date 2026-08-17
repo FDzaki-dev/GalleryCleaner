@@ -43,6 +43,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.example.gallerycleaner.ui.components.GlassButton
 import com.example.gallerycleaner.ui.theme.GalleryCleanerTheme
+import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -421,7 +424,21 @@ fun AppRoot(
         }
     }
 
-    var allMedia by remember { mutableStateOf<List<MediaItem>>(emptyList()) }
+    // Batch44 (Audit Gap P1 #5): PersistentList, not a plain List. The old
+    // `allMedia = allMedia + page` rebuilt the ENTIRE accumulated list from
+    // scratch on every single page during progressive loading — on a large
+    // library (thousands-tens of thousands of items, per the audit), that's
+    // O(n) copying repeated for every page, so total work grows O(n²) in
+    // library size. PersistentList.addAll() below does the same "produce a
+    // new, Compose-observable value" job but via structural sharing — only
+    // the new page's elements are actually new work, not a full copy of
+    // everything already loaded. Every read call site (allMedia.filterNot,
+    // .map, .filter in the derived-state effect below) keeps working
+    // unchanged, since PersistentList still IS a List; only the 3 call
+    // sites that REASSIGN allMedia from a plain-List-returning stdlib
+    // function (filterNot/map) needed `.toPersistentList()` appended to
+    // satisfy the type — see the Organize/Delete handlers further down.
+    var allMedia by remember { mutableStateOf<PersistentList<MediaItem>>(persistentListOf()) }
     var isLoading by remember { mutableStateOf(false) }
     var groupMode by remember { mutableStateOf(GroupMode.MONTH) }
     var sortOption by remember { mutableStateOf(SortOption.DATE) }
@@ -480,12 +497,12 @@ fun AppRoot(
     LaunchedEffect(hasPermission, refreshTrigger) {
         if (hasPermission) {
             isLoading = true
-            allMedia = emptyList()
+            allMedia = persistentListOf()
             var firstPage = true
             withContext(Dispatchers.IO) {
                 MediaRepository.loadMediaProgressively(context).collect { page ->
                     withContext(Dispatchers.Main) {
-                        allMedia = allMedia + page
+                        allMedia = allMedia.addAll(page)
                         if (firstPage) {
                             isLoading = false
                             isLoadingMore = true
@@ -620,7 +637,7 @@ fun AppRoot(
     ) { result ->
         val items = pendingDeleteRetry
         if (result.resultCode == android.app.Activity.RESULT_OK && items != null) {
-            allMedia = allMedia.filterNot { item -> items.any { it.id == item.id } }
+            allMedia = allMedia.filterNot { item -> items.any { it.id == item.id } }.toPersistentList()
             scope.launch {
                 trashStore.remove(items.map { it.id })
                 statsStore.recordDeletion(items.sumOf { it.sizeBytes }, items.size)
@@ -735,7 +752,7 @@ fun AppRoot(
                 val failed = DeleteHelper.deleteDirectly(context, uris)
                 val deleted = items.filterNot { failed.contains(it.uri) }
                 val deletedIds = deleted.map { it.id }
-                allMedia = allMedia.filterNot { item -> deletedIds.contains(item.id) }
+                allMedia = allMedia.filterNot { item -> deletedIds.contains(item.id) }.toPersistentList()
                 scope.launch {
                     trashStore.remove(deletedIds)
                     statsStore.recordDeletion(deleted.sumOf { it.sizeBytes }, deleted.size)
@@ -800,7 +817,7 @@ fun AppRoot(
             if (item.id in movedIds) {
                 item.copy(relativePath = targetFolder, bucketName = newBucketName)
             } else item
-        }
+        }.toPersistentList()
     }
 
     /** Last-good-write-request pending state for "Organize" (ROADMAP Fase A
