@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Undo
@@ -21,8 +22,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import coil.imageLoader
 import coil.request.ImageRequest
+import com.example.gallerycleaner.ui.components.GlassCard
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -275,6 +278,42 @@ fun SwipeScreen(
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
                 return@Column
+            }
+
+            // Audit Gap P1 #7: findNearDuplicates() is an aHash/Hamming-distance
+            // heuristic (see its doc comment in MediaScanner.kt) — it can false-
+            // positive on genuinely different-but-similar-looking photos and
+            // false-negative on crops/rotations. Unlike "Duplicate files" (exact
+            // byte-for-byte hash, a real confirmation), these groups must never
+            // read as confirmed dupes — this banner is the one place that
+            // distinction reaches the user, right where the delete decision
+            // actually happens. Keyed off group.key (the literal "Similar
+            // photos" string HomeScreen.kt constructs this group with, same
+            // pattern every other synthetic group here already relies on),
+            // not [displayName], since a custom folder label should never be
+            // able to suppress this notice.
+            if (group.key == "Similar photos") {
+                GlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 8.dp),
+                    contentPadding = 12.dp
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Suggested matches, not confirmed duplicates — grouped by visual similarity. Review each photo before deleting.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
             }
 
             if (viewMode == SwipeViewMode.Grid) {
