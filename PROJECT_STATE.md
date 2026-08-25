@@ -1,11 +1,21 @@
-# PROJECT_STATE — GalleryCleaner
+# PROJECT_STATE — GalleryCleaner *(nama app di layar: **Snaply**)*
+
+## ⚠️ IDENTITAS PROJECT — WAJIB DIBACA SEBELUM BATCH APAPUN
+Project ini punya **2 nama berbeda, KEDUANYA SENGAJA, PERMANEN**:
+- **Nama produk/display (yang dilihat user)**: **Snaply** — launcher label, notifikasi, semua teks UI, judul dokumen. Sejak Batch55-57.
+- **Identitas kode/repo (yang TIDAK PERNAH ikut berubah)**: **`GalleryCleaner`** / `com.example.gallerycleaner` — nama repo GitHub, nama folder Termux lokal, `applicationId`/package Kotlin, `rootProject.name`, nama class (`GalleryCleanerApp`/`GalleryCleanerTheme`), style resource (`Theme.GalleryCleaner`), dan folder storage on-device (`Pictures|Movies/GalleryCleaner/Backup`, `Documents/GalleryCleaner/logs/`).
+
+Kalau nemu file/kode masih nyebut "GalleryCleaner" — **itu BUKAN sisa rebrand yang kelewat, itu BY DESIGN.** Rebrand yang diminta user eksplisit "kosmetik only, haram hukumnya jikalau sampai mengacaukan workflow Termux" (lihat Batch55-57 di Riwayat Batch + rasional lengkap tiap pengecualian di "Belum Dikerjakan" bawah). **JANGAN**:
+- "Membereskan" sisa "GalleryCleaner" yang ketemu di kode/config sebagai kalau itu bug/inkonsistensi.
+- Mengganti `-iname`/nama folder di script Termux jadi "Snaply" — folder lokal & repo TETAP `GalleryCleaner`.
+- Mengganti `applicationId`/package Kotlin ke nama baru tanpa izin eksplisit user (task terpisah, bukan "kosmetik").
 
 ## 🔗 Rilis Terbaru
 - GitHub Release (APK signed, siap install, muncul di sidebar repo): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v57 — Batch57 (Rebranding tahap 3/3 — SELESAI: judul RELEASE_SIGNING.md + entry CHANGELOG.md baru, 2 file)
+v58 — Batch58 (Abadikan identitas dual-nama Snaply/GalleryCleaner sebagai warning box permanen di puncak PROJECT_STATE.md, biar sesi depan gak salah "benerin" atau nyoba rename lanjutan, 1 file)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **REBRANDING Gallery Cleaner → Snaply — ✅ SELESAI (Batch55-57, kosmetik only)** — permintaan user eksplisit: "kosmetik only, haram hukumnya jikalau sampai mengacaukan workflow termux". Keputusan scope (assumption, belum dikonfirmasi user secara literal per-item, tapi konsisten sama instruksi "kosmetik only" + Protected Files + Termux gag-order), diarsipkan di sini buat referensi batch depan:
@@ -46,6 +56,10 @@ v57 — Batch57 (Rebranding tahap 3/3 — SELESAI: judul RELEASE_SIGNING.md + en
 - release.keystore (tidak disertakan di repo, via secrets)
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch58 — Abadikan identitas dual-nama (1 file)
+User: "Abadikan yang perlu diabadikan. Demi mencegah konflik pada sesi selanjutnya!!" — setelah rebrand Batch55-57, project sekarang punya 2 nama sekaligus (display "Snaply" vs codebase/repo "GalleryCleaner"), dan detail rasionalnya cuma ada di tengah/bawah file ("Belum Dikerjakan" + Riwayat Batch). Risiko konkret: sesi baru mulai dari Hard Reset ZIP (0 histori chat), baca judul file "PROJECT_STATE — GalleryCleaner", terus nemu `strings.xml` bilang "Snaply" — tanpa konteks eksplisit di PALING ATAS file, sesi itu bisa salah nyimpulin ini inkonsistensi yang perlu "dibenerin" (entah revert ke GalleryCleaner, atau lanjut rename package/folder/repo tanpa izin eksplisit — dua-duanya pelanggaran instruksi user).
+Fix: `PROJECT_STATE.md` — judul H1 dikasih anotasi inline nama display, + box "⚠️ IDENTITAS PROJECT — WAJIB DIBACA SEBELUM BATCH APAPUN" ditaruh SEBELUM "Rilis Terbaru" (baris pertama yang kebaca setelah judul) — eksplisit list 2 identitas + 3 larangan konkret (jangan "beresin" sisa GalleryCleaner, jangan ganti -iname script Termux, jangan ganti applicationId tanpa izin). Detail rasional lengkap (kenapa tiap pengecualian) TETAP di "Belum Dikerjakan" — box baru ini cuma pointer cepat + guardrail, bukan duplikasi penuh.
 
 ### Batch57 — Rebranding tahap 3/3, SELESAI (2 file)
 Penutup Batch55-56. Diganti:
