@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v61_Batch61 — 2026-08-25
+- **Audit Gap P1 #8** (1 file): "Blurry photos" sekarang dapat banner "suggestion, bukan guarantee" — pola sama persis P1 #7 (near-duplicate) Batch54. Algoritma blur detection (`laplacianVariance`, threshold 60.0) tidak diubah — perluasan banner `GlassCard` yang sudah ada di `SwipeScreen.kt`, sekarang cover "Similar photos" + "Blurry photos". Detail: `PROJECT_STATE.md` Batch61.
+
 ## v60_Batch60 — 2026-08-25
 - **Bugfix** (1 file): "Update available" dialog di Settings recall terus walau app sudah versi terbaru — root cause: delayed-delete file APK leftover pakai coroutine scope yang ke-cancel saat navigasi keluar Settings (wajar terjadi tepat setelah tap Install, sistem installer ambil alih layar). Fix: scope cleanup dipisah biar gak ke-cancel, plus safety-net bandingkan versionName archive vs yang beneran terinstall sebelum nampilin "tap to install" lagi. Detail: `PROJECT_STATE.md` Batch60.
 

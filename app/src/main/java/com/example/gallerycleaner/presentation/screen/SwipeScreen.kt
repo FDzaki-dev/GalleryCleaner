@@ -280,19 +280,34 @@ fun SwipeScreen(
                 return@Column
             }
 
-            // Audit Gap P1 #7: findNearDuplicates() is an aHash/Hamming-distance
-            // heuristic (see its doc comment in MediaScanner.kt) — it can false-
-            // positive on genuinely different-but-similar-looking photos and
-            // false-negative on crops/rotations. Unlike "Duplicate files" (exact
-            // byte-for-byte hash, a real confirmation), these groups must never
-            // read as confirmed dupes — this banner is the one place that
+            // Audit Gap P1 #7 (Batch54) + P1 #8 (Batch61): both
+            // findNearDuplicates() and findBlurryPhotos() are local,
+            // no-ML heuristics with a hardcoded cutoff (Hamming distance 5;
+            // Laplacian variance 60.0 — see their doc comments in
+            // MediaScanner.kt) — neither is calibrated per resolution,
+            // low-light noise, or intentional soft-focus/bokeh, so both can
+            // misjudge a photo. Unlike "Duplicate files" (exact byte-for-byte
+            // hash, a real confirmation), these groups must never read as a
+            // confirmed verdict — this banner is the one place that
             // distinction reaches the user, right where the delete decision
-            // actually happens. Keyed off group.key (the literal "Similar
-            // photos" string HomeScreen.kt constructs this group with, same
+            // actually happens. Deliberately a UX reframing, not an
+            // algorithm change: the audit's own conclusion for a heuristic
+            // like this is "always suggestion, never fatal", not a specific
+            // threshold/calibration fix — and tuning the actual pixel math
+            // without a compiler/device to verify against real photos would
+            // be a stab in the dark here. Keyed off group.key (the literal
+            // strings HomeScreen.kt constructs these groups with, same
             // pattern every other synthetic group here already relies on),
             // not [displayName], since a custom folder label should never be
             // able to suppress this notice.
-            if (group.key == "Similar photos") {
+            val heuristicSuggestionText = when (group.key) {
+                "Similar photos" ->
+                    "Suggested matches, not confirmed duplicates — grouped by visual similarity. Review each photo before deleting."
+                "Blurry photos" ->
+                    "Suggested as possibly blurry — an automatic estimate, not a guarantee. Intentional soft-focus shots can be flagged too. Review each photo before deleting."
+                else -> null
+            }
+            if (heuristicSuggestionText != null) {
                 GlassCard(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -309,7 +324,7 @@ fun SwipeScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "Suggested matches, not confirmed duplicates — grouped by visual similarity. Review each photo before deleting.",
+                            heuristicSuggestionText,
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
