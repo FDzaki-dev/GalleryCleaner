@@ -94,15 +94,41 @@ object MediaScanner {
             .filter { it.size > 1 }
         if (sizeCandidates.isEmpty()) return emptyList()
 
+        // Batch45 (Audit Gap P1 #6, stage 1): persistent hash cache — an
+        // item whose id+size+dateModifiedMillis all match what's cached
+        // from a previous scan reuses that hash instead of opening and
+        // re-reading the file. Loaded/saved ONCE per call, not per item —
+        // see HashCacheStore's doc comment for why. `updatedCache` becomes
+        // the full replacement written back at the end, so anything not
+        // re-added here (item deleted, or its size no longer collides with
+        // another item's) is naturally dropped rather than accumulating
+        // forever.
+        val cacheStore = HashCacheStore(context)
+        val cache = cacheStore.loadAll()
+        val updatedCache = HashMap<Long, HashCacheStore.Entry>(cache.size)
+
         val result = mutableListOf<MediaItem>()
         for (candidates in sizeCandidates) {
             candidates
-                .mapNotNull { item -> hashContent(context, item.uri)?.let { hash -> hash to item } }
+                .mapNotNull { item ->
+                    val cached = cache[item.id]
+                    val hash = if (cached != null &&
+                        cached.sizeBytes == item.sizeBytes &&
+                        cached.dateModifiedMillis == item.dateModifiedMillis
+                    ) {
+                        cached.hash
+                    } else {
+                        hashContent(context, item.uri)
+                    }
+                    hash?.also { updatedCache[item.id] = HashCacheStore.Entry(item.sizeBytes, item.dateModifiedMillis, it) }
+                        ?.let { h -> h to item }
+                }
                 .groupBy({ it.first }, { it.second })
                 .values
                 .filter { it.size > 1 }
                 .forEach { result += it }
         }
+        cacheStore.saveAll(updatedCache)
         return result.sortedByDescending { it.sizeBytes }
     }
 
