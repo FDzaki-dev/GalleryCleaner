@@ -41,6 +41,8 @@ import com.example.gallerycleaner.ui.theme.PeriwinkleKeep
 import com.example.gallerycleaner.ui.theme.SageKeep
 import com.example.gallerycleaner.ui.theme.CoralDelete
 import com.example.gallerycleaner.ui.theme.MidnightGlass
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -105,21 +107,6 @@ fun SettingsScreen(
     // Available/Downloading/ReadyToInstall keep the dialog open.
     var updateState by remember { mutableStateOf<UpdateUiState>(UpdateUiState.Idle) }
 
-    // Batch53 — runs once when Settings opens: if a previous session
-    // downloaded an update but the person backed out before tapping
-    // Install, the tag was already marked known (see onDownloadUpdate
-    // below) and the file is still on disk. Without this check, tapping
-    // "Check for update" here would just say "up to date" — this resumes
-    // straight to ReadyToInstall instead, using the tag already recorded
-    // at download time (see ApkDownloader.findDownloadedApk's doc comment).
-    LaunchedEffect(Unit) {
-        val existingFile = ApkDownloader.findDownloadedApk(context)
-        val lastKnownTag = UpdateChecker.getLastKnownTag(context)
-        if (existingFile != null && lastKnownTag != null) {
-            updateState = UpdateUiState.ReadyToInstall(existingFile, lastKnownTag)
-        }
-    }
-
     // Batch51 — installed version, read once via PackageManager (not
     // BuildConfig: buildConfig feature isn't enabled in app/build.gradle.kts,
     // and this avoids touching that protected file for this task).
@@ -128,6 +115,42 @@ fun SettingsScreen(
             context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "?"
         } catch (e: PackageManager.NameNotFoundException) {
             "?"
+        }
+    }
+
+    // Batch53 — runs once when Settings opens: if a previous session
+    // downloaded an update but the person backed out before tapping
+    // Install, the tag was already marked known (see onDownloadUpdate
+    // below) and the file is still on disk. Without this check, tapping
+    // "Check for update" here would just say "up to date" — this resumes
+    // straight to ReadyToInstall instead, using the tag already recorded
+    // at download time (see ApkDownloader.findDownloadedApk's doc comment).
+    //
+    // Batch60 — hardened: a leftover file here doesn't always mean the
+    // install is still pending. launchInstall() below deletes the file
+    // 5s after launching the system installer, but that cleanup is tied
+    // to this screen's own coroutine scope — if the person leaves
+    // Settings (or the app/process dies) in that 5s window, which is
+    // completely normal right after tapping Install (the system
+    // installer takes over the screen), the delete never runs. The file
+    // then survives a REAL successful install forever, and every future
+    // Settings visit was re-showing "Downloaded — tap to install." even
+    // though the running app is already current — the "recall" bug.
+    // Fix: compare the leftover file's own versionName (read from its
+    // manifest, not trusted from network state) against what's actually
+    // installed right now. If they match, the install already happened —
+    // delete the stale copy instead of re-prompting.
+    LaunchedEffect(Unit) {
+        val existingFile = ApkDownloader.findDownloadedApk(context)
+        val lastKnownTag = UpdateChecker.getLastKnownTag(context)
+        if (existingFile != null && lastKnownTag != null) {
+            val archiveVersion = context.packageManager
+                .getPackageArchiveInfo(existingFile.path, 0)?.versionName
+            if (archiveVersion != null && archiveVersion == currentVersionName) {
+                existingFile.delete()
+            } else {
+                updateState = UpdateUiState.ReadyToInstall(existingFile, lastKnownTag)
+            }
         }
     }
 
@@ -146,7 +169,19 @@ fun SettingsScreen(
         // person cancels the system's own install confirmation after this
         // point, they'd need to tap "Check for update" again to re-fetch
         // it, which is minor next to the alternative (permanent re-prompt).
-        scope.launch {
+        //
+        // Batch60: deliberately NOT `scope` (this screen's
+        // rememberCoroutineScope) — tapping Install hands control to the
+        // system installer, and the person backing out of Settings (or
+        // the app going to background) in the next 5s is the normal case,
+        // not an edge case. `scope` gets cancelled the moment this
+        // Composable leaves composition, which was silently skipping this
+        // delete and leaving the file on disk — the file+tag combo then
+        // read as "still needs install" forever (see the resume-check
+        // LaunchedEffect above), even after a real successful install.
+        // A detached scope survives that navigation so the cleanup
+        // actually runs.
+        CoroutineScope(Dispatchers.IO).launch {
             delay(5000)
             file.delete()
         }

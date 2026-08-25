@@ -15,7 +15,7 @@ Kalau nemu file/kode masih nyebut "GalleryCleaner" — **itu BUKAN sisa rebrand 
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v59 — Batch59 (Rebrand app icon/launcher: dari placeholder default kotak-biru+siluet-kamera ke logo baru gradient violet→magenta, glassmorphism, tema gallery/photo + sparkle Gen-Z, 1 file kode + 2 file log)
+v60 — Batch60 (Fix bug "update available" recall walau app sudah versi terbaru: leftover APK file dari delayed-delete yang scope-nya ke-cancel pas navigasi = false ReadyToInstall selamanya. 1 file kode + 2 file log)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **REBRANDING Gallery Cleaner → Snaply — ✅ SELESAI (Batch55-57, kosmetik only)** — permintaan user eksplisit: "kosmetik only, haram hukumnya jikalau sampai mengacaukan workflow termux". Keputusan scope (assumption, belum dikonfirmasi user secara literal per-item, tapi konsisten sama instruksi "kosmetik only" + Protected Files + Termux gag-order), diarsipkan di sini buat referensi batch depan:
@@ -56,6 +56,15 @@ v59 — Batch59 (Rebrand app icon/launcher: dari placeholder default kotak-biru+
 - release.keystore (tidak disertakan di repo, via secrets)
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch60 — Fix "update available" recall meski app sudah latest (1 file)
+User: "debugging banner aplikasi baru tersedia yang sering recall, walaupun aplikasi sudah latest version!!" — investigasi dulu (pola project ini: baca alur penuh sebelum coding). Update-check UI cuma ada 1 tempat: row+dialog "Check for update" di `SettingsScreen.kt` (Batch49-53), bukan banner otomatis Home — jadi "sering recall" berarti dialog "Downloaded — tap to install." muncul lagi walau app sebenarnya sudah versi terbaru.
+Root cause (ditemukan lewat baca `launchInstall()` + resume-check `LaunchedEffect(Unit)` Batch53 bareng): `launchInstall()` menghapus file APK yang sudah didownload lewat `scope.launch { delay(5000); file.delete() }` — tapi `scope` di sini adalah `rememberCoroutineScope()` milik `SettingsScreen` sendiri, jadi ke-cancel begitu Composable ini keluar dari composition. Persis itu yang terjadi di alur normal: tap "Install" → sistem installer ambil alih layar → user balik/minimize app dalam 5 detik itu (wajar banget, bukan edge case) → delete gak pernah jalan → file APK nyangkut permanen di disk, padahal install-nya sendiri sukses. Sesi berikutnya buka Settings, resume-check nemuin file+tag masih ada → nyimpulin "masih perlu diinstall" → dialog muncul lagi, walau app yang jalan sekarang sudah persis versi itu. Ini murni bug lifecycle/state, BUKAN bug di `UpdateChecker.kt`'s tag-comparison logic (itu sudah benar, sengaja hindari compare version number karena skema git-rev-count vs run_number beda, lihat doc comment class itu).
+Fix (2 lapis, 1 file `SettingsScreen.kt`):
+1. **Root cause**: `launchInstall()` — delayed delete pindah dari `scope.launch` (composable-scoped) ke `CoroutineScope(Dispatchers.IO).launch` (detached) — survive navigasi/backgrounding di window 5 detik itu.
+2. **Safety net** (jaga-jaga file tetap nyangkut, mis. process ke-kill total sebelum 5 detik): resume-check `LaunchedEffect(Unit)` diperkuat — sebelum percaya file leftover = "masih perlu install", baca `versionName` archive-nya sendiri (`PackageManager.getPackageArchiveInfo`) dan banding ke `versionName` yang BENERAN terinstall sekarang (`currentVersionName`, di-reorder ke atas biar bisa dipakai di sini juga, tanpa duplikasi lookup). Kalau sama → file itu sudah beneran ke-install, hapus diam-diam, jangan tampilkan ReadyToInstall lagi.
+Kenapa gak pakai fix lain: sempat dipertimbangkan `ACTION_PACKAGE_REPLACED` broadcast receiver (deteksi install-complete yang lebih "proper") — ditunda, karena butuh registrasi receiver baru (nyentuh `AndroidManifest.xml`, protected file, atau dynamic-register yang nambah kompleksitas lifecycle baru) buat masalah yang sebetulnya sudah tuntas lewat cara jauh lebih kecil di atas. `UpdateChecker.kt`/`ApkDownloader.kt` 0 disentuh — bug-nya di lifecycle SettingsScreen, bukan di logic check/download itu sendiri.
+Verifikasi: brace 153/153, paren 369/369 (seluruh file). Belum tervalidasi di compiler/device asli (sandbox ini gak ada Android toolchain) — validasi runtime sebenarnya nunggu build CI/instalasi manual.
 
 ### Batch59 — Rebrand app icon/launcher (1 file)
 User: "rebranding logo yang gak pernah berubah sejak project dibuat!!" — `app/src/main/res/drawable/ic_launcher.xml` masih persis konten placeholder awal (kotak solid `#2196F3` + siluet kamera generik), belum pernah disentuh dari Batch1 sampai Batch58. Sebelum eksekusi, ditanya 3 preferensi ke user (konsep/tema, palet warna, gaya render) karena 0 arahan desain eksplisit di prompt — jawaban: "eye catching + Gen Z, tetap bisa dikenali fungsinya" / gradient ungu-violet / glassmorphism iOS-style.

@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v60_Batch60 — 2026-08-25
+- **Bugfix** (1 file): "Update available" dialog di Settings recall terus walau app sudah versi terbaru — root cause: delayed-delete file APK leftover pakai coroutine scope yang ke-cancel saat navigasi keluar Settings (wajar terjadi tepat setelah tap Install, sistem installer ambil alih layar). Fix: scope cleanup dipisah biar gak ke-cancel, plus safety-net bandingkan versionName archive vs yang beneran terinstall sebelum nampilin "tap to install" lagi. Detail: `PROJECT_STATE.md` Batch60.
+
 ## v59_Batch59 — 2026-08-25
 - **Rebrand app icon** (1 file): `ic_launcher.xml` — placeholder default (kotak biru + siluet kamera, belum pernah berubah sejak awal project) diganti logo baru: rounded-square gradient violet→magenta, 2 kartu kaca (glassmorphism) berisi glyph gunung+matahari (foto/galeri) + aksen sparkle. Otomatis berlaku ke launcher icon, splash screen icon, dan shortcut icon (semua rujuk file yang sama). Detail: `PROJECT_STATE.md` Batch59.
 
