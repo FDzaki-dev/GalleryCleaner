@@ -136,4 +136,9 @@ dependencies {
     // Batch39 (Audit Gap P0 #4): real BiometricPrompt for App Lock,
     // replacing the deprecated KeyguardManager.createConfirmDeviceCredentialIntent().
     implementation("androidx.biometric:biometric:1.1.0")
+    // Batch49: in-app update (UpdateChecker + ApkDownloader). Brings Okio
+    // transitively, used for true chunk-by-chunk APK streaming instead of
+    // loading the whole response body into RAM (project rule "Release
+    // Downloader (Anti-OOM)").
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
