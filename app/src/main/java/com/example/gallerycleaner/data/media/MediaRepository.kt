@@ -31,7 +31,7 @@ object MediaRepository {
     fun onThisDay(items: List<MediaItem>): List<MediaItem> =
         MediaScanner.onThisDay(items)
 
-    suspend fun findExactDuplicates(context: Context, items: List<MediaItem>, onProgress: (checked: Int, total: Int) -> Unit = {}): List<MediaItem> =
+    suspend fun findExactDuplicates(context: Context, items: List<MediaItem>, onProgress: (checked: Int, total: Int) -> Unit = { _, _ -> }): List<MediaItem> =
         MediaScanner.findExactDuplicates(context, items, onProgress)
 
     suspend fun findBlurryPhotos(context: Context, items: List<MediaItem>): List<MediaItem> =

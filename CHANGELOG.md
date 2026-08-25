@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v48_Batch48 — 2026-08-25
+- **HOTFIX** (2 file, 1 baris tiap file): CI build gagal (run170) — `onProgress: (Int, Int) -> Unit = {}` di `MediaScanner.kt`/`MediaRepository.kt`, Kotlin gak infer arity buat lambda kosong di posisi default parameter value kalau functional type >1 param (beda dari lambda biasa di call-site). Fix: `{}` → `{ _, _ -> }`. Sisa logic Batch47 tidak diubah. Detail: `PROJECT_STATE.md` Batch48.
+
 ## v47_Batch47 — 2026-08-25
 - **Audit Gap P1 #6 stage 2a** (2 file): `findExactDuplicates()`'s hashing loop had ZERO suspension points despite being `suspend` — a cancelled Job (e.g. `LaunchedEffect(activeMedia)` restarting mid-scan) couldn't actually stop it; it silently ran to completion every time. Fix: `yield()` every 20 items (same cadence `findBlurryPhotos` already uses) makes cancellation real, plus optional `onProgress(checked, total)` callback (default no-op, 0 call-site changes needed). Hash cache now saved in `finally` — a cancelled run still persists whatever it hashed, so the next scan resumes cheaper via stage 1's cache instead of from zero (not positional resume, just an honest byproduct, documented as such). Stage 2b (on-demand Scan/Cancel button + progress% UI, needs `MainActivity.kt`+`HomeScreen.kt`) deferred — over the 3-file cap combined with this batch. Detail: `PROJECT_STATE.md` Batch47.
 

@@ -5,7 +5,7 @@
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v47 — Batch47 (Audit Gap P1 #6 stage 2a: findExactDuplicates cancellable via yield + progress callback + cache-persist-on-cancel, 2 file kode)
+v48 — Batch48 (HOTFIX run170: default lambda 2-parameter butuh arity eksplisit, 2 file kode, 1 baris tiap file)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **AUDIT GAP TRACKER (mulai Batch38)** — 20 temuan P0/P1/P2. Sumber sekarang **`AUDIT_GAP.md` di root repo** (ditanamkan permanen Batch45 — sebelumnya cuma ada sebagai upload chat sesi lama, itu sebabnya sempat jadi BLOCKER di awal sesi ini). Dikerjakan bertahap per batch (bukan 1 batch raksasa — di luar batas 3-file/batch project ini). Status:
@@ -43,6 +43,13 @@ Setelah Batch45, command Termux yang dikasih ke user pakai `-iname "gallery-clea
 
 ## Riwayat Batch (terbaru → terlama)
 Detail Batch2–4 belum granular di file ini — lihat `CHANGELOG.md` (urutan sama, terbaru di atas).
+
+### Batch48 — HOTFIX: CI build gagal dari Batch47 (2 file, 1 baris tiap file)
+User upload log CI gagal (`log-fail_main_run170-attempt1_1f96cac.log`). Root cause: `onProgress: (checked: Int, total: Int) -> Unit = {}` — Kotlin TIDAK auto-infer arity buat lambda literal kosong `{}` di posisi **default parameter value** kalau functional type-nya >1 parameter (beda dari lambda biasa di call-site, yang memang boleh `{}` kosong tanpa peduli arity selama gak dipakai). Compiler error persis nunjuk ke `{` itu sendiri di kedua file: `e: ...MediaRepository.kt:34:128 Expected 2 parameters of types Int, Int` dan `e: ...MediaScanner.kt:97:58 Expected 2 parameters of types Int, Int` — murni salah tebak sintaks Kotlin waktu Batch47 ditulis tanpa compiler untuk validasi (pola sama kayak hotfix Batch41).
+
+**Fix**: `{}` → `{ _, _ -> }` (underscore = parameter sengaja gak dipakai, arity dinyatakan eksplisit) di kedua file — `MediaScanner.kt` baris 97, `MediaRepository.kt` baris 34. Tidak ada perubahan lain — logic yield/cancellation/cache Batch47 lainnya sudah benar dan tidak disentuh.
+
+**Verifikasi manual**: brace/paren balance `MediaScanner.kt` 78/78 & 175/175, `MediaRepository.kt` 19/19 & 54/54 (angka sama persis kayak sebelum hotfix — cuma isi `{}` yang berubah, jumlah bracket gak nambah/kurang). Compile sesungguhnya nunggu CI run berikutnya.
 
 ### Batch47 — Audit Gap P1 #6 stage 2a: cancellable exact-dup scan + progress callback (2 file)
 User pilih lanjut #6 stage 2 ("apapun, yang penting gak asal jadi"). Full stage 2 (on-demand+cancel+progress UI) butuh 4 file (`MediaScanner.kt`, `MediaRepository.kt`, `MainActivity.kt`, `HomeScreen.kt`) — tabrak HARD CAP 3-file/batch. Dipecah jadi 2a (backend, batch ini) dan 2b (UI, next batch) — pola sama persis kayak split stage 1/2 di Batch45.

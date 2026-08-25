@@ -94,7 +94,7 @@ object MediaScanner {
         // 100% source-compatible — 0 call-site changes needed this batch.
         // Real progress% UI is a separate, later batch (needs MainActivity
         // state + HomeScreen UI, out of scope for this backend-only stage).
-        onProgress: (checked: Int, total: Int) -> Unit = {}
+        onProgress: (checked: Int, total: Int) -> Unit = { _, _ -> }
     ): List<MediaItem> {
         val sizeCandidates = items
             .filter { it.sizeBytes > 0 }
