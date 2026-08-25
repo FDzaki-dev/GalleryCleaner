@@ -47,6 +47,7 @@ import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -583,14 +584,6 @@ fun AppRoot(
         onThisDayItems = withContext(Dispatchers.Default) {
             MediaRepository.onThisDay(activeMedia)
         }
-
-        delay(600)
-        val duplicates = withContext(Dispatchers.IO) {
-            MediaRepository.findExactDuplicates(context, activeMedia)
-        }
-        if (duplicates.isNotEmpty()) {
-            smartGroups = quickCategories + MediaGroup("Duplicate files", duplicates)
-        }
     }
 
     // Blur/near-duplicate detection: on-demand only (see MediaRepository's
@@ -617,6 +610,44 @@ fun AppRoot(
             }
             nearDupScanState = ScanState.Done(result)
         }
+    }
+
+    // Batch52 (Audit Gap P1 #6, stage 2b) — exact-duplicate scan, now
+    // on-demand like blur/near-dup above (was automatic inside the
+    // LaunchedEffect(activeMedia) block until this batch). Unlike those
+    // two, this one reports progress% (MediaScanner.findExactDuplicates'
+    // onProgress callback, wired since Batch47) and can be cancelled
+    // mid-scan — kept as separate state/functions rather than folding into
+    // ScanState<T> itself, since blur/near-dup weren't asked to gain
+    // progress/cancel in this batch and ScanState is shared across all
+    // three (changing it risks their behavior too).
+    var duplicateScanState by remember { mutableStateOf<ScanState<List<MediaItem>>>(ScanState.Idle) }
+    var duplicateScanProgress by remember { mutableStateOf(0f) }
+    var duplicateScanJob by remember { mutableStateOf<Job?>(null) }
+
+    fun scanDuplicates() {
+        duplicateScanState = ScanState.Scanning
+        duplicateScanProgress = 0f
+        duplicateScanJob = scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                MediaRepository.findExactDuplicates(context, activeMedia) { checked, total ->
+                    // Written from Dispatchers.IO — safe, same reasoning as
+                    // ApkDownloader's progress callback in SettingsScreen.kt:
+                    // Compose snapshot state writes are thread-safe and the
+                    // recomposition itself is scheduled on the main thread.
+                    duplicateScanProgress = if (total > 0) checked.toFloat() / total else 0f
+                }
+            }
+            duplicateScanState = ScanState.Done(result)
+            duplicateScanJob = null
+        }
+    }
+
+    fun cancelDuplicateScan() {
+        duplicateScanJob?.cancel()
+        duplicateScanJob = null
+        duplicateScanState = ScanState.Idle
+        duplicateScanProgress = 0f
     }
 
     val totalFreedBytes by statsStore.totalFreedBytesFlow.collectAsState(initial = 0L)
@@ -1030,6 +1061,10 @@ fun AppRoot(
                     onScanBlurry = ::scanBlurryPhotos,
                     nearDupScanState = nearDupScanState,
                     onScanNearDuplicates = ::scanNearDuplicates,
+                    duplicateScanState = duplicateScanState,
+                    duplicateScanProgress = duplicateScanProgress,
+                    onScanDuplicates = ::scanDuplicates,
+                    onCancelDuplicateScan = ::cancelDuplicateScan,
                     groupMode = groupMode,
                     sortOption = sortOption,
                     progressStore = progressStore,

@@ -400,6 +400,52 @@ internal fun ScanTriggerRow(title: String, subtitle: String, scanning: Boolean, 
     }
 }
 
+/** Batch52 — like [ScanTriggerRow] but for a scan that reports progress and
+ *  can be cancelled mid-flight (currently just exact-duplicate detection,
+ *  which streams onProgress(checked,total) — see
+ *  MediaScanner.findExactDuplicates). Blur/near-dup stay on the plain
+ *  ScanTriggerRow above; they weren't asked to gain cancel/progress in this
+ *  batch, and this is kept as a separate composable rather than adding
+ *  optional params to ScanTriggerRow to avoid touching its two existing
+ *  call sites at all. */
+@Composable
+internal fun CancellableScanTriggerRow(
+    title: String,
+    subtitle: String,
+    scanning: Boolean,
+    progress: Float,
+    onClick: () -> Unit,
+    onCancel: () -> Unit
+) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = 0.dp,
+        onClick = onClick,
+        enabled = !scanning
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(title, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    if (scanning) "Scanning… ${(progress * 100).toInt()}%" else subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            if (scanning) {
+                TextButton(onClick = onCancel) { Text("Cancel") }
+            } else {
+                Text("Scan", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
+
 /** A Quick Clean shortcut row — visually distinct (accent-tinted) from the
  *  regular month/album rows below so it reads as a suggestion, not a folder. */
 @Composable

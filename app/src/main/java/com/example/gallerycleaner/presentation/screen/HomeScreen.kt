@@ -44,6 +44,10 @@ fun HomeScreen(
     onScanBlurry: () -> Unit = {},
     nearDupScanState: ScanState<List<MediaGroup>> = ScanState.Idle,
     onScanNearDuplicates: () -> Unit = {},
+    duplicateScanState: ScanState<List<MediaItem>> = ScanState.Idle,
+    duplicateScanProgress: Float = 0f,
+    onScanDuplicates: () -> Unit = {},
+    onCancelDuplicateScan: () -> Unit = {},
     groupMode: GroupMode,
     sortOption: SortOption,
     progressStore: ProgressStore,
@@ -377,6 +381,29 @@ fun HomeScreen(
                                     onScanNearDuplicates()
                                 }
                             }
+                        )
+                        // Batch52 (Audit Gap P1 #6, stage 2b): was folded
+                        // automatically into Quick Clean before this batch —
+                        // now on-demand like the two rows above, but reports
+                        // progress% and can be cancelled mid-scan (see
+                        // CancellableScanTriggerRow in HomeScreenSections.kt).
+                        CancellableScanTriggerRow(
+                            title = "Duplicate files",
+                            subtitle = when (val s = duplicateScanState) {
+                                is ScanState.Done -> if (s.result.isEmpty()) "None found" else "${s.result.size} found — tap to review"
+                                else -> "Find exact byte-for-byte copies"
+                            },
+                            scanning = duplicateScanState is ScanState.Scanning,
+                            progress = duplicateScanProgress,
+                            onClick = {
+                                val s = duplicateScanState
+                                if (s is ScanState.Done && s.result.isNotEmpty()) {
+                                    onGroupClick(MediaGroup("Duplicate files", s.result))
+                                } else if (s !is ScanState.Scanning) {
+                                    onScanDuplicates()
+                                }
+                            },
+                            onCancel = onCancelDuplicateScan
                         )
                     }
                 }
