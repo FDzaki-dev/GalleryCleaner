@@ -193,7 +193,7 @@ class MainActivity : FragmentActivity() {
                     val biometricManager = remember { BiometricManager.from(this@MainActivity) }
                     val promptInfo = remember {
                         BiometricPrompt.PromptInfo.Builder()
-                            .setTitle("Unlock GalleryCleaner")
+                            .setTitle("Unlock Snaply")
                             .setSubtitle("Confirm your screen lock to continue")
                             // No setNegativeButtonText(): mutually exclusive
                             // with DEVICE_CREDENTIAL below — the system
@@ -1167,7 +1167,7 @@ private fun PermissionScreen(
             if (permanentlyDenied) {
                 "Photo access was denied. Enable it from this app's system Settings to continue."
             } else {
-                "Gallery Cleaner needs access to your photos to help you swipe through and declutter."
+                "Snaply needs access to your photos to help you swipe through and declutter."
             },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1195,7 +1195,7 @@ private fun AppLockScreen(onUnlockClick: () -> Unit) {
             tint = MaterialTheme.colorScheme.primary
         )
         Spacer(Modifier.height(16.dp))
-        Text("GalleryCleaner is locked", style = MaterialTheme.typography.headlineSmall)
+        Text("Snaply is locked", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(8.dp))
         Text(
             "Confirm your screen lock to continue.",

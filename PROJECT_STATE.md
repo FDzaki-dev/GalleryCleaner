@@ -5,9 +5,25 @@
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v54 — Batch54 (Audit Gap P1 #7: banner "suggestion, bukan confirmed duplicate" di SwipeScreen buat grup Similar photos, 1 file)
+v55 — Batch55 (Rebranding tahap 1/N: Gallery Cleaner → **Snaply** di 3 string paling terlihat user — launcher label, notifikasi, layar lock/permission, 3 file)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
+- **REBRANDING Gallery Cleaner → Snaply (mulai Batch55, kosmetik only)** — permintaan user eksplisit: "kosmetik only, haram hukumnya jikalau sampai mengacaukan workflow termux". Keputusan scope (assumption, belum dikonfirmasi user secara literal per-item, tapi konsisten sama instruksi "kosmetik only" + Protected Files + Termux gag-order):
+  - ✅ **DIGANTI** — teks yang benar-benar dilihat user di UI/notifikasi/dokumentasi produk: `app_name` (launcher label), notifikasi, dialog lock/permission, top bar title, README/ROADMAP/RELEASE_SIGNING.md judul & body prosa yang nyebut nama app.
+  - ❌ **TETAP `GalleryCleaner`/`gallercleaner`/`com.example.gallerycleaner` — SENGAJA TIDAK diganti** (ini alasan kenapa rebrand ini "kosmetik", bukan total):
+    - **Package ID / applicationId** (`com.example.gallerycleaner`) — ganti ini = tiap file `.kt` kena sentuh (package declaration + import), risiko masif, 0 manfaat user-facing.
+    - **Nama folder Termux/repo GitHub** (`GalleryCleaner`, PascalCase tanpa hyphen) — persis yang diperingatkan section 6 project ini: folder WAJIB statis, `-iname` di script Termux nyari nama ini. Ganti = script generate folder BARU salah (riwayat insiden serupa sudah pernah kejadian soal hyphen-mismatch, lihat Batch~46 di Riwayat Batch).
+    - **`rootProject.name`** di `settings.gradle.kts` (protected file) — identifier Gradle-internal, gak pernah muncul ke user, gak ada manfaat ganti.
+    - **Nama kelas/fungsi/resource internal**: `GalleryCleanerApp` (class), `GalleryCleanerTheme` (fun), `Theme.GalleryCleaner`/`Theme.GalleryCleaner.Splash` (style resource) — 0 visibility ke user, tapi kalau diganti WAJIB sinkron ke `AndroidManifest.xml` (protected) + `Theme.kt` + `themes.xml` sekaligus dalam 1 batch (pas 3 file, 0 slack buat typo). Ditunda tanpa izin eksplisit user — resiko/manfaat gak sepadan buat rebrand "kosmetik".
+    - **Folder penyimpanan on-device** (`BackupHelper.APP_FOLDER`/`CrashLogger.APP_FOLDER` = `"GalleryCleaner"`, dipakai buat path nyata `Pictures|Movies/GalleryCleaner/Backup` & `Documents/GalleryCleaner/logs/`) — ganti nama folder ini artinya user yang UPDATE (bukan install baru) bakal punya backup/log LAMA nyangkut di folder nama lama, gak ke-pindah otomatis, dan copy baru mulai nulis ke folder nama baru → user bingung kenapa "kehilangan" backup lama. `SettingsScreen.kt`'s teks "...Movies > GalleryCleaner > Backup..." SENGAJA tetap match nama folder asli ini (bukan diganti "Snaply") — biar teks di layar tetap akurat sama folder yang beneran dipakai. STABILITY WINS.
+    - `AUDIT_GAP.md` — filenya sendiri eksplisit bilang VERBATIM/tidak diedit dari upload asli user, gak disentuh sama sekali termasuk buat rebrand.
+    - **Riwayat Batch lama** di `PROJECT_STATE.md`/`CHANGELOG.md` — fakta historis (nama file APK, judul dokumen yang diupload user, dst. yang literally begitu adanya waktu itu) TIDAK ditulis ulang; cuma entry BARU ke depan yang pakai nama baru.
+    - `ApkDownloader.kt`/`UpdateChecker.kt` HTTP `User-Agent: "GalleryCleaner-App"` — string internal ke GitHub API, 0 visibility user, ditunda (bukan prioritas, boleh nyusul kalau user minta).
+  - Progress: ✅ Batch55 (3 file: `strings.xml` app_name, `MainActivity.kt` ×3 teks, `CleaningReminderWorker.kt` notifikasi). Sisa antrian:
+    - ⏳ `HomeScreen.kt` top bar title `Text("Gallery Cleaner"...)` → "Snaply" (1 file, batch depan).
+    - ⏳ `README.md` + `ROADMAP.md` + `RELEASE_SIGNING.md` — judul & body prosa yang nyebut nama produk sebagai "Gallery Cleaner"/"GalleryCleaner" → "Snaply", TAPI semua URL repo (`github.com/FDzaki-dev/GalleryCleaner/...`) & instruksi `git clone`/folder lokal TETAP `GalleryCleaner` (nama repo asli, gak ikut berubah). Perlu diedit manual per-baris (bukan search-replace buta) karena 1 file bisa punya campuran keduanya.
+    - ⏳ `CHANGELOG.md` — cukup tambah 1 baris ringkas soal rename di paling atas (entry baru), riwayat lama TIDAK ditulis ulang.
+
 - **AUDIT GAP TRACKER (mulai Batch38)** — 20 temuan P0/P1/P2. Sumber sekarang **`AUDIT_GAP.md` di root repo** (ditanamkan permanen Batch45 — sebelumnya cuma ada sebagai upload chat sesi lama, itu sebabnya sempat jadi BLOCKER di awal sesi ini). Dikerjakan bertahap per batch (bukan 1 batch raksasa — di luar batas 3-file/batch project ini). Status:
   - ✅ **P0 #3** (retention gak auto-eksekusi) — **Batch38**: `TrashExpiryWorker` baru, notifikasi saat item lewat retensi. **Catatan penting**: silent background delete TERBUKTI mustahil di scoped storage (`TrashStore`'s doc sendiri sudah bilang ini sejak sebelum Batch38) — `MediaStore.createDeleteRequest()` WAJIB dari foreground Activity + WAJIB dialog konfirmasi user di API30+. Jadi fix-nya notifikasi proaktif, bukan silent-delete (yang memang gak mungkin). Audit-nya benar soal gejala, tapi solusi "truly automatic" di deskripsi audit gak feasible di platform ini — didokumentasikan biar gak diulang gagal-paham di batch depan.
   - ✅ **P0 #4** (App Lock klaim vs implementasi) — **Batch39**: implementasi lama pakai `KeyguardManager.createConfirmDeviceCredentialIntent()` (deprecated, `@Suppress("DEPRECATION")`) yang cuma nunjukin layar PIN/pattern/password device — "biometric" di README/Settings selama ini cuma klaim, bukan fitur nyata. Fix: ganti ke `androidx.biometric.BiometricPrompt` dengan `BIOMETRIC_STRONG or DEVICE_CREDENTIAL` — sekarang beneran nunjukin prompt sidik jari/wajah dulu, fallback otomatis ke screen lock kalau biometric gak ke-enroll/gagal. Ini fix nyata (bukan cuma benerin dokumentasi), karena implementasi lama emang gak sesuai klaim. Detail lengkap di Riwayat Batch di bawah.
@@ -32,6 +48,14 @@ v54 — Batch54 (Audit Gap P1 #7: banner "suggestion, bukan confirmed duplicate"
 - release.keystore (tidak disertakan di repo, via secrets)
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch55 — Rebranding tahap 1/N: Gallery Cleaner → Snaply (3 file)
+User minta rebrand total tapi "kosmetik only, haram hukumnya jikalau sampai mengacaukan workflow termux". Scope decision lengkap (apa yang diganti vs sengaja TIDAK — package ID, folder Termux/repo, rootProject.name, class/theme internal, folder backup/log on-device, AUDIT_GAP.md, riwayat batch lama) didokumentasikan di "Belum Dikerjakan" bagian atas file ini, bukan diulang di sini.
+Diganti batch ini (3 file, semua string yang benar-benar tampil ke user di layar/notifikasi):
+- `strings.xml` — `app_name`: "Gallery Cleaner" → "Snaply" (ini yang muncul sebagai label launcher/nama app di system Settings).
+- `MainActivity.kt` (protected, edit parsial, 3 titik): judul `BiometricPrompt` ("Unlock GalleryCleaner" → "Unlock Snaply"), teks alasan minta izin foto, teks layar "GalleryCleaner is locked" → "Snaply is locked".
+- `CleaningReminderWorker.kt` — `setContentTitle` notifikasi reminder pembersihan.
+Verifikasi: brace/paren balanced kedua file `.kt` (278/278, 504/504 dan 16/16, 49/49). Sisa antrian (Home top bar title, README/ROADMAP/RELEASE_SIGNING.md, catatan CHANGELOG) — lihat "Belum Dikerjakan".
 
 ### Batch54 — Audit Gap P1 #7: banner suggestion di near-duplicate review (1 file)
 `SwipeScreen.kt` — banner `GlassCard` "Suggested matches, not confirmed duplicates — grouped by visual similarity. Review each photo before deleting." muncul di atas konten review (Swipe & Grid view mode) hanya saat `group.key == "Similar photos"` (persis string yang dipakai `HomeScreen.kt` bikin grup ini). Detail lengkap + kenapa "Duplicate files" sengaja TIDAK dapat banner ini + catatan import `.dp` yang baru ditambah, ada di tracker "AUDIT GAP TRACKER" di atas.

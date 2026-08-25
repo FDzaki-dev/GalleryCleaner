@@ -108,7 +108,7 @@ class CleaningReminderWorker(
 
         val builder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_gallery)
-            .setContentTitle("Gallery Cleaner")
+            .setContentTitle("Snaply")
             .setContentText("You have $count item(s) worth reviewing — screenshots or large files.")
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
