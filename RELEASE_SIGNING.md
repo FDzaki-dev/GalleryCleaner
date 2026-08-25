@@ -1,4 +1,4 @@
-# GalleryCleaner release signing
+# Snaply release signing
 
 The GitHub Actions workflow requires these repository secrets:
 
