@@ -56,10 +56,56 @@ object UpdateChecker {
         val tagName: String,
         val releaseName: String,
         val releaseNotes: String,
+        val shortSummary: String,
         val apkDownloadUrl: String,
         val apkSizeBytes: Long,
         val apkFileName: String,
     )
+
+    private const val SUMMARY_MAX_BULLETS = 5
+    private const val SUMMARY_MAX_CHARS = 320
+
+    /**
+     * Batch51 — turns GitHub's auto-generated release body
+     * (`generate_release_notes: true` in `build.yml`) into a short,
+     * human-readable summary instead of the raw commit-log dump: strips
+     * `## ` headers, `by @user in <url>` attribution suffixes, and the
+     * `**Full Changelog**: <compare-url>` line — that link just points
+     * back at a diff, which isn't a substitute for a short in-app summary.
+     * Caps at [SUMMARY_MAX_BULLETS] bullets / [SUMMARY_MAX_CHARS] chars so
+     * the update dialog stays short. Falls back to a generic line when the
+     * body is empty or nothing survives the filtering.
+     */
+    private fun buildShortSummary(rawBody: String): String {
+        if (rawBody.isBlank()) return "New release available."
+
+        val attributionSuffix = Regex("""\s+by\s+@\S+\s+in\s+\S+$""", RegexOption.IGNORE_CASE)
+        val bullets = rawBody.lineSequence()
+            .map { it.trim() }
+            .filter { line ->
+                line.isNotEmpty() &&
+                    !line.startsWith("#") &&
+                    !line.startsWith("**Full Changelog")
+            }
+            .map { line ->
+                line.removePrefix("*").removePrefix("-").trim()
+                    .replace(attributionSuffix, "")
+                    .trim()
+            }
+            .filter { it.isNotBlank() }
+            .take(SUMMARY_MAX_BULLETS)
+            .map { "• $it" }
+            .toList()
+
+        if (bullets.isEmpty()) return "New release available."
+
+        val joined = bullets.joinToString("\n")
+        return if (joined.length > SUMMARY_MAX_CHARS) {
+            joined.take(SUMMARY_MAX_CHARS).trimEnd() + "…"
+        } else {
+            joined
+        }
+    }
 
     sealed class CheckResult {
         data object UpToDate : CheckResult()
@@ -109,10 +155,12 @@ object UpdateChecker {
                     return@withContext CheckResult.Error("Latest release has no .apk asset attached")
                 }
 
+                val rawNotes = json.optString("body", "")
                 val info = UpdateInfo(
                     tagName = tagName,
                     releaseName = json.optString("name", tagName),
-                    releaseNotes = json.optString("body", ""),
+                    releaseNotes = rawNotes,
+                    shortSummary = buildShortSummary(rawNotes),
                     apkDownloadUrl = apkUrl,
                     apkSizeBytes = apkSize,
                     apkFileName = apkName,

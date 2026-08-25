@@ -104,6 +104,17 @@ fun SettingsScreen(
     // Available/Downloading/ReadyToInstall keep the dialog open.
     var updateState by remember { mutableStateOf<UpdateUiState>(UpdateUiState.Idle) }
 
+    // Batch51 — installed version, read once via PackageManager (not
+    // BuildConfig: buildConfig feature isn't enabled in app/build.gradle.kts,
+    // and this avoids touching that protected file for this task).
+    val currentVersionName = remember {
+        try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "?"
+        } catch (e: PackageManager.NameNotFoundException) {
+            "?"
+        }
+    }
+
     // Returned from the "Allow from this source" system settings screen
     // (only reached on API26+ when the permission isn't granted yet) — if
     // the person granted it, retry the install immediately instead of
@@ -539,6 +550,12 @@ fun SettingsScreen(
         dialogState is UpdateUiState.ReadyToInstall
     ) {
         val isDownloading = dialogState is UpdateUiState.Downloading
+        val newTagName = when (dialogState) {
+            is UpdateUiState.Available -> dialogState.info.tagName
+            is UpdateUiState.Downloading -> dialogState.info.tagName
+            is UpdateUiState.ReadyToInstall -> dialogState.tagName
+            else -> ""
+        }
         val releaseName = when (dialogState) {
             is UpdateUiState.Available -> dialogState.info.releaseName
             is UpdateUiState.Downloading -> dialogState.info.releaseName
@@ -554,19 +571,21 @@ fun SettingsScreen(
             title = { Text(releaseName) },
             text = {
                 Column {
+                    // Batch51 — installed vs incoming version, shown across
+                    // all three dialog states (Available/Downloading/
+                    // ReadyToInstall) so it stays visible through the flow.
+                    Text(
+                        "Installed $currentVersionName → New $newTagName",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.height(8.dp))
                     when (dialogState) {
                         is UpdateUiState.Available -> {
-                            if (dialogState.info.releaseNotes.isNotBlank()) {
-                                Text(
-                                    dialogState.info.releaseNotes,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            } else {
-                                Text(
-                                    "New release available.",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
+                            Text(
+                                dialogState.info.shortSummary,
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
                         is UpdateUiState.Downloading -> {
                             LinearProgressIndicator(

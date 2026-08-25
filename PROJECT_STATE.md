@@ -5,7 +5,7 @@
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v50 — Batch50 (In-app update, tahap 2/2: manifest+FileProvider+UI Settings, 3 file — fitur update sekarang end-to-end)
+v51 — Batch51 (In-app update dialog: compare versi terpasang vs versi baru + ringkasan singkat dari release notes, 2 file)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **In-app update — polish kecil (opsional, belum diminta user)**: kalau orang download APK tapi keluar dari dialog/Settings sebelum tap "Install", file `.apk` udah kepegang di disk dan tag udah ke-mark known (lihat komentar `onDownloadUpdate` di `SettingsScreen.kt`) — buka lagi "Check for update" bakal langsung bilang "up to date" walau belum ke-install. Perbaikannya butuh cek file existing di `getExternalFilesDir(null)/updates/` saat screen dibuka, bukan bagian dari task ini, dicatat biar gak kelupaan.
@@ -30,6 +30,16 @@ v50 — Batch50 (In-app update, tahap 2/2: manifest+FileProvider+UI Settings, 3 
 - .github/workflows/build.yml
 - .gitignore
 - release.keystore (tidak disertakan di repo, via secrets)
+
+## Riwayat Batch (terbaru di atas)
+
+### Batch51 — In-app update dialog: compare versi + ringkasan singkat (2 file)
+Diminta user: dialog update sekarang nunjukin compare versi terpasang vs versi baru, plus info singkat soal isi update — bukan nyuruh user lihat log/link changelog buat detail.
+- `UpdateChecker.kt` — `UpdateInfo` dapat field baru `shortSummary`. Dibangun dari `buildShortSummary()` (fungsi baru, private): parse raw `body` dari GitHub `/releases/latest` (auto-generated lewat `generate_release_notes: true` di `build.yml`), buang baris `## ` header, buang suffix `by @user in <url>` per baris, buang baris `**Full Changelog**: <compare-url>` (link itu yang sebelumnya jadi satu-satunya "detail" yang ditawarkan — sekarang dibuang, diganti ringkasan bullet asli). Dibatasi 5 bullet / 320 karakter, fallback "New release available." kalau body kosong atau gak ada yang lolos filter. `releaseNotes` (raw) TETAP ada di data class (gak dihapus, cuma gak dipakai lagi di UI) — non-breaking, cuma 1 titik konstruksi `UpdateInfo` (di file ini sendiri), aman nambah field.
+- `SettingsScreen.kt` — 2 perubahan: (1) `currentVersionName` baru, dibaca sekali via `context.packageManager.getPackageInfo(...).versionName` (bukan `BuildConfig.VERSION_NAME` — `buildFeatures.buildConfig` belum di-enable di `app/build.gradle.kts`, sengaja dihindari biar gak nyentuh protected file itu untuk task ini). (2) Dialog update (Available/Downloading/ReadyToInstall) sekarang nunjukin baris "Installed X → New Y" di atas, konsisten muncul di ketiga state pakai `newTagName` (pattern sama kayak `releaseName` yang udah ada). Body dialog state `Available` ganti dari raw `releaseNotes` ke `shortSummary` yang baru.
+- **Sengaja TIDAK diubah**: baris subtitle inline di row "Check for update" (`"Version ${current.info.tagName} is available."`) — compare version paling relevan di dialog detail (tempat user mutusin download), bukan di baris ringkas Settings; nambahin di 2 tempat sekaligus dianggap scope creep di luar yang diminta.
+- **Sengaja TIDAK diubah**: logic pembanding tag (`UpdateChecker.checkForUpdate`'s tag-string comparison) — itu udah didokumentasikan sengaja gak pakai perbandingan angka versi (lihat class doc `UpdateChecker.kt`, versionCode/tag pakai skema angka beda). Task ini murni soal apa yang DITAMPILKAN ke user, bukan logic "ada update atau nggak".
+- Verifikasi: brace/paren balanced kedua file, 1 titik konstruksi `UpdateInfo` (aman nambah field non-optional), `currentVersionName` dibungkus try/catch `PackageManager.NameNotFoundException` (fallback "?", walau query package sendiri praktis gak pernah gagal).
 
 ## ⚠️ Insiden Operasional (permanen — bukan bagian Riwayat Batch, gak ada kode berubah)
 
