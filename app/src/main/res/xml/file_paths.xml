@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Batch50: matches ApkDownloader.kt's UPDATE_SUBDIR ("updates") under
+     getExternalFilesDir(null) — external-files-path maps to that exact
+     root, so only this one subfolder is exposed to the FileProvider, not
+     the app's whole external-files space. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <external-files-path
+        name="updates"
+        path="updates/" />
+</paths>

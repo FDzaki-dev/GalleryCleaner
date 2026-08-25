@@ -22,6 +22,16 @@
     <!-- Batch39 (Audit Gap P0 #4): App Lock's BiometricPrompt. Normal
          permission, granted automatically at install — no runtime prompt. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Batch50: in-app update. INTERNET is a normal permission (no
+         runtime prompt) — needed for UpdateChecker/ApkDownloader (Batch49)
+         to reach api.github.com. REQUEST_INSTALL_PACKAGES is what lets the
+         person install the downloaded APK without going through their
+         browser/file manager; on API 26+ it still requires an explicit
+         one-time "Allow from this source" grant handled at runtime via
+         Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES (SettingsScreen.kt),
+         this manifest entry only makes that grant possible at all. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
         android:name=".GalleryCleanerApp"
@@ -46,5 +56,23 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
+
+        <!-- Batch50: exposes getExternalFilesDir(null)/updates/<apk> (see
+             ApkDownloader.kt, Batch49) as a content:// URI for the system
+             package installer — required since API24+ blocks file://
+             Intent data (FileUriExposedException) and installers can't
+             read a plain app-private file path. exported=false +
+             grantUriPermissions=true is the standard FileProvider pairing:
+             not usable by other apps directly, only via the explicit
+             FLAG_GRANT_READ_URI_PERMISSION set on the install Intent. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

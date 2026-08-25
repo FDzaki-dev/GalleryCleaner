@@ -2,8 +2,11 @@ package com.example.gallerycleaner
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -27,7 +30,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.example.gallerycleaner.ui.theme.DustyRoseDelete
 import com.example.gallerycleaner.ui.theme.IndigoBg
 import com.example.gallerycleaner.ui.theme.Neumorph
@@ -37,6 +42,7 @@ import com.example.gallerycleaner.ui.theme.SageKeep
 import com.example.gallerycleaner.ui.theme.CoralDelete
 import com.example.gallerycleaner.ui.theme.MidnightGlass
 import kotlinx.coroutines.launch
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,6 +95,90 @@ fun SettingsScreen(
         } else {
             scope.launch { settingsStore.setCleaningReminderEnabled(false) }
             CleaningReminderWorker.cancel(context)
+        }
+    }
+
+    // Batch50: in-app update (UpdateChecker/ApkDownloader are Batch49).
+    // One state machine drives both the Settings row subtitle and the
+    // dialog below — Idle/UpToDate/Error are dismissible-by-tap-again,
+    // Available/Downloading/ReadyToInstall keep the dialog open.
+    var updateState by remember { mutableStateOf<UpdateUiState>(UpdateUiState.Idle) }
+
+    // Returned from the "Allow from this source" system settings screen
+    // (only reached on API26+ when the permission isn't granted yet) — if
+    // the person granted it, retry the install immediately instead of
+    // making them tap "Install" a second time.
+    val installSourcePermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        val current = updateState
+        if (current is UpdateUiState.ReadyToInstall &&
+            (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || context.packageManager.canRequestPackageInstalls())
+        ) {
+            installDownloadedApk(context, current.file)
+        }
+    }
+
+    fun onCheckForUpdate() {
+        updateState = UpdateUiState.Checking
+        scope.launch {
+            updateState = when (val result = UpdateChecker.checkForUpdate(context)) {
+                is UpdateChecker.CheckResult.UpToDate -> UpdateUiState.UpToDate
+                is UpdateChecker.CheckResult.UpdateAvailable -> UpdateUiState.Available(result.info)
+                is UpdateChecker.CheckResult.Error -> UpdateUiState.Error(result.message)
+            }
+        }
+    }
+
+    fun onDownloadUpdate(info: UpdateChecker.UpdateInfo) {
+        scope.launch {
+            updateState = UpdateUiState.Downloading(info, 0f)
+            val result = ApkDownloader.download(
+                context = context,
+                url = info.apkDownloadUrl,
+                fileName = info.apkFileName,
+                expectedSizeBytes = info.apkSizeBytes
+            ) { bytesRead, totalBytes ->
+                // Written from Dispatchers.IO inside ApkDownloader — safe:
+                // Compose's snapshot state system is thread-safe for
+                // writes and schedules the recomposition on the main
+                // thread itself, no manual withContext(Main) needed here.
+                updateState = UpdateUiState.Downloading(
+                    info,
+                    if (totalBytes > 0) bytesRead.toFloat() / totalBytes else 0f
+                )
+            }
+            updateState = when (result) {
+                is ApkDownloader.DownloadResult.Success -> {
+                    // Mark known now (on successful download, not on
+                    // confirmed install) — see UpdateChecker's class doc
+                    // for why. Known limitation: if the person downloads
+                    // but backs out without installing, leaving Settings
+                    // resets this screen's local state, and the next
+                    // "Check for update" will say up-to-date even though
+                    // the already-downloaded APK was never installed. The
+                    // file itself stays on disk either way; not fixed here
+                    // to keep this batch to 3 files.
+                    UpdateChecker.markTagAsKnown(context, info.tagName)
+                    UpdateUiState.ReadyToInstall(result.file, info.tagName)
+                }
+                is ApkDownloader.DownloadResult.Error -> UpdateUiState.Error(result.message)
+            }
+        }
+    }
+
+    fun onInstallUpdate(file: File) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            !context.packageManager.canRequestPackageInstalls()
+        ) {
+            installSourcePermissionLauncher.launch(
+                Intent(
+                    Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    Uri.parse("package:${context.packageName}")
+                )
+            )
+        } else {
+            installDownloadedApk(context, file)
         }
     }
 
@@ -387,8 +477,166 @@ fun SettingsScreen(
                     )
                 }
             }
+
+            item { Spacer(Modifier.height(24.dp)) }
+            item { SettingsSectionLabel("About") }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .clickable(
+                            enabled = updateState is UpdateUiState.Idle ||
+                                updateState is UpdateUiState.UpToDate ||
+                                updateState is UpdateUiState.Error
+                        ) { onCheckForUpdate() },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Check for update", style = MaterialTheme.typography.bodyLarge)
+                        Spacer(Modifier.height(2.dp))
+                        val subtitle = when (val current = updateState) {
+                            UpdateUiState.Idle -> "Tap to check GitHub for a newer release."
+                            UpdateUiState.Checking -> "Checking…"
+                            UpdateUiState.UpToDate -> "You're on the latest version."
+                            is UpdateUiState.Available -> "Version ${current.info.tagName} is available."
+                            is UpdateUiState.Downloading -> "Downloading… ${(current.progress * 100).toInt()}%"
+                            is UpdateUiState.ReadyToInstall -> "Downloaded — tap to install."
+                            is UpdateUiState.Error -> "Couldn't check for updates: ${current.message}"
+                        }
+                        Text(
+                            subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (updateState is UpdateUiState.Error) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
+                    when (updateState) {
+                        UpdateUiState.Checking -> CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                        is UpdateUiState.Downloading -> CircularProgressIndicator(
+                            progress = (updateState as UpdateUiState.Downloading).progress,
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                        else -> {}
+                    }
+                }
+            }
         }
     }
+
+    // Dialog for Available/Downloading/ReadyToInstall — Idle/UpToDate/Error
+    // stay inline in the row above, no dialog needed for those.
+    val dialogState = updateState
+    if (dialogState is UpdateUiState.Available ||
+        dialogState is UpdateUiState.Downloading ||
+        dialogState is UpdateUiState.ReadyToInstall
+    ) {
+        val isDownloading = dialogState is UpdateUiState.Downloading
+        val releaseName = when (dialogState) {
+            is UpdateUiState.Available -> dialogState.info.releaseName
+            is UpdateUiState.Downloading -> dialogState.info.releaseName
+            is UpdateUiState.ReadyToInstall -> dialogState.tagName
+            else -> ""
+        }
+        AlertDialog(
+            onDismissRequest = { if (!isDownloading) updateState = UpdateUiState.Idle },
+            properties = DialogProperties(
+                dismissOnBackPress = !isDownloading,
+                dismissOnClickOutside = !isDownloading
+            ),
+            title = { Text(releaseName) },
+            text = {
+                Column {
+                    when (dialogState) {
+                        is UpdateUiState.Available -> {
+                            if (dialogState.info.releaseNotes.isNotBlank()) {
+                                Text(
+                                    dialogState.info.releaseNotes,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            } else {
+                                Text(
+                                    "New release available.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                        is UpdateUiState.Downloading -> {
+                            LinearProgressIndicator(
+                                progress = dialogState.progress,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "${(dialogState.progress * 100).toInt()}% — keep this open until it finishes.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        is UpdateUiState.ReadyToInstall -> {
+                            Text(
+                                "Downloaded. Android will ask you to confirm the install next.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        else -> {}
+                    }
+                }
+            },
+            confirmButton = {
+                when (dialogState) {
+                    is UpdateUiState.Available -> TextButton(
+                        onClick = { onDownloadUpdate(dialogState.info) }
+                    ) { Text("Download") }
+                    is UpdateUiState.ReadyToInstall -> TextButton(
+                        onClick = { onInstallUpdate(dialogState.file) }
+                    ) { Text("Install") }
+                    else -> {}
+                }
+            },
+            dismissButton = {
+                if (!isDownloading) {
+                    TextButton(onClick = { updateState = UpdateUiState.Idle }) { Text("Cancel") }
+                }
+            }
+        )
+    }
+}
+
+/** Batch50 — one state machine drives the "Check for update" row and its
+ *  dialog together (see call-site in [SettingsScreen]). */
+private sealed class UpdateUiState {
+    data object Idle : UpdateUiState()
+    data object Checking : UpdateUiState()
+    data object UpToDate : UpdateUiState()
+    data class Available(val info: UpdateChecker.UpdateInfo) : UpdateUiState()
+    data class Downloading(val info: UpdateChecker.UpdateInfo, val progress: Float) : UpdateUiState()
+    data class ReadyToInstall(val file: File, val tagName: String) : UpdateUiState()
+    data class Error(val message: String) : UpdateUiState()
+}
+
+/** Batch50 — hands the downloaded APK (app-specific external storage, see
+ *  ApkDownloader.kt) to the system installer via a FileProvider content://
+ *  URI, since a plain file:// Intent data throws FileUriExposedException
+ *  on API24+ and installers can't read an app-private path directly. */
+private fun installDownloadedApk(context: Context, file: File) {
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, "application/vnd.android.package-archive")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(intent)
 }
 
 @Composable
