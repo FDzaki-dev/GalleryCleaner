@@ -120,4 +120,32 @@ object ApkDownloader {
             .listFiles()
             ?.forEach { it.delete() }
     }
+
+    /**
+     * Batch53 (in-app update polish, previously flagged optional in
+     * PROJECT_STATE.md's Pending Queue — now requested) — looks for a
+     * fully-downloaded (non-`.part`) APK already sitting in the updates
+     * folder from a previous session, so Settings can resume straight to
+     * "ready to install" instead of falsely reporting "up to date" just
+     * because the person backed out before tapping Install last time (the
+     * tag gets marked known on download *success*, not on confirmed
+     * install — see [UpdateChecker]'s class doc).
+     *
+     * Also sweeps any stray `.part` file (always incomplete/unusable — see
+     * [download]'s failure path, which normally deletes these itself but
+     * can't if the process was killed first) and any older finished APK
+     * that isn't the most recently completed one, so this folder doesn't
+     * accumulate abandoned downloads across multiple releases over time.
+     */
+    fun findDownloadedApk(context: Context): File? {
+        val dir = File(context.getExternalFilesDir(null), UPDATE_SUBDIR)
+        val files = dir.listFiles() ?: return null
+
+        files.filter { it.name.endsWith(".part") }.forEach { it.delete() }
+
+        val apks = files.filter { it.isFile && it.name.endsWith(".apk", ignoreCase = true) }
+        val newest = apks.maxByOrNull { it.lastModified() } ?: return null
+        apks.filter { it != newest }.forEach { it.delete() }
+        return newest
+    }
 }

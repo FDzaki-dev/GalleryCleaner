@@ -199,4 +199,14 @@ object UpdateChecker {
             .putString(KEY_LAST_KNOWN_TAG, tagName)
             .apply()
     }
+
+    /**
+     * Batch53 — read-only lookup of the tag last recorded via
+     * [markTagAsKnown]. Used to pair a leftover downloaded APK
+     * (`ApkDownloader.findDownloadedApk`) with the version it belongs to
+     * when Settings reopens, without hitting the GitHub API again.
+     */
+    fun getLastKnownTag(context: Context): String? =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_LAST_KNOWN_TAG, null)
 }

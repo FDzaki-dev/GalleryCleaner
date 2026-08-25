@@ -41,6 +41,7 @@ import com.example.gallerycleaner.ui.theme.PeriwinkleKeep
 import com.example.gallerycleaner.ui.theme.SageKeep
 import com.example.gallerycleaner.ui.theme.CoralDelete
 import com.example.gallerycleaner.ui.theme.MidnightGlass
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -104,6 +105,21 @@ fun SettingsScreen(
     // Available/Downloading/ReadyToInstall keep the dialog open.
     var updateState by remember { mutableStateOf<UpdateUiState>(UpdateUiState.Idle) }
 
+    // Batch53 — runs once when Settings opens: if a previous session
+    // downloaded an update but the person backed out before tapping
+    // Install, the tag was already marked known (see onDownloadUpdate
+    // below) and the file is still on disk. Without this check, tapping
+    // "Check for update" here would just say "up to date" — this resumes
+    // straight to ReadyToInstall instead, using the tag already recorded
+    // at download time (see ApkDownloader.findDownloadedApk's doc comment).
+    LaunchedEffect(Unit) {
+        val existingFile = ApkDownloader.findDownloadedApk(context)
+        val lastKnownTag = UpdateChecker.getLastKnownTag(context)
+        if (existingFile != null && lastKnownTag != null) {
+            updateState = UpdateUiState.ReadyToInstall(existingFile, lastKnownTag)
+        }
+    }
+
     // Batch51 — installed version, read once via PackageManager (not
     // BuildConfig: buildConfig feature isn't enabled in app/build.gradle.kts,
     // and this avoids touching that protected file for this task).
@@ -112,6 +128,27 @@ fun SettingsScreen(
             context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "?"
         } catch (e: PackageManager.NameNotFoundException) {
             "?"
+        }
+    }
+
+    // Batch53 — shared by both install-trigger paths below (direct tap, and
+    // the "granted install-source permission" resume path) so the delayed
+    // cleanup isn't duplicated or, worse, forgotten on one of the two.
+    fun launchInstall(file: File) {
+        installDownloadedApk(context, file)
+        // Delayed, not immediate: the system installer reads the file via
+        // the FileProvider content:// URI shortly after the intent is
+        // dispatched, not necessarily before this call returns — deleting
+        // right away risked a race (installer opening a file that's
+        // already gone). Once this fires, findDownloadedApk (on the next
+        // Settings open) no longer finds it, so a real successful install
+        // doesn't get re-prompted forever — the tradeoff is that if the
+        // person cancels the system's own install confirmation after this
+        // point, they'd need to tap "Check for update" again to re-fetch
+        // it, which is minor next to the alternative (permanent re-prompt).
+        scope.launch {
+            delay(5000)
+            file.delete()
         }
     }
 
@@ -126,7 +163,7 @@ fun SettingsScreen(
         if (current is UpdateUiState.ReadyToInstall &&
             (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || context.packageManager.canRequestPackageInstalls())
         ) {
-            installDownloadedApk(context, current.file)
+            launchInstall(current.file)
         }
     }
 
@@ -163,13 +200,12 @@ fun SettingsScreen(
                 is ApkDownloader.DownloadResult.Success -> {
                     // Mark known now (on successful download, not on
                     // confirmed install) — see UpdateChecker's class doc
-                    // for why. Known limitation: if the person downloads
-                    // but backs out without installing, leaving Settings
-                    // resets this screen's local state, and the next
-                    // "Check for update" will say up-to-date even though
-                    // the already-downloaded APK was never installed. The
-                    // file itself stays on disk either way; not fixed here
-                    // to keep this batch to 3 files.
+                    // for why. If the person backs out before tapping
+                    // Install, leaving Settings resets this screen's local
+                    // state — but the LaunchedEffect(Unit) above now
+                    // catches that on the next open (Batch53) instead of
+                    // this state being lost until the file is stumbled on
+                    // some other way.
                     UpdateChecker.markTagAsKnown(context, info.tagName)
                     UpdateUiState.ReadyToInstall(result.file, info.tagName)
                 }
@@ -189,7 +225,7 @@ fun SettingsScreen(
                 )
             )
         } else {
-            installDownloadedApk(context, file)
+            launchInstall(file)
         }
     }
 
