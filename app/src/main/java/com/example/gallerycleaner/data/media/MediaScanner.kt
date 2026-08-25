@@ -86,7 +86,16 @@ object MediaScanner {
      *
      * Does file I/O, so this must run off the main thread (Dispatchers.IO).
      */
-    suspend fun findExactDuplicates(context: Context, items: List<MediaItem>): List<MediaItem> {
+    suspend fun findExactDuplicates(
+        context: Context,
+        items: List<MediaItem>,
+        // Batch47 (Audit Gap P1 #6, stage 2a): default no-op keeps the sole
+        // existing caller (MainActivity's automatic LaunchedEffect scan)
+        // 100% source-compatible — 0 call-site changes needed this batch.
+        // Real progress% UI is a separate, later batch (needs MainActivity
+        // state + HomeScreen UI, out of scope for this backend-only stage).
+        onProgress: (checked: Int, total: Int) -> Unit = {}
+    ): List<MediaItem> {
         val sizeCandidates = items
             .filter { it.sizeBytes > 0 }
             .groupBy { it.sizeBytes }
@@ -107,28 +116,56 @@ object MediaScanner {
         val cache = cacheStore.loadAll()
         val updatedCache = HashMap<Long, HashCacheStore.Entry>(cache.size)
 
+        // Batch47 (Audit Gap P1 #6, stage 2a): the loop below is the actual
+        // hashing work (file I/O + MD5) and previously had ZERO suspension
+        // points despite being a `suspend fun` — meaning a cancelled Job
+        // (e.g. MainActivity's LaunchedEffect(activeMedia) restarting mid-
+        // scan while a large library streams in) could NOT actually stop
+        // this loop; it silently ran to completion every time, wasting I/O
+        // on a result nobody was going to use anymore. `yield()` every
+        // YIELD_EVERY items (same constant/cadence findBlurryPhotos already
+        // uses) is what makes cancellation real here, not just theoretical.
+        //
+        // `updatedCache` is saved in `finally` so even a cancelled run keeps
+        // whatever hashes it managed to compute before being interrupted —
+        // the next scan (auto or manual) resumes cheaper via stage 1's
+        // cache instead of re-hashing from zero. This is NOT positional
+        // resume (no "continue exactly where it left off mid-list"), just
+        // an honest byproduct of the cache architecture — documented as
+        // such, not overclaimed.
+        val totalCandidates = sizeCandidates.sumOf { it.size }
+        var checked = 0
         val result = mutableListOf<MediaItem>()
-        for (candidates in sizeCandidates) {
-            candidates
-                .mapNotNull { item ->
-                    val cached = cache[item.id]
-                    val hash = if (cached != null &&
-                        cached.sizeBytes == item.sizeBytes &&
-                        cached.dateModifiedMillis == item.dateModifiedMillis
-                    ) {
-                        cached.hash
-                    } else {
-                        hashContent(context, item.uri)
+        try {
+            for (candidates in sizeCandidates) {
+                candidates
+                    .mapNotNull { item ->
+                        checked++
+                        if (checked % YIELD_EVERY == 0) {
+                            kotlinx.coroutines.yield()
+                            onProgress(checked, totalCandidates)
+                        }
+                        val cached = cache[item.id]
+                        val hash = if (cached != null &&
+                            cached.sizeBytes == item.sizeBytes &&
+                            cached.dateModifiedMillis == item.dateModifiedMillis
+                        ) {
+                            cached.hash
+                        } else {
+                            hashContent(context, item.uri)
+                        }
+                        hash?.also { updatedCache[item.id] = HashCacheStore.Entry(item.sizeBytes, item.dateModifiedMillis, it) }
+                            ?.let { h -> h to item }
                     }
-                    hash?.also { updatedCache[item.id] = HashCacheStore.Entry(item.sizeBytes, item.dateModifiedMillis, it) }
-                        ?.let { h -> h to item }
-                }
-                .groupBy({ it.first }, { it.second })
-                .values
-                .filter { it.size > 1 }
-                .forEach { result += it }
+                    .groupBy({ it.first }, { it.second })
+                    .values
+                    .filter { it.size > 1 }
+                    .forEach { result += it }
+            }
+            onProgress(totalCandidates, totalCandidates)
+        } finally {
+            cacheStore.saveAll(updatedCache)
         }
-        cacheStore.saveAll(updatedCache)
         return result.sortedByDescending { it.sizeBytes }
     }
 

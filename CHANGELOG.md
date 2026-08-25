@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v47_Batch47 — 2026-08-25
+- **Audit Gap P1 #6 stage 2a** (2 file): `findExactDuplicates()`'s hashing loop had ZERO suspension points despite being `suspend` — a cancelled Job (e.g. `LaunchedEffect(activeMedia)` restarting mid-scan) couldn't actually stop it; it silently ran to completion every time. Fix: `yield()` every 20 items (same cadence `findBlurryPhotos` already uses) makes cancellation real, plus optional `onProgress(checked, total)` callback (default no-op, 0 call-site changes needed). Hash cache now saved in `finally` — a cancelled run still persists whatever it hashed, so the next scan resumes cheaper via stage 1's cache instead of from zero (not positional resume, just an honest byproduct, documented as such). Stage 2b (on-demand Scan/Cancel button + progress% UI, needs `MainActivity.kt`+`HomeScreen.kt`) deferred — over the 3-file cap combined with this batch. Detail: `PROJECT_STATE.md` Batch47.
+
 ## v44_Batch44 — 2026-08-17
 - **Audit Gap P1 #5 fix** (2 file): `MainActivity`'s progressive gallery loading (`allMedia = allMedia + page`) bikin full List copy tiap page — O(n²) total di library besar. Fix: `allMedia` jadi `PersistentList<MediaItem>` (`kotlinx.collections.immutable:0.3.8` — dipin, bukan versi terbaru, karena project di Kotlin 1.9.24 dan versi 0.4.0+ butuh Kotlin ≥2.1.20), `.addAll(page)` pakai structural sharing bukan full-copy. `SnapshotStateList` DIPERTIMBANGKAN tapi ditolak (reference-nya stabil selamanya, bikin `LaunchedEffect(allMedia,...)` cuma jalan sekali — risiko regresi terlalu tinggi tanpa compiler/device buat validasi). 3 titik reassignment lain (`filterNot`/`map` di handler Delete/Organize) ditambah `.toPersistentList()` biar tipe cocok. Stage 5 dari audit `GalleryCleaner_v37_Audit_Gap_Final.md` — mulai P1 setelah 4/4 P0 tuntas. Detail: `PROJECT_STATE.md` Batch44.
 
