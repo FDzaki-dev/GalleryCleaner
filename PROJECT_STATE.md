@@ -5,7 +5,7 @@
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v45 — Batch45 (Audit file ditanamkan permanen ke repo + Audit Gap P1 #6 stage 1: persistent hash cache untuk findExactDuplicates, 2 file + 1 doc baru)
+v46 — Batch46 (Catat permanen insiden Termux PROJ_DIR case-mismatch, 0 file kode — cuma dokumentasi)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **AUDIT GAP TRACKER (mulai Batch38)** — 20 temuan P0/P1/P2. Sumber sekarang **`AUDIT_GAP.md` di root repo** (ditanamkan permanen Batch45 — sebelumnya cuma ada sebagai upload chat sesi lama, itu sebabnya sempat jadi BLOCKER di awal sesi ini). Dikerjakan bertahap per batch (bukan 1 batch raksasa — di luar batas 3-file/batch project ini). Status:
@@ -29,6 +29,17 @@ v45 — Batch45 (Audit file ditanamkan permanen ke repo + Audit Gap P1 #6 stage 
 - .github/workflows/build.yml
 - .gitignore
 - release.keystore (tidak disertakan di repo, via secrets)
+
+## ⚠️ Insiden Operasional (permanen — bukan bagian Riwayat Batch, gak ada kode berubah)
+
+### Batch46 — Termux PROJ_DIR case-mismatch bikin folder baru salah, bukan nemu folder existing
+Setelah Batch45, command Termux yang dikasih ke user pakai `-iname "gallery-cleaner"` (lowercase-kebab-case) buat cari folder project lokal. Nama repo GitHub project ini ASLI-nya `GalleryCleaner` — PascalCase, TANPA hyphen (lihat URL rilis di paling atas file ini: `github.com/FDzaki-dev/GalleryCleaner`). `find -iname` cuma case-insensitive (huruf besar/kecil), BUKAN hyphen-insensitive — jadi `"gallery-cleaner"` (ada hyphen) tetap gak pernah match folder asli `GalleryCleaner` (gak ada hyphen), berapa pun kombinasi besar/kecil hurufnya. Pencarian gagal → fallback `mkdir -p ~/projects/gallery-cleaner` bikin folder BARU yang salah, bukan masuk ke folder project yang sudah ada.
+
+**Root cause**: instruksi umum project ("Variabel [NamaFolderProyek] WAJIB 100% lowercase kebab-case", lihat bagian Termux Automation Commands) SALAH diterapkan ke project yang REPO-nya sudah ada dan sudah punya nama sendiri. Aturan kebab-case itu maksudnya buat project BARU (saat `gh repo create` pertama kali) — begitu repo sudah exist dengan nama tertentu (apa pun casing-nya), nama itu jadi fakta yang harus diikuti apa adanya, bukan diseragamkan ulang ke kebab-case.
+
+**Dampak**: kemungkinan ada folder residu `~/projects/gallery-cleaner` di device user. Skrip daily-update TIDAK pernah nge-set git remote (`git remote add origin` cuma ada di skrip INITIAL SETUP) — jadi `git push` di folder salah ini pasti gagal duluan sebelum sempat nyentuh GitHub. Kesimpulan: 0 dampak ke remote/GitHub, tapi folder lokal residu tetap perlu dibersihkan manual (skrip pembersihan diberikan terpisah di chat, bukan bagian permanen file ini karena itu perintah housekeeping sekali-jalan, bukan source project).
+
+**Fix permanen ke depan (WAJIB diikuti tiap generate command Termux buat project INI)**: pakai nama folder/repo PERSIS `GalleryCleaner` (PascalCase, tanpa hyphen) di setiap `-iname` dan fallback path — JANGAN otomatis di-kebab-case-kan lagi. Precedence: nama repo GitHub yang sudah eksis > aturan gaya penamaan umum di instruksi project.
 
 ## Riwayat Batch (terbaru → terlama)
 Detail Batch2–4 belum granular di file ini — lihat `CHANGELOG.md` (urutan sama, terbaru di atas).
