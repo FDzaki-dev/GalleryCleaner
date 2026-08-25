@@ -5,7 +5,7 @@
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v55 — Batch55 (Rebranding tahap 1/N: Gallery Cleaner → **Snaply** di 3 string paling terlihat user — launcher label, notifikasi, layar lock/permission, 3 file)
+v56 — Batch56 (Rebranding tahap 2/N: top bar Home + judul README.md/ROADMAP.md → Snaply, kompetitor "Sponge - Gallery Cleaner" & repo URL/path storage sengaja tetap, 3 file)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **REBRANDING Gallery Cleaner → Snaply (mulai Batch55, kosmetik only)** — permintaan user eksplisit: "kosmetik only, haram hukumnya jikalau sampai mengacaukan workflow termux". Keputusan scope (assumption, belum dikonfirmasi user secara literal per-item, tapi konsisten sama instruksi "kosmetik only" + Protected Files + Termux gag-order):
@@ -19,10 +19,10 @@ v55 — Batch55 (Rebranding tahap 1/N: Gallery Cleaner → **Snaply** di 3 strin
     - `AUDIT_GAP.md` — filenya sendiri eksplisit bilang VERBATIM/tidak diedit dari upload asli user, gak disentuh sama sekali termasuk buat rebrand.
     - **Riwayat Batch lama** di `PROJECT_STATE.md`/`CHANGELOG.md` — fakta historis (nama file APK, judul dokumen yang diupload user, dst. yang literally begitu adanya waktu itu) TIDAK ditulis ulang; cuma entry BARU ke depan yang pakai nama baru.
     - `ApkDownloader.kt`/`UpdateChecker.kt` HTTP `User-Agent: "GalleryCleaner-App"` — string internal ke GitHub API, 0 visibility user, ditunda (bukan prioritas, boleh nyusul kalau user minta).
-  - Progress: ✅ Batch55 (3 file: `strings.xml` app_name, `MainActivity.kt` ×3 teks, `CleaningReminderWorker.kt` notifikasi). Sisa antrian:
-    - ⏳ `HomeScreen.kt` top bar title `Text("Gallery Cleaner"...)` → "Snaply" (1 file, batch depan).
-    - ⏳ `README.md` + `ROADMAP.md` + `RELEASE_SIGNING.md` — judul & body prosa yang nyebut nama produk sebagai "Gallery Cleaner"/"GalleryCleaner" → "Snaply", TAPI semua URL repo (`github.com/FDzaki-dev/GalleryCleaner/...`) & instruksi `git clone`/folder lokal TETAP `GalleryCleaner` (nama repo asli, gak ikut berubah). Perlu diedit manual per-baris (bukan search-replace buta) karena 1 file bisa punya campuran keduanya.
+  - Progress: ✅ Batch55 (3 file: `strings.xml` app_name, `MainActivity.kt` ×3 teks, `CleaningReminderWorker.kt` notifikasi). ✅ Batch56 (3 file: `HomeScreen.kt` top bar title — UI text terakhir yang tersisa; `README.md` judul H1 doc; `ROADMAP.md` judul H1 doc — kompetitor **"Sponge - Gallery Cleaner"** di kedua file SENGAJA tetap apa adanya, itu nama listing asli app pihak ketiga bukan brand kita). Sisa antrian:
+    - ⏳ `RELEASE_SIGNING.md` — judul H1 "GalleryCleaner release signing" → "Snaply release signing" (1 file, low priority).
     - ⏳ `CHANGELOG.md` — cukup tambah 1 baris ringkas soal rename di paling atas (entry baru), riwayat lama TIDAK ditulis ulang.
+    - Setelah 2 item di atas, rebrand kosmetik dianggap TUNTAS (semua sisanya — package ID, folder Termux/repo, storage path, class/theme internal, AUDIT_GAP.md — sudah diputuskan permanen TIDAK berubah, lihat daftar di atas).
 
 - **AUDIT GAP TRACKER (mulai Batch38)** — 20 temuan P0/P1/P2. Sumber sekarang **`AUDIT_GAP.md` di root repo** (ditanamkan permanen Batch45 — sebelumnya cuma ada sebagai upload chat sesi lama, itu sebabnya sempat jadi BLOCKER di awal sesi ini). Dikerjakan bertahap per batch (bukan 1 batch raksasa — di luar batas 3-file/batch project ini). Status:
   - ✅ **P0 #3** (retention gak auto-eksekusi) — **Batch38**: `TrashExpiryWorker` baru, notifikasi saat item lewat retensi. **Catatan penting**: silent background delete TERBUKTI mustahil di scoped storage (`TrashStore`'s doc sendiri sudah bilang ini sejak sebelum Batch38) — `MediaStore.createDeleteRequest()` WAJIB dari foreground Activity + WAJIB dialog konfirmasi user di API30+. Jadi fix-nya notifikasi proaktif, bukan silent-delete (yang memang gak mungkin). Audit-nya benar soal gejala, tapi solusi "truly automatic" di deskripsi audit gak feasible di platform ini — didokumentasikan biar gak diulang gagal-paham di batch depan.
@@ -48,6 +48,13 @@ v55 — Batch55 (Rebranding tahap 1/N: Gallery Cleaner → **Snaply** di 3 strin
 - release.keystore (tidak disertakan di repo, via secrets)
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch56 — Rebranding tahap 2/N: Home top bar + judul README/ROADMAP (3 file)
+Lanjutan Batch55. Diganti (3 file):
+- `HomeScreen.kt` — `Text("Gallery Cleaner"...)` di top bar Home → "Snaply". Ini string UI in-app terakhir yang tersisa (grep ulang setelah batch ini bersih, 0 sisa "Gallery Cleaner"/"GalleryCleaner" di kode `.kt` yang benar-benar dirender ke user).
+- `README.md` — judul H1 doc. Instruksi setup (`git clone`, `unzip`, nama folder lokal, URL repo) TIDAK disentuh — itu semua nama repo GitHub asli (`GalleryCleaner`), yang sengaja tetap sesuai keputusan scope Batch55.
+- `ROADMAP.md` — judul H1 doc. **Perhatian khusus**: judul lama nyebut 2 hal beda yang keduanya mengandung kata "Gallery Cleaner" — project KITA (`GalleryCleaner`, no-space) vs nama listing app kompetitor pihak ketiga **"Sponge - Gallery Cleaner"** (ada space, nama Play Store asli mereka, muncul lagi di baris 9 sebagai tolok ukur riset). Cuma yang pertama diganti; nama kompetitor dibiarkan verbatim di kedua titik kemunculannya (mengubahnya akan jadi salah kutip nama app orang lain).
+Verifikasi: grep manual tiap sisa "Gallery Cleaner"/"GalleryCleaner" di README.md/ROADMAP.md setelah edit — 3 kategori tersisa, semua by-design: URL repo GitHub, nama kompetitor "Sponge - Gallery Cleaner", dan folder storage on-device `Pictures|Movies/GalleryCleaner/Backup` (functional path, keputusan Batch55). `HomeScreen.kt` brace/paren balanced (97/97, 174/174). Sisa antrian: `RELEASE_SIGNING.md` + catatan `CHANGELOG.md` — lihat "Belum Dikerjakan".
 
 ### Batch55 — Rebranding tahap 1/N: Gallery Cleaner → Snaply (3 file)
 User minta rebrand total tapi "kosmetik only, haram hukumnya jikalau sampai mengacaukan workflow termux". Scope decision lengkap (apa yang diganti vs sengaja TIDAK — package ID, folder Termux/repo, rootProject.name, class/theme internal, folder backup/log on-device, AUDIT_GAP.md, riwayat batch lama) didokumentasikan di "Belum Dikerjakan" bagian atas file ini, bukan diulang di sini.

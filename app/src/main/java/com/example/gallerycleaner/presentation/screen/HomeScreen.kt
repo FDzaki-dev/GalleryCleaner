@@ -159,7 +159,7 @@ fun HomeScreen(
                                 )
                             )
                         } else {
-                            Text("Gallery Cleaner", style = MaterialTheme.typography.titleLarge)
+                            Text("Snaply", style = MaterialTheme.typography.titleLarge)
                         }
                     },
                     navigationIcon = {

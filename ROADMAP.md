@@ -1,4 +1,4 @@
-# ROADMAP — GalleryCleaner vs "Sponge - Gallery Cleaner"
+# ROADMAP — Snaply vs "Sponge - Gallery Cleaner"
 
 ## 🔗 Rilis Terbaru
 APK signed terbaru: **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**

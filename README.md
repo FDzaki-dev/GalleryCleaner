@@ -1,4 +1,4 @@
-# Gallery Cleaner
+# Snaply
 
 A swipe-to-clean gallery app: swipe left to delete, right to keep. Organizes
 your photos/videos by month or album, remembers where you left off in each
