@@ -15,7 +15,7 @@ Kalau nemu file/kode masih nyebut "GalleryCleaner" — **itu BUKAN sisa rebrand 
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v58 — Batch58 (Abadikan identitas dual-nama Snaply/GalleryCleaner sebagai warning box permanen di puncak PROJECT_STATE.md, biar sesi depan gak salah "benerin" atau nyoba rename lanjutan, 1 file)
+v59 — Batch59 (Rebrand app icon/launcher: dari placeholder default kotak-biru+siluet-kamera ke logo baru gradient violet→magenta, glassmorphism, tema gallery/photo + sparkle Gen-Z, 1 file kode + 2 file log)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **REBRANDING Gallery Cleaner → Snaply — ✅ SELESAI (Batch55-57, kosmetik only)** — permintaan user eksplisit: "kosmetik only, haram hukumnya jikalau sampai mengacaukan workflow termux". Keputusan scope (assumption, belum dikonfirmasi user secara literal per-item, tapi konsisten sama instruksi "kosmetik only" + Protected Files + Termux gag-order), diarsipkan di sini buat referensi batch depan:
@@ -56,6 +56,12 @@ v58 — Batch58 (Abadikan identitas dual-nama Snaply/GalleryCleaner sebagai warn
 - release.keystore (tidak disertakan di repo, via secrets)
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch59 — Rebrand app icon/launcher (1 file)
+User: "rebranding logo yang gak pernah berubah sejak project dibuat!!" — `app/src/main/res/drawable/ic_launcher.xml` masih persis konten placeholder awal (kotak solid `#2196F3` + siluet kamera generik), belum pernah disentuh dari Batch1 sampai Batch58. Sebelum eksekusi, ditanya 3 preferensi ke user (konsep/tema, palet warna, gaya render) karena 0 arahan desain eksplisit di prompt — jawaban: "eye catching + Gen Z, tetap bisa dikenali fungsinya" / gradient ungu-violet / glassmorphism iOS-style.
+Fix: `ic_launcher.xml` ditulis ulang total (bukan protected file, aman full-replace) — background rounded-square (squircle, konsisten iOS-Look project) linear-gradient `#8B5CF6`→`#EC4899` (violet→magenta), di atasnya 2 lapis "kartu kaca" (frosted, `fillAlpha` 0.16/0.30 + stroke putih tipis) — kartu belakang dirotasi -9° buat kesan stack/gallery, kartu depan berisi glyph gunung+matahari (ikon foto/galeri universal, biar fungsi tetap kebaca instan) putih solid, plus 2 sparkle 4-titik (aksen Gen-Z/"cleaned") pojok kanan-atas di luar kartu. Pakai `<aapt:attr>`+`<gradient>` (butuh API24+, aman karena minSdk=31 project ini). Divalidasi well-formed via XML parser + preview render lokal (SVG-equivalent lewat wkhtmltoimage, bukan compiler asli — belum tervalidasi visual asli di Android Studio/device).
+Kenapa cuma 1 file cukup: `AndroidManifest.xml`'s `android:icon`, `themes.xml`'s `windowSplashScreenAnimatedIcon`, dan `shortcuts.xml`'s (2 shortcut icon) semuanya sudah merujuk `@drawable/ic_launcher` yang sama — app ini belum pakai sistem adaptive icon (`mipmap-anydpi-v26`), jadi 1 file ganti otomatis merebranding launcher icon + splash screen icon + shortcut icon sekaligus, 0 file lain perlu disentuh (termasuk `AndroidManifest.xml` yang protected — referensinya tidak berubah, jadi tidak disentuh sama sekali).
+Belum dikerjakan (di luar scope "rebrand logo"): migrasi ke adaptive icon (`mipmap-anydpi-v26` + layer background/foreground terpisah, biar dapat themed-icon Android 13+/Material You) — perubahan arsitektur icon, bukan "ganti gambar", ditunda sampai user minta eksplisit.
 
 ### Batch58 — Abadikan identitas dual-nama (1 file)
 User: "Abadikan yang perlu diabadikan. Demi mencegah konflik pada sesi selanjutnya!!" — setelah rebrand Batch55-57, project sekarang punya 2 nama sekaligus (display "Snaply" vs codebase/repo "GalleryCleaner"), dan detail rasionalnya cuma ada di tengah/bawah file ("Belum Dikerjakan" + Riwayat Batch). Risiko konkret: sesi baru mulai dari Hard Reset ZIP (0 histori chat), baca judul file "PROJECT_STATE — GalleryCleaner", terus nemu `strings.xml` bilang "Snaply" — tanpa konteks eksplisit di PALING ATAS file, sesi itu bisa salah nyimpulin ini inkonsistensi yang perlu "dibenerin" (entah revert ke GalleryCleaner, atau lanjut rename package/folder/repo tanpa izin eksplisit — dua-duanya pelanggaran instruksi user).

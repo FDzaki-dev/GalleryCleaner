@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v59_Batch59 — 2026-08-25
+- **Rebrand app icon** (1 file): `ic_launcher.xml` — placeholder default (kotak biru + siluet kamera, belum pernah berubah sejak awal project) diganti logo baru: rounded-square gradient violet→magenta, 2 kartu kaca (glassmorphism) berisi glyph gunung+matahari (foto/galeri) + aksen sparkle. Otomatis berlaku ke launcher icon, splash screen icon, dan shortcut icon (semua rujuk file yang sama). Detail: `PROJECT_STATE.md` Batch59.
+
 ## v56_Batch56 — 2026-08-25
 - **Rebranding** (Batch55-56, 6 file total): nama app diganti dari "Gallery Cleaner" ke **Snaply** di semua teks yang tampil ke user — launcher label (`strings.xml`), notifikasi reminder, dialog biometric/lock/permission (`MainActivity.kt`), top bar Home (`HomeScreen.kt`) — plus judul `README.md`/`ROADMAP.md`/`RELEASE_SIGNING.md`. Kosmetik only by design: package ID (`com.example.gallerycleaner`), nama folder Termux/repo GitHub (`GalleryCleaner`), nama kompetitor "Sponge - Gallery Cleaner" (nama listing pihak ketiga, bukan brand kita), dan folder backup/log on-device (`Pictures|Movies/GalleryCleaner/...`) SENGAJA tidak ikut berubah — detail scope lengkap + alasan tiap pengecualian: `PROJECT_STATE.md`.
 

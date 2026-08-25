@@ -1,12 +1,67 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- Base: rounded-square backdrop, violet -> magenta gradient (Gen-Z, iOS-squircle) -->
+    <path android:pathData="M24,0 L84,0 A24,24 0 0 1 108,24 L108,84 A24,24 0 0 1 84,108 L24,108 A24,24 0 0 1 0,84 L0,24 A24,24 0 0 1 24,0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="0" android:startY="0"
+                android:endX="108" android:endY="108"
+                android:startColor="#8B5CF6"
+                android:endColor="#EC4899" />
+        </aapt:attr>
+    </path>
+
+    <!-- Glass sheen streak, top-left -->
     <path
-        android:fillColor="#2196F3"
-        android:pathData="M0,0h108v108h-108z" />
-    <path
+        android:pathData="M0,14 L44,0 L54,0 L0,26 Z"
         android:fillColor="#FFFFFF"
-        android:pathData="M30,74 C30,80 34,84 40,84 L68,84 C74,84 78,80 78,74 L78,44 C78,38 74,34 68,34 L60,34 L56,28 L52,28 L48,34 L40,34 C34,34 30,38 30,44 Z M54,44 C61,44 66,50 66,57 C66,64 61,70 54,70 C47,70 42,64 42,57 C42,50 47,44 54,44 Z" />
+        android:fillAlpha="0.10" />
+
+    <!-- Back photo card (stack depth), rotated, frosted -->
+    <group android:pivotX="54" android:pivotY="57" android:rotation="-9">
+        <path
+            android:pathData="M28,28 L76,28 A8,8 0 0 1 84,36 L84,74 A8,8 0 0 1 76,82 L28,82 A8,8 0 0 1 20,74 L20,36 A8,8 0 0 1 28,28 Z"
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.16" />
+    </group>
+
+    <!-- Front photo card (frosted glass pane) -->
+    <path
+        android:pathData="M32,32 L76,32 A8,8 0 0 1 84,40 L84,74 A8,8 0 0 1 76,82 L32,82 A8,8 0 0 1 24,74 L24,40 A8,8 0 0 1 32,32 Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.30"
+        android:strokeColor="#FFFFFF"
+        android:strokeAlpha="0.55"
+        android:strokeWidth="1.4" />
+
+    <!-- Sun -->
+    <path
+        android:pathData="M38,46 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.95" />
+
+    <!-- Mountain range glyph (recognizable gallery/photo icon) -->
+    <path
+        android:pathData="M28,76 L42,54 L50,63 L62,48 L80,76 Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.95" />
+
+    <!-- Sparkle accent, large -->
+    <path
+        android:pathData="M92,14 L93.6,18.4 L98,20 L93.6,21.6 L92,26 L90.4,21.6 L86,20 L90.4,18.4 Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.95" />
+
+    <!-- Sparkle accent, small -->
+    <path
+        android:pathData="M78,9 L78.8,11.2 L81,12 L78.8,12.8 L78,15 L77.2,12.8 L75,12 L77.2,11.2 Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.85" />
+
 </vector>
