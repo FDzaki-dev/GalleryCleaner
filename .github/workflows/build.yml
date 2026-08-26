@@ -150,6 +150,39 @@ jobs:
           path: app/build/outputs/apk/release/${{ env.OUT_NAME }}
           if-no-files-found: error
 
+      # Section 4 ("GitHub Workflow — Anti-Desync") requires this: if
+      # another push landed on main while THIS run was still building (JDK
+      # setup + SDK download + Gradle assembleRelease above can take
+      # several minutes), origin/main's tip will have moved past the
+      # commit that triggered this run. Publishing anyway would make an
+      # OLDER commit's APK the "latest" GitHub Release, silently regressing
+      # the version users see — the exact desync this guard exists to stop.
+      # Placed here (immediately before the publish step, not earlier) on
+      # purpose: checking right after checkout would only catch a push that
+      # already existed at trigger time, not one that lands *during* this
+      # run's own build — the race window this guard actually needs to
+      # close is between trigger and publish, so the check has to happen as
+      # close to publish as possible. Re-fetches origin/main fresh here
+      # rather than trusting the initial checkout's snapshot, since that
+      # snapshot is from job start and may itself now be behind. Scoped to
+      # `main` only (matches the instruction's literal wording, "tip 'main'
+      # lokal") — the `master` push trigger below is a separate legacy
+      # fallback this guard doesn't reason about.
+      - name: Stale Run Guard (Anti-Desync)
+        if: github.ref_name == 'main'
+        run: |
+          set -euo pipefail
+
+          git fetch origin main
+          LATEST_MAIN="$(git rev-parse origin/main)"
+
+          if [ "$GITHUB_SHA" != "$LATEST_MAIN" ]; then
+            echo "::error::Stale run — this run was triggered by commit $GITHUB_SHA, but origin/main has since moved to $LATEST_MAIN. A newer push exists; aborting so this run doesn't publish an outdated release."
+            exit 1
+          fi
+
+          echo "Up to date with origin/main ($LATEST_MAIN) — safe to publish."
+
       - name: Publish GitHub Release
         id: release
         if: github.ref_name == 'main' || github.ref_name == 'master'

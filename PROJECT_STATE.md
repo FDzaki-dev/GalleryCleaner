@@ -15,7 +15,7 @@ Kalau nemu file/kode masih nyebut "GalleryCleaner" — **itu BUKAN sisa rebrand 
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v64 — Batch64 (Audit Gap P1 #10: expectation-setting note di Organize dialog buat multi-item move di API<30, 1 file)
+v65 — Batch65 (Stale Run Guard ditambahkan ke build.yml — Section 4 Anti-Desync, protected file edit-parsial, 1 file)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **REBRANDING Gallery Cleaner → Snaply — ✅ SELESAI (Batch55-57, kosmetik only)** — permintaan user eksplisit: "kosmetik only, haram hukumnya jikalau sampai mengacaukan workflow termux". Keputusan scope (assumption, belum dikonfirmasi user secara literal per-item, tapi konsisten sama instruksi "kosmetik only" + Protected Files + Termux gag-order), diarsipkan di sini buat referensi batch depan:
@@ -52,7 +52,6 @@ v64 — Batch64 (Audit Gap P1 #10: expectation-setting note di Organize dialog b
 - Filmstrip (`SwipeScreenGrid.kt`) belum secara visual meredupkan item yang sudah di-organize — kosmetik minor, terbuka sejak Batch17.
 - Belum ada test end-to-end manual di device asli untuk jalur legacy Organize (API 24-28) — belum ada emulator/compiler di sandbox ini.
 - ~~Temuan lama: nama file APK vs nomor tag GitHub Release pakai 2 skema angka berbeda~~ — **SUDAH FIXED** (batch yang mana tepatnya tidak tercatat eksplisit di riwayat ini, tapi `build.yml`'s "Rename APK" step doc comment sendiri konfirmasi: keduanya sekarang pakai `$GITHUB_RUN_NUMBER`). Baris ini sempat nyangkut ketinggalan gak di-update — dikoreksi Batch63 pas baca ulang file itu buat task lain, biar gak nyesatin sesi depan.
-- **Stale Run Guard belum ada** (ditemukan Batch63, di luar scope task saat itu — "rapiin output", bukan "tambah fitur"): sistem instruksi user (section 4) bilang `build.yml` WAJIB punya "Stale Run Guard" (banding `GITHUB_SHA` vs tip `main` lokal, exit 1 kalau beda) — grep 0 hasil, belum pernah ada. Ini nambah LOGIC baru ke protected file, beda kelas keputusan dari sekadar rapiin output — nunggu instruksi eksplisit user sebelum dikerjakan.
 
 ## Protected Assets (jangan hapus/replace penuh)
 - app/build.gradle.kts, build.gradle.kts, settings.gradle.kts
@@ -62,6 +61,9 @@ v64 — Batch64 (Audit Gap P1 #10: expectation-setting note di Organize dialog b
 - release.keystore (tidak disertakan di repo, via secrets)
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch65 — Stale Run Guard di build.yml (1 file, protected)
+Nutup temuan Batch63. `.github/workflows/build.yml` (protected, edit-parsial) — step baru "Stale Run Guard (Anti-Desync)" disisipkan PERSIS sebelum "Publish GitHub Release" (bukan di awal job setelah Checkout): `git fetch origin main` ulang (bukan pakai snapshot awal checkout yang udah basi kalau build-nya lama), banding `$GITHUB_SHA` (commit pemicu run ini) vs tip `origin/main` fresh — beda → `exit 1`, skip publish. Alasan penempatan: race window yang beneran perlu ditutup itu ANTARA trigger sampai publish (JDK setup + SDK download + Gradle assembleRelease bisa makan beberapa menit) — cek di awal job cuma nangkep push yang UDAH ada pas trigger, bukan push yang masuk SELAMA build jalan; taruh di akhir (sesaat sebelum publish) nutup window itu penuh. Di-scope `if: github.ref_name == 'main'` doang (match kata "tip 'main' lokal" persis di instruksi) — trigger `master` (legacy fallback, 0 dipakai di skrip Termux project ini) sengaja gak ikut kena guard ini. 0 step lain disentuh/dipindah — 1 step baru doang. Verifikasi: `python3 -c "import yaml; yaml.safe_load(...)"` parse sukses, urutan step (Checkout→...→Upload signed APK artifact→**Stale Run Guard**→Publish GitHub Release→Job summary) sesuai rencana.
 
 ### Batch64 — Audit Gap P1 #10: expectation-setting note buat multi-item Organize di API<30 (1 file)
 Rasional lengkap (kenapa API30+ udah optimal, kenapa API<30 gak punya solusi "truly batched" di level OS, dan temuan sampingan minSdk instruksi-vs-kode) ada di "AUDIT GAP TRACKER" di atas, gak diulang di sini. Ringkas: `SwipeScreenControls.kt`'s `OrganizeFolderDialog` dapet 1 baris note kondisional (`itemCount > 1 && !MoveHelper.supportsBatchWriteRequest()`) sebelum daftar folder — set ekspektasi soal kemungkinan beberapa dialog izin berturut-turut di Android versi lama, bukan fix teknis (gak ada API buat itu). Verifikasi: brace/paren balanced 41/41, 140/140. Dengan ini, seluruh P0+P1 (#1-10) di `AUDIT_GAP.md` SELESAI — sisa cuma P2 #11-20.
