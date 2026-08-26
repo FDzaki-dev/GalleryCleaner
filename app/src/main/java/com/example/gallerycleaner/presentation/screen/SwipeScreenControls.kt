@@ -231,6 +231,26 @@ internal fun OrganizeFolderDialog(
         title = { Text(if (itemCount == 1) "Move to folder" else "Move $itemCount items to folder") },
         text = {
             Column {
+                // Audit Gap P1 #10: on API 30+ MoveHelper.supportsBatchWriteRequest()
+                // already gets ONE MediaStore.createWriteRequest() consent dialog
+                // for the whole selection (see MainActivity.kt's performOrganize) —
+                // that's the platform's only single-dialog batch-grant primitive,
+                // and it doesn't exist pre-API 30. Below that, MoveHelper falls
+                // back to per-item RecoverableSecurityException, so moving several
+                // items that each need a fresh grant can surface as multiple
+                // prompts in a row. Nothing here makes that faster — there's no
+                // OS API to batch it below API 30 — this just sets the
+                // expectation up front instead of the prompts appearing to be a
+                // bug. Single-item moves never hit this (only one prompt either
+                // way), so the note only shows for itemCount > 1.
+                if (itemCount > 1 && !MoveHelper.supportsBatchWriteRequest()) {
+                    Text(
+                        "Your Android version may show a separate permission prompt for each photo that needs one.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
                 if (suggestedFolders.isNotEmpty()) {
                     Text(
                         "Existing folders",
