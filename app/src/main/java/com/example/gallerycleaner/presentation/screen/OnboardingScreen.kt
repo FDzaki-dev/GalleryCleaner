@@ -1,5 +1,6 @@
 package com.example.gallerycleaner
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,74 +18,72 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.gallerycleaner.ui.components.GlassButton
 import kotlinx.coroutines.launch
 
+// Batch67 (Audit Gap P2 #11, stage 1/4) — title/body used to be raw String
+// literals here. Moved to strings.xml, referenced by @StringRes id instead:
+// this list is a top-level val evaluated outside any @Composable, so
+// stringResource() (which needs LocalContext.current from composition)
+// can't be called here — resolution happens later, inside
+// OnboardingPageContent below, which IS a @Composable. `emoji` stays a
+// plain String: it's a pictogram, not translatable text, so it's outside
+// this audit item's localization/maintenance concern.
 private data class OnboardingPage(
     val emoji: String,
-    val title: String,
-    val body: String
+    @StringRes val titleRes: Int,
+    @StringRes val bodyRes: Int
 )
 
 private val ONBOARDING_PAGES = listOf(
     OnboardingPage(
         emoji = "👉👈",
-        title = "Swipe to sort",
-        body = "Swipe right (or tap ✓) to keep a photo, swipe left (or tap ✕) to delete it. " +
-            "One decision at a time, no digging through folders."
+        titleRes = R.string.onboarding_page1_title,
+        bodyRes = R.string.onboarding_page1_body
     ),
     OnboardingPage(
         emoji = "🗑️",
-        title = "Nothing's gone right away",
-        body = "Deleted photos go to Trash first, not straight off your device. " +
-            "You can restore them anytime, or set how long Trash keeps things in Settings."
+        titleRes = R.string.onboarding_page2_title,
+        bodyRes = R.string.onboarding_page2_body
     ),
     OnboardingPage(
         emoji = "▦",
-        title = "Or clean in bulk",
-        body = "Inside any folder, switch to grid view to multi-select several photos at once " +
-            "instead of swiping one by one — handy for clearing out a whole album fast. " +
-            "Tap the zoom icon on any thumbnail to check it full-size before deciding."
+        titleRes = R.string.onboarding_page3_title,
+        bodyRes = R.string.onboarding_page3_body
     ),
     OnboardingPage(
         emoji = "🔎",
-        title = "Let the app find the junk",
-        body = "Home screen has scan buttons for blurry shots and near-duplicate burst photos — " +
-            "tap to scan, review what it finds, decide from there. Nothing runs in the background " +
-            "without you asking."
+        titleRes = R.string.onboarding_page4_title,
+        bodyRes = R.string.onboarding_page4_body
     ),
     OnboardingPage(
         emoji = "🗜️",
-        title = "Shrink without deleting",
-        body = "Not ready to let a photo go? Select it in grid view and tap Compress to shrink the " +
-            "file size while keeping the photo looking the same."
+        titleRes = R.string.onboarding_page5_title,
+        bodyRes = R.string.onboarding_page5_body
     ),
     OnboardingPage(
         emoji = "📅",
-        title = "A look back",
-        body = "\"On this day\" surfaces photos from this exact date in past years, right on the " +
-            "home screen — a nudge to revisit old memories, not just delete new clutter."
+        titleRes = R.string.onboarding_page6_title,
+        bodyRes = R.string.onboarding_page6_body
     ),
     OnboardingPage(
         emoji = "🔍",
-        title = "Find things fast",
-        body = "Use the search icon on the home screen to jump straight to a folder or a photo " +
-            "by name, instead of scrolling to find it."
+        titleRes = R.string.onboarding_page7_title,
+        bodyRes = R.string.onboarding_page7_body
     ),
     OnboardingPage(
         emoji = "🎨",
-        title = "Make it yours",
-        body = "Settings has a few color styles beyond the default look, plus a toggle for the " +
-            "short vibration when you swipe — on by default, easy to turn off."
+        titleRes = R.string.onboarding_page8_title,
+        bodyRes = R.string.onboarding_page8_body
     ),
     OnboardingPage(
         emoji = "🔒",
-        title = "Keep it private",
-        body = "If you'd rather your gallery stay behind your phone's own lock screen, turn on " +
-            "App Lock in Settings — it uses whatever PIN, pattern, or biometric you already have set up."
+        titleRes = R.string.onboarding_page9_title,
+        bodyRes = R.string.onboarding_page9_body
     )
 )
 
@@ -111,12 +110,12 @@ fun OnboardingScreen(onDone: () -> Unit) {
                 ) {
                     TextButton(onClick = onDone) {
                         Text(
-                            "Skip",
+                            stringResource(R.string.onboarding_skip),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     GlassButton(
-                        text = if (isLastPage) "Get Started" else "Next",
+                        text = if (isLastPage) stringResource(R.string.onboarding_get_started) else stringResource(R.string.onboarding_next),
                         onClick = {
                             if (isLastPage) {
                                 onDone()
@@ -150,7 +149,7 @@ private fun OnboardingPageContent(page: OnboardingPage) {
         Text(page.emoji, style = MaterialTheme.typography.displayLarge)
         Spacer(Modifier.height(28.dp))
         Text(
-            page.title,
+            stringResource(page.titleRes),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
@@ -158,7 +157,7 @@ private fun OnboardingPageContent(page: OnboardingPage) {
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            page.body,
+            stringResource(page.bodyRes),
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
