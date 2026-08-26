@@ -868,12 +868,21 @@ fun AppRoot(
                 // Write access for the whole batch was just granted (API 30+
                 // path) — every MoveHelper.moveTo call below should now
                 // succeed without hitting RecoverableSecurityException again.
-                val movedIds = items.mapNotNull { item ->
-                    when (MoveHelper.moveTo(context, item, targetFolder)) {
-                        is MoveHelper.Result.Success, MoveHelper.Result.AlreadyThere -> item.id
-                        else -> null
-                    }
-                }.toSet()
+                //
+                // Batch62 (Audit Gap P1 #9): PartialSuccess is tracked
+                // separately from movedIds on purpose — it means the file
+                // moved on disk but MediaStore's row couldn't be confirmed
+                // updated even after MoveHelper awaited the media scanner's
+                // own callback (see MoveHelper.Result.PartialSuccess's doc
+                // comment). Folding it into movedIds here would repeat the
+                // exact bug this fixes: applyOrganizeResult would show the
+                // item in its new folder in-memory while a fresh MediaStore
+                // query could still disagree.
+                val results = items.associateWith { item -> MoveHelper.moveTo(context, item, targetFolder) }
+                val movedIds = results.filterValues {
+                    it is MoveHelper.Result.Success || it == MoveHelper.Result.AlreadyThere
+                }.keys.map { it.id }.toSet()
+                val partialCount = results.values.count { it is MoveHelper.Result.PartialSuccess }
                 withContext(Dispatchers.Main) {
                     applyOrganizeResult(movedIds, targetFolder)
                     if (movedIds.isNotEmpty()) {
@@ -881,8 +890,14 @@ fun AppRoot(
                             "Moved ${movedIds.size} photo${if (movedIds.size == 1) "" else "s"} to $targetFolder"
                         )
                     }
-                    if (movedIds.size < items.size) {
-                        snackbarHostState.showSnackbar("Gagal memindahkan ${items.size - movedIds.size} file")
+                    if (partialCount > 0) {
+                        snackbarHostState.showSnackbar(
+                            "$partialCount file pindah lokasi tapi belum terverifikasi — buka ulang app untuk sinkronkan"
+                        )
+                    }
+                    val failedCount = items.size - movedIds.size - partialCount
+                    if (failedCount > 0) {
+                        snackbarHostState.showSnackbar("Gagal memindahkan $failedCount file")
                     }
                 }
             }
@@ -918,11 +933,22 @@ fun AppRoot(
                 }
             } else {
                 val movedIds = mutableSetOf<Long>()
+                val partialIds = mutableSetOf<Long>()
                 var needsPermissionSender: IntentSender? = null
                 for (item in items) {
                     when (val result = MoveHelper.moveTo(context, item, targetFolder)) {
                         is MoveHelper.Result.Success -> movedIds.add(item.id)
                         MoveHelper.Result.AlreadyThere -> movedIds.add(item.id)
+                        // Batch62 (Audit Gap P1 #9) — moved on disk, but not
+                        // confirmed in MediaStore even after MoveHelper
+                        // awaited the scanner's own callback. Excluded from
+                        // movedIds (no optimistic local-state update — see
+                        // the retry-path block above for why) and, below,
+                        // excluded from the retry list too: re-running
+                        // moveTo on an item whose file already relocated
+                        // would just fail (sourceFile no longer exists at
+                        // the old path), not actually help it retry.
+                        is MoveHelper.Result.PartialSuccess -> partialIds.add(item.id)
                         is MoveHelper.Result.NeedsPermission -> {
                             needsPermissionSender = result.recoverySender
                             break
@@ -934,7 +960,7 @@ fun AppRoot(
                     if (movedIds.isNotEmpty()) applyOrganizeResult(movedIds, targetFolder)
                     val sender = needsPermissionSender
                     if (sender != null) {
-                        pendingOrganizeRetry = items.filterNot { it.id in movedIds } to targetFolder
+                        pendingOrganizeRetry = items.filterNot { it.id in movedIds || it.id in partialIds } to targetFolder
                         organizeRequestLauncher.launch(IntentSenderRequest.Builder(sender).build())
                     } else {
                         if (movedIds.isNotEmpty()) {
@@ -942,8 +968,14 @@ fun AppRoot(
                                 "Moved ${movedIds.size} photo${if (movedIds.size == 1) "" else "s"} to $targetFolder"
                             )
                         }
-                        if (movedIds.size < items.size) {
-                            snackbarHostState.showSnackbar("Gagal memindahkan ${items.size - movedIds.size} file")
+                        if (partialIds.isNotEmpty()) {
+                            snackbarHostState.showSnackbar(
+                                "${partialIds.size} file pindah lokasi tapi belum terverifikasi — buka ulang app untuk sinkronkan"
+                            )
+                        }
+                        val failedCount = items.size - movedIds.size - partialIds.size
+                        if (failedCount > 0) {
+                            snackbarHostState.showSnackbar("Gagal memindahkan $failedCount file")
                         }
                     }
                 }

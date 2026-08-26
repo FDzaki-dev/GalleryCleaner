@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v62_Batch62 — 2026-08-25
+- **Audit Gap P1 #9** (2 file): fix bug fungsional — `MoveHelper` (legacy API 24-28 move path) dulu asumsi Success tanpa verifikasi kalau update MediaStore gagal/silent-0-rows setelah file fisik pindah. Sekarang beneran await konfirmasi `MediaScannerConnection` sebelum lapor Success vs `PartialSuccess` (state baru) — `MainActivity.kt` gak lagi optimistic-update UI buat kasus belum terverifikasi. Detail: `PROJECT_STATE.md` Batch62.
+
 ## v61_Batch61 — 2026-08-25
 - **Audit Gap P1 #8** (1 file): "Blurry photos" sekarang dapat banner "suggestion, bukan guarantee" — pola sama persis P1 #7 (near-duplicate) Batch54. Algoritma blur detection (`laplacianVariance`, threshold 60.0) tidak diubah — perluasan banner `GlassCard` yang sudah ada di `SwipeScreen.kt`, sekarang cover "Similar photos" + "Blurry photos". Detail: `PROJECT_STATE.md` Batch61.
 
