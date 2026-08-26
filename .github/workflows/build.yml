@@ -30,9 +30,11 @@ jobs:
 
       - name: Install Android SDK components
         run: |
+          echo "::group::sdkmanager output (verbose — safe to skip unless this step fails)"
           sdkmanager "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0"
+          echo "::endgroup::"
 
       - name: Decode permanent release keystore
         env:
@@ -104,8 +106,9 @@ jobs:
           test -f "$APK"
           test -s "$APK"
 
-          echo "APK size:"
-          du -h "$APK"
+          APK_SIZE="$(du -h "$APK" | cut -f1)"
+          echo "APK_SIZE=$APK_SIZE" >> "$GITHUB_ENV"
+          echo "APK size: $APK_SIZE"
 
           echo "Verifying APK signature..."
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
@@ -148,6 +151,7 @@ jobs:
           if-no-files-found: error
 
       - name: Publish GitHub Release
+        id: release
         if: github.ref_name == 'main' || github.ref_name == 'master'
         uses: softprops/action-gh-release@v2
         with:
@@ -157,3 +161,33 @@ jobs:
           files: app/build/outputs/apk/release/${{ env.OUT_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Batch63: everything above this line reports its own result the
+      # usual GitHub Actions way (raw step logs + red ❌/green ✅ per step).
+      # This step doesn't replace that — it's `if: always()` purely to add
+      # a single at-a-glance Markdown card at the top of the run page
+      # ($GITHUB_STEP_SUMMARY), so "did this build succeed, what's the
+      # version, where's the APK/release" doesn't require scrolling raw
+      # logs to answer. Deliberately no `set -euo pipefail`: a hiccup in
+      # this purely-cosmetic step (e.g. `git rev-parse` failing for some
+      # unrelated reason) must never fail an otherwise-successful build.
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## 📦 GalleryCleaner — run #${GITHUB_RUN_NUMBER}"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Result | ${{ job.status == 'success' && '✅ Success' || '❌ Failed' }} |"
+            echo "| Commit | \`$(git rev-parse --short HEAD 2>/dev/null || echo unknown)\` on \`${GITHUB_REF_NAME}\` |"
+            if [ -n "${OUT_NAME:-}" ]; then
+              echo "| APK | \`${OUT_NAME}\` (${APK_SIZE:-size unknown}) |"
+            fi
+            if [ -n "${{ steps.release.outputs.url }}" ]; then
+              echo "| Release | ${{ steps.release.outputs.url }} |"
+            fi
+            if [ "${{ job.status }}" != "success" ] && [ -n "${LOG_FILE:-}" ]; then
+              echo "| Build log | \`${LOG_FILE}\` — see the uploaded artifact above ⬆️ |"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v63_Batch63 — 2026-08-25
+- **CI output cleanup** (1 file, protected — edit-parsial-only): `.github/workflows/build.yml` — sdkmanager output di-collapse (`::group::`), APK size ditangkap ke env, step "Job summary" baru nulis kartu Markdown ringkas (`$GITHUB_STEP_SUMMARY`: result/commit/APK/release-link/failure-log) di puncak halaman run. 0 logic build/sign/versioning disentuh. Gap ditemukan (belum dikerjakan): "Stale Run Guard" yang diwajibkan instruksi user belum pernah ada di file ini — lihat `PROJECT_STATE.md` Batch63.
+
 ## v62_Batch62 — 2026-08-25
 - **Audit Gap P1 #9** (2 file): fix bug fungsional — `MoveHelper` (legacy API 24-28 move path) dulu asumsi Success tanpa verifikasi kalau update MediaStore gagal/silent-0-rows setelah file fisik pindah. Sekarang beneran await konfirmasi `MediaScannerConnection` sebelum lapor Success vs `PartialSuccess` (state baru) — `MainActivity.kt` gak lagi optimistic-update UI buat kasus belum terverifikasi. Detail: `PROJECT_STATE.md` Batch62.
 

@@ -15,7 +15,7 @@ Kalau nemu file/kode masih nyebut "GalleryCleaner" — **itu BUKAN sisa rebrand 
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v62 — Batch62 (Audit Gap P1 #9 — Move/organize partial-success edge case: MoveHelper sekarang await konfirmasi media-scanner beneran sebelum lapor Success, bukan tebak. 2 file kode + 2 file log)
+v63 — Batch63 (Rapikan output GitHub Actions: sdkmanager di-collapse ke ::group::, tambah $GITHUB_STEP_SUMMARY (versi/APK/size/release-link/log-gagal dalam 1 tabel). Protected file .github/workflows/build.yml, edit-parsial-only. 1 file kode + 2 file log)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **REBRANDING Gallery Cleaner → Snaply — ✅ SELESAI (Batch55-57, kosmetik only)** — permintaan user eksplisit: "kosmetik only, haram hukumnya jikalau sampai mengacaukan workflow termux". Keputusan scope (assumption, belum dikonfirmasi user secara literal per-item, tapi konsisten sama instruksi "kosmetik only" + Protected Files + Termux gag-order), diarsipkan di sini buat referensi batch depan:
@@ -48,7 +48,8 @@ v62 — Batch62 (Audit Gap P1 #9 — Move/organize partial-success edge case: Mo
 - **ROADMAP Fase D (belum dimulai)**: multi-bahasa (minimal ES + PT-BR), monetisasi premium one-time-purchase, Play Store readiness (privacy policy URL, Data Safety form, screenshot set, ASO description).
 - Filmstrip (`SwipeScreenGrid.kt`) belum secara visual meredupkan item yang sudah di-organize — kosmetik minor, terbuka sejak Batch17.
 - Belum ada test end-to-end manual di device asli untuk jalur legacy Organize (API 24-28) — belum ada emulator/compiler di sandbox ini.
-- Temuan lama, belum ditindak (bukan diminta user): nama file APK (`VERSION_NAME` dari `git rev-list --count HEAD`) dan nomor tag GitHub Release (`github.run_number`) pakai 2 skema angka berbeda — dibiarkan sampai ada instruksi eksplisit.
+- ~~Temuan lama: nama file APK vs nomor tag GitHub Release pakai 2 skema angka berbeda~~ — **SUDAH FIXED** (batch yang mana tepatnya tidak tercatat eksplisit di riwayat ini, tapi `build.yml`'s "Rename APK" step doc comment sendiri konfirmasi: keduanya sekarang pakai `$GITHUB_RUN_NUMBER`). Baris ini sempat nyangkut ketinggalan gak di-update — dikoreksi Batch63 pas baca ulang file itu buat task lain, biar gak nyesatin sesi depan.
+- **Stale Run Guard belum ada** (ditemukan Batch63, di luar scope task saat itu — "rapiin output", bukan "tambah fitur"): sistem instruksi user (section 4) bilang `build.yml` WAJIB punya "Stale Run Guard" (banding `GITHUB_SHA` vs tip `main` lokal, exit 1 kalau beda) — grep 0 hasil, belum pernah ada. Ini nambah LOGIC baru ke protected file, beda kelas keputusan dari sekadar rapiin output — nunggu instruksi eksplisit user sebelum dikerjakan.
 
 ## Protected Assets (jangan hapus/replace penuh)
 - app/build.gradle.kts, build.gradle.kts, settings.gradle.kts
@@ -58,6 +59,18 @@ v62 — Batch62 (Audit Gap P1 #9 — Move/organize partial-success edge case: Mo
 - release.keystore (tidak disertakan di repo, via secrets)
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch63 — Rapikan output GitHub Actions workflow (1 file, protected)
+User: "Next urgent: rapikan output workflow GitHub yang serampangan & tidak informatif!!" — target: `.github/workflows/build.yml`, **protected file** (rule "Edit Parsial Only"). Instruksi eksplisit dari user dianggap izin buat masuk & edit file ini, tapi tetap dieksekusi sebagai **edit bertarget**, bukan rewrite total — 0 logic versioning/build/sign/rename yang udah benar (termasuk fix run_number match antara APK filename vs release tag) disentuh sama sekali.
+Diagnosa "serampangan & tidak informatif": (1) `sdkmanager` step nyembur output progress/license verbose tanpa struktur — bikin log run keliatan berantakan dari step paling awal; (2) 0 ada ringkasan di run-page — buat tahu versi/APK/size/status harus scroll manual ke step "Verify APK"/"Rename APK" satu-satu, GitHub Actions punya `$GITHUB_STEP_SUMMARY` (kartu Markdown di puncak halaman run) yang sama sekali belum dipakai.
+Fix (4 titik, semua additive, 0 langkah/step lama dihapus/direstruktur):
+1. **Install Android SDK components**: output sdkmanager dibungkus `::group::...::endgroup::` — collapsible by default, command-nya sendiri 0 berubah.
+2. **Verify APK exists and is signed**: `du -h` yang sebelumnya cuma di-echo, sekarang JUGA ditangkap ke `$GITHUB_ENV` sebagai `APK_SIZE` (buat dipakai step baru di bawah) — echo lama tetap ada, cuma nambah 1 baris capture.
+3. **Publish GitHub Release**: ditambah `id: release` — 0 ubah behavior action itu sendiri, cuma biar output `url`-nya bisa direferensikan step berikutnya.
+4. **Step baru "Job summary"** (`if: always()`, taruh paling akhir): nulis 1 tabel Markdown ke `$GITHUB_STEP_SUMMARY` — Result (✅/❌ dari `job.status`), Commit SHA, APK filename+size, link Release (kalau ada), dan nama file log kegagalan (kalau build gagal, nunjuk ke artifact yang udah di-upload step "Upload build failure log"). Sengaja TIDAK pakai `set -euo pipefail` di step ini — step kosmetik murni, gak boleh bikin build yang sebenarnya sukses jadi keliatan gagal gara-gara `git rev-parse` atau semacamnya hiccup.
+Keputusan sadar TIDAK di-grouping: step "Build signed release APK" (gradle output mentah) sengaja TETAP gak dibungkus `::group::` — ini step paling sering gagal & paling butuh visibility instan pas gagal; grouping (collapsed by default) bakal nambah 1 klik ekstra justru di momen paling kritis. "STABILITY WINS" menang di sini, walau nambah 1 area verbose lagi.
+**Gap ditemukan (BUKAN scope task ini, dicatat aja)**: sistem instruksi user (section 4, "GitHub Workflow Anti-Desync") bilang workflow ini WAJIB punya "Stale Run Guard" (bandingkan `GITHUB_SHA` vs tip `main` lokal, exit 1 kalau beda) — grep di file ini 0 hasil, fitur itu belum pernah ada di `build.yml` manapun sepanjang riwayat batch project ini. Ditunda, bukan diabaikan — nunggu instruksi eksplisit karena ini nambah LOGIC baru (bukan cuma rapiin output) ke protected file, beda kelas keputusan dari batch ini.
+Verifikasi: `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/build.yml'))"` → valid, 12 steps terdaftar (11 asli + 1 baru). Belum tervalidasi di GitHub Actions run asli (sandbox ini gak ada runner).
 
 ### Batch62 — Audit Gap P1 #9: verifikasi post-move nyata (2 file)
 User: "Next" — lanjut Pending Queue, P1 #9 setelah P1 #8 (Batch61).
