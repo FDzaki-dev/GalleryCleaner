@@ -9,6 +9,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
@@ -278,10 +280,10 @@ fun SettingsScreen(
         contentColor = MaterialTheme.colorScheme.onBackground,
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back_cd))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -296,7 +298,7 @@ fun SettingsScreen(
                 .fillMaxSize(),
             contentPadding = PaddingValues(16.dp)
         ) {
-            item { SettingsSectionLabel("Appearance") }
+            item { SettingsSectionLabel(stringResource(R.string.settings_section_appearance)) }
             item {
                 // Batch26 — rearsitektur: 3-way RadioButton (Match system /
                 // Light / Dark, one-directional single-select) diganti 2
@@ -332,10 +334,10 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text("Match system", style = MaterialTheme.typography.bodyLarge)
+                            Text(stringResource(R.string.settings_match_system_title), style = MaterialTheme.typography.bodyLarge)
                             Spacer(Modifier.height(2.dp))
                             Text(
-                                "Follow this device's light/dark setting automatically.",
+                                stringResource(R.string.settings_match_system_subtitle),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -359,11 +361,11 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text("Dark mode", style = MaterialTheme.typography.bodyLarge)
+                            Text(stringResource(R.string.settings_dark_mode_title), style = MaterialTheme.typography.bodyLarge)
                             Spacer(Modifier.height(2.dp))
                             Text(
-                                if (matchSystem) "Currently following the system setting."
-                                else "Off uses light appearance.",
+                                if (matchSystem) stringResource(R.string.settings_dark_mode_subtitle_system)
+                                else stringResource(R.string.settings_dark_mode_subtitle_off),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -382,10 +384,10 @@ fun SettingsScreen(
             }
 
             item { Spacer(Modifier.height(24.dp)) }
-            item { SettingsSectionLabel("Color style") }
+            item { SettingsSectionLabel(stringResource(R.string.settings_section_color_style)) }
             item {
                 Text(
-                    "Applies to both Light and Dark above.",
+                    stringResource(R.string.settings_color_style_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 4.dp, top = 0.dp, end = 4.dp, bottom = 8.dp)
@@ -407,10 +409,10 @@ fun SettingsScreen(
             }
 
             item { Spacer(Modifier.height(24.dp)) }
-            item { SettingsSectionLabel("Trash") }
+            item { SettingsSectionLabel(stringResource(R.string.settings_section_trash)) }
             item {
                 Text(
-                    "Automatically flag items in Trash for cleanup after:",
+                    stringResource(R.string.settings_trash_retention_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
@@ -427,14 +429,14 @@ fun SettingsScreen(
                         FilterChip(
                             selected = retentionDays == days,
                             onClick = { scope.launch { settingsStore.setTrashRetentionDays(days) } },
-                            label = { Text("$days days") }
+                            label = { Text(stringResource(R.string.settings_trash_retention_days, days)) }
                         )
                     }
                 }
             }
 
             item { Spacer(Modifier.height(24.dp)) }
-            item { SettingsSectionLabel("Backup") }
+            item { SettingsSectionLabel(stringResource(R.string.settings_section_backup)) }
             item {
                 Row(
                     modifier = Modifier
@@ -443,10 +445,10 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("Backup before delete", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.settings_backup_before_delete_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            "Copy each photo/video to Pictures or Movies > GalleryCleaner > Backup before it's permanently deleted.",
+                            stringResource(R.string.settings_backup_before_delete_subtitle),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -459,7 +461,7 @@ fun SettingsScreen(
             }
 
             item { Spacer(Modifier.height(24.dp)) }
-            item { SettingsSectionLabel("Notifications") }
+            item { SettingsSectionLabel(stringResource(R.string.settings_section_notifications)) }
             item {
                 Row(
                     modifier = Modifier
@@ -468,10 +470,10 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("Cleaning reminders", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.settings_cleaning_reminders_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            "A once-a-day nudge if there are screenshots or large files worth reviewing.",
+                            stringResource(R.string.settings_cleaning_reminders_subtitle),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -481,7 +483,7 @@ fun SettingsScreen(
             }
 
             item { Spacer(Modifier.height(24.dp)) }
-            item { SettingsSectionLabel("Swiping") }
+            item { SettingsSectionLabel(stringResource(R.string.settings_section_swiping)) }
             item {
                 Row(
                     modifier = Modifier
@@ -490,10 +492,10 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("Random clean mode", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.settings_random_mode_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            "Shuffle a folder's photos into random order each time you open it, instead of date order.",
+                            stringResource(R.string.settings_random_mode_subtitle),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -506,7 +508,7 @@ fun SettingsScreen(
             }
 
             item { Spacer(Modifier.height(24.dp)) }
-            item { SettingsSectionLabel("Feedback") }
+            item { SettingsSectionLabel(stringResource(R.string.settings_section_feedback)) }
             item {
                 Row(
                     modifier = Modifier
@@ -515,10 +517,10 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("Swipe haptics", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.settings_swipe_haptics_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            "A short vibration when you keep or delete a photo.",
+                            stringResource(R.string.settings_swipe_haptics_subtitle),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -531,7 +533,7 @@ fun SettingsScreen(
             }
 
             item { Spacer(Modifier.height(24.dp)) }
-            item { SettingsSectionLabel("Privacy") }
+            item { SettingsSectionLabel(stringResource(R.string.settings_section_privacy)) }
             item {
                 Row(
                     modifier = Modifier
@@ -540,13 +542,13 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("App lock", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.settings_app_lock_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
                             if (isDeviceSecure) {
-                                "Require your screen lock (PIN, pattern, or biometric) to open the app."
+                                stringResource(R.string.settings_app_lock_subtitle_secure)
                             } else {
-                                "Set a screen lock on this device first (Settings > Security)."
+                                stringResource(R.string.settings_app_lock_subtitle_insecure)
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -561,7 +563,7 @@ fun SettingsScreen(
             }
 
             item { Spacer(Modifier.height(24.dp)) }
-            item { SettingsSectionLabel("About") }
+            item { SettingsSectionLabel(stringResource(R.string.settings_section_about)) }
             item {
                 Row(
                     modifier = Modifier
@@ -575,16 +577,16 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("Check for update", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.settings_check_update_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         val subtitle = when (val current = updateState) {
-                            UpdateUiState.Idle -> "Tap to check GitHub for a newer release."
-                            UpdateUiState.Checking -> "Checking…"
-                            UpdateUiState.UpToDate -> "You're on the latest version."
-                            is UpdateUiState.Available -> "Version ${current.info.tagName} is available."
-                            is UpdateUiState.Downloading -> "Downloading… ${(current.progress * 100).toInt()}%"
-                            is UpdateUiState.ReadyToInstall -> "Downloaded — tap to install."
-                            is UpdateUiState.Error -> "Couldn't check for updates: ${current.message}"
+                            UpdateUiState.Idle -> stringResource(R.string.settings_update_idle)
+                            UpdateUiState.Checking -> stringResource(R.string.settings_update_checking)
+                            UpdateUiState.UpToDate -> stringResource(R.string.settings_update_uptodate)
+                            is UpdateUiState.Available -> stringResource(R.string.settings_update_available, current.info.tagName)
+                            is UpdateUiState.Downloading -> stringResource(R.string.settings_update_downloading, (current.progress * 100).toInt())
+                            is UpdateUiState.ReadyToInstall -> stringResource(R.string.settings_update_ready)
+                            is UpdateUiState.Error -> stringResource(R.string.settings_update_error, current.message)
                         }
                         Text(
                             subtitle,
@@ -646,7 +648,7 @@ fun SettingsScreen(
                     // all three dialog states (Available/Downloading/
                     // ReadyToInstall) so it stays visible through the flow.
                     Text(
-                        "Installed $currentVersionName → New $newTagName",
+                        stringResource(R.string.settings_update_dialog_version_line, currentVersionName, newTagName),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -665,14 +667,14 @@ fun SettingsScreen(
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "${(dialogState.progress * 100).toInt()}% — keep this open until it finishes.",
+                                stringResource(R.string.settings_update_dialog_downloading_progress, (dialogState.progress * 100).toInt()),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         is UpdateUiState.ReadyToInstall -> {
                             Text(
-                                "Downloaded. Android will ask you to confirm the install next.",
+                                stringResource(R.string.settings_update_dialog_ready_body),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -684,16 +686,16 @@ fun SettingsScreen(
                 when (dialogState) {
                     is UpdateUiState.Available -> TextButton(
                         onClick = { onDownloadUpdate(dialogState.info) }
-                    ) { Text("Download") }
+                    ) { Text(stringResource(R.string.settings_update_dialog_download_btn)) }
                     is UpdateUiState.ReadyToInstall -> TextButton(
                         onClick = { onInstallUpdate(dialogState.file) }
-                    ) { Text("Install") }
+                    ) { Text(stringResource(R.string.settings_update_dialog_install_btn)) }
                     else -> {}
                 }
             },
             dismissButton = {
                 if (!isDownloading) {
-                    TextButton(onClick = { updateState = UpdateUiState.Idle }) { Text("Cancel") }
+                    TextButton(onClick = { updateState = UpdateUiState.Idle }) { Text(stringResource(R.string.settings_update_dialog_cancel_btn)) }
                 }
             }
         )
@@ -746,8 +748,8 @@ private fun SettingsSectionLabel(text: String) {
  *  bare settings toggle. */
 private class ThemeStyle(
     val appTheme: AppTheme,
-    val label: String,
-    val description: String,
+    @StringRes val labelRes: Int,
+    @StringRes val descriptionRes: Int,
     val previewBg: Color,
     val swatchKeep: Color,
     val swatchDelete: Color
@@ -756,26 +758,26 @@ private class ThemeStyle(
 private val THEME_STYLES = listOf(
     ThemeStyle(
         appTheme = AppTheme.SIGNATURE,
-        label = "Signature",
-        description = "Midnight-blue glassmorphism — frosted panels over a deep navy glow.",
+        labelRes = R.string.settings_theme_signature_label,
+        descriptionRes = R.string.settings_theme_signature_desc,
         previewBg = MidnightGlass.NavyCore,
         swatchKeep = SageKeep,
         swatchDelete = CoralDelete
     ),
     ThemeStyle(
         appTheme = AppTheme.AMBER_RESERVE,
-        label = "Amber Reserve",
+        labelRes = R.string.settings_theme_amber_reserve_label,
         // Batch36 redesign: was "Espresso skeuomorphism-lite — raised
         // brass-bevel panels, not glass." (Batch27/28) — now pure Soft UI.
-        description = "Deep navy neumorphism — soft dual-shadow panels, no border, no glass.",
+        descriptionRes = R.string.settings_theme_amber_reserve_desc,
         previewBg = Neumorph.DeepNavy,
         swatchKeep = Neumorph.ClassicBrass,
         swatchDelete = OxbloodDelete
     ),
     ThemeStyle(
         appTheme = AppTheme.INDIGO_NOIR,
-        label = "Indigo Noir",
-        description = "Deep indigo, platinum & dusty rose accents.",
+        labelRes = R.string.settings_theme_indigo_noir_label,
+        descriptionRes = R.string.settings_theme_indigo_noir_desc,
         previewBg = IndigoBg,
         swatchKeep = PeriwinkleKeep,
         swatchDelete = DustyRoseDelete
@@ -832,10 +834,10 @@ private fun ThemeStyleCard(style: ThemeStyle, selected: Boolean, onClick: () -> 
         }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(style.label, style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(style.labelRes), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(2.dp))
             Text(
-                style.description,
+                stringResource(style.descriptionRes),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -844,7 +846,7 @@ private fun ThemeStyleCard(style: ThemeStyle, selected: Boolean, onClick: () -> 
             Spacer(Modifier.width(8.dp))
             Icon(
                 Icons.Filled.Check,
-                contentDescription = "Selected",
+                contentDescription = stringResource(R.string.settings_theme_selected_cd),
                 tint = MaterialTheme.colorScheme.primary
             )
         }
