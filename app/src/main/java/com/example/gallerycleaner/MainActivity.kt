@@ -675,7 +675,10 @@ fun AppRoot(
             }
             scope.launch {
                 snackbarHostState.showSnackbar(
-                    "Deleted ${items.size} photo${if (items.size == 1) "" else "s"} — freed ${formatBytes(items.sumOf { it.sizeBytes })}"
+                    context.resources.getQuantityString(
+                        R.plurals.main_deleted_photos, items.size, items.size,
+                        formatBytes(items.sumOf { it.sizeBytes })
+                    )
                 )
             }
         } else if (items != null) {
@@ -791,7 +794,10 @@ fun AppRoot(
                 if (deleted.isNotEmpty()) {
                     scope.launch {
                         snackbarHostState.showSnackbar(
-                            "Deleted ${deleted.size} photo${if (deleted.size == 1) "" else "s"} — freed ${formatBytes(deleted.sumOf { it.sizeBytes })}"
+                            context.resources.getQuantityString(
+                                R.plurals.main_deleted_photos, deleted.size, deleted.size,
+                                formatBytes(deleted.sumOf { it.sizeBytes })
+                            )
                         )
                     }
                 }
@@ -887,7 +893,9 @@ fun AppRoot(
                     applyOrganizeResult(movedIds, targetFolder)
                     if (movedIds.isNotEmpty()) {
                         snackbarHostState.showSnackbar(
-                            "Moved ${movedIds.size} photo${if (movedIds.size == 1) "" else "s"} to $targetFolder"
+                            context.resources.getQuantityString(
+                                R.plurals.main_moved_photos, movedIds.size, movedIds.size, targetFolder
+                            )
                         )
                     }
                     if (partialCount > 0) {
@@ -965,7 +973,9 @@ fun AppRoot(
                     } else {
                         if (movedIds.isNotEmpty()) {
                             snackbarHostState.showSnackbar(
-                                "Moved ${movedIds.size} photo${if (movedIds.size == 1) "" else "s"} to $targetFolder"
+                                context.resources.getQuantityString(
+                                    R.plurals.main_moved_photos, movedIds.size, movedIds.size, targetFolder
+                                )
                             )
                         }
                         if (partialIds.isNotEmpty()) {
@@ -1027,7 +1037,9 @@ fun AppRoot(
                         scope.launch {
                             trashStore.remove(ids)
                             snackbarHostState.showSnackbar(
-                                "${ids.size} photo${if (ids.size == 1) "" else "s"} restored"
+                                context.resources.getQuantityString(
+                                    R.plurals.main_restored_photos, ids.size, ids.size
+                                )
                             )
                         }
                     },
@@ -1066,7 +1078,9 @@ fun AppRoot(
                                 trashStore.addToTrash(ids)
                                 if (ids.isNotEmpty()) {
                                     val result = snackbarHostState.showSnackbar(
-                                        message = "${ids.size} photo${if (ids.size == 1) "" else "s"} moved to trash",
+                                        message = context.resources.getQuantityString(
+                                            R.plurals.main_trashed_photos, ids.size, ids.size
+                                        ),
                                         actionLabel = "Undo",
                                         duration = SnackbarDuration.Long
                                     )

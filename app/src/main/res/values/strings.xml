@@ -133,4 +133,26 @@
     <string name="home_scan_none_found">None found</string>
     <string name="home_scan_found_count">%1$d found — tap to review</string>
     <string name="home_near_dup_found">%1$d photos in %2$d group%3$s — tap to review</string>
+
+    <!-- Batch72 (Audit Gap P2 #12, stage 1/2: MainActivity.kt + HomeScreenSections.kt) -->
+    <plurals name="main_deleted_photos">
+        <item quantity="one">Deleted %1$d photo — freed %2$s</item>
+        <item quantity="other">Deleted %1$d photos — freed %2$s</item>
+    </plurals>
+    <plurals name="main_moved_photos">
+        <item quantity="one">Moved %1$d photo to %2$s</item>
+        <item quantity="other">Moved %1$d photos to %2$s</item>
+    </plurals>
+    <plurals name="main_restored_photos">
+        <item quantity="one">%1$d photo restored</item>
+        <item quantity="other">%1$d photos restored</item>
+    </plurals>
+    <plurals name="main_trashed_photos">
+        <item quantity="one">%1$d photo moved to trash</item>
+        <item quantity="other">%1$d photos moved to trash</item>
+    </plurals>
+    <plurals name="home_years_ago">
+        <item quantity="one">%1$d year ago</item>
+        <item quantity="other">%1$d years ago</item>
+    </plurals>
 </resources>

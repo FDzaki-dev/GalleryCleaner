@@ -323,6 +323,7 @@ private fun CleanupGoalDialog(
  *  folders) — no new navigation path to reason about. */
 @Composable
 internal fun OnThisDayRow(photos: List<MediaItem>, onClick: () -> Unit) {
+    val context = LocalContext.current
     val caption = remember(photos) {
         val thisYear = Calendar.getInstance().get(Calendar.YEAR)
         val cal = Calendar.getInstance()
@@ -332,7 +333,9 @@ internal fun OnThisDayRow(photos: List<MediaItem>, onClick: () -> Unit) {
         }.distinct().sorted()
         when {
             yearsAgo.isEmpty() -> ""
-            yearsAgo.size == 1 -> "${yearsAgo.first()} year${if (yearsAgo.first() != 1) "s" else ""} ago"
+            yearsAgo.size == 1 -> context.resources.getQuantityString(
+                R.plurals.home_years_ago, yearsAgo.first(), yearsAgo.first()
+            )
             else -> "${yearsAgo.first()}\u2013${yearsAgo.last()} years ago"
         }
     }
