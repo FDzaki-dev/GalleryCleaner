@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -49,10 +50,15 @@ fun TrashScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (selected.isEmpty()) "Trash (${items.size})" else "${selected.size} selected") },
+                title = {
+                    Text(
+                        if (selected.isEmpty()) stringResource(R.string.trash_title_count, items.size)
+                        else stringResource(R.string.trash_title_selected, selected.size)
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.trash_back_cd))
                     }
                 },
                 actions = {
@@ -67,14 +73,17 @@ fun TrashScreen(
                                     contentColor = MaterialTheme.colorScheme.secondary
                                 )
                             ) {
-                                Text("Empty Trash")
+                                Text(stringResource(R.string.trash_empty_button))
                             }
                         } else {
                             TextButton(onClick = {
                                 if (selected.size == items.size) selected.clear()
                                 else { selected.clear(); selected.addAll(items.map { it.id }) }
                             }) {
-                                Text(if (selected.size == items.size) "Deselect all" else "Select all")
+                                Text(
+                                if (selected.size == items.size) stringResource(R.string.trash_deselect_all)
+                                else stringResource(R.string.trash_select_all)
+                            )
                             }
                         }
                     }
@@ -99,12 +108,12 @@ fun TrashScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         GlassButton(
-                            text = "Restore",
+                            text = stringResource(R.string.trash_restore_button),
                             modifier = Modifier.weight(1f),
                             onClick = { onRestore(selected.toList()); selected.clear() }
                         )
                         DangerButton(
-                            text = "Delete permanently",
+                            text = stringResource(R.string.trash_delete_permanently_button),
                             modifier = Modifier.weight(1f),
                             onClick = { onDeletePermanently(selected.toList()) }
                         )
@@ -118,7 +127,7 @@ fun TrashScreen(
                 modifier = Modifier.padding(padding).fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Trash is empty.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.trash_empty_state), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             val gridPadding = mergePadding(padding, 12.dp)
@@ -159,7 +168,8 @@ fun TrashScreen(
                                 modifier = Modifier.align(Alignment.BottomStart).padding(5.dp)
                             ) {
                                 Text(
-                                    if (daysLeft <= 0) "Expires today" else "${daysLeft}d left",
+                                    if (daysLeft <= 0) stringResource(R.string.trash_expires_today)
+                                    else stringResource(R.string.trash_days_left, daysLeft),
                                     color = Color.White,
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
@@ -196,23 +206,20 @@ fun TrashScreen(
     if (showEmptyTrashConfirm) {
         AlertDialog(
             onDismissRequest = { showEmptyTrashConfirm = false },
-            title = { Text("Empty Trash?") },
+            title = { Text(stringResource(R.string.trash_empty_dialog_title)) },
             text = {
-                Text(
-                    "This will permanently delete all ${items.size} item(s) in Trash. " +
-                        "This can't be undone."
-                )
+                Text(stringResource(R.string.trash_empty_dialog_body, items.size))
             },
             confirmButton = {
                 TextButton(onClick = {
                     showEmptyTrashConfirm = false
                     onDeletePermanently(items.map { it.id })
                 }) {
-                    Text("Delete All", color = MaterialTheme.colorScheme.secondary)
+                    Text(stringResource(R.string.trash_empty_dialog_confirm), color = MaterialTheme.colorScheme.secondary)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showEmptyTrashConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { showEmptyTrashConfirm = false }) { Text(stringResource(R.string.trash_empty_dialog_cancel)) }
             }
         )
     }

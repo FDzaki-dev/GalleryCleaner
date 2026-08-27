@@ -90,4 +90,21 @@
     <string name="settings_update_dialog_download_btn">Download</string>
     <string name="settings_update_dialog_install_btn">Install</string>
     <string name="settings_update_dialog_cancel_btn">Cancel</string>
+
+    <!-- Batch70 (Audit Gap P2 #11, stage 3/4: TrashScreen.kt) -->
+    <string name="trash_title_count">Trash (%1$d)</string>
+    <string name="trash_title_selected">%1$d selected</string>
+    <string name="trash_back_cd">Back</string>
+    <string name="trash_empty_button">Empty Trash</string>
+    <string name="trash_select_all">Select all</string>
+    <string name="trash_deselect_all">Deselect all</string>
+    <string name="trash_restore_button">Restore</string>
+    <string name="trash_delete_permanently_button">Delete permanently</string>
+    <string name="trash_empty_state">Trash is empty.</string>
+    <string name="trash_expires_today">Expires today</string>
+    <string name="trash_days_left">%1$dd left</string>
+    <string name="trash_empty_dialog_title">Empty Trash?</string>
+    <string name="trash_empty_dialog_body">This will permanently delete all %1$d item(s) in Trash. This can\'t be undone.</string>
+    <string name="trash_empty_dialog_confirm">Delete All</string>
+    <string name="trash_empty_dialog_cancel">Cancel</string>
 </resources>
