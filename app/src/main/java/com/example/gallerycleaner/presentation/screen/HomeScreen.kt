@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -150,7 +151,7 @@ fun HomeScreen(
                                     .fillMaxWidth()
                                     .focusRequester(searchFocusRequester),
                                 singleLine = true,
-                                placeholder = { Text("Search folders or photos") },
+                                placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
                                 colors = TextFieldDefaults.colors(
                                     focusedContainerColor = Color.Transparent,
                                     unfocusedContainerColor = Color.Transparent,
@@ -159,7 +160,7 @@ fun HomeScreen(
                                 )
                             )
                         } else {
-                            Text("Snaply", style = MaterialTheme.typography.titleLarge)
+                            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge)
                         }
                     },
                     navigationIcon = {
@@ -167,7 +168,7 @@ fun HomeScreen(
                             IconButton(onClick = { closeSearch() }) {
                                 Icon(
                                     Icons.Filled.Close,
-                                    contentDescription = "Close search",
+                                    contentDescription = stringResource(R.string.home_close_search_cd),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -179,7 +180,7 @@ fun HomeScreen(
                                 IconButton(onClick = { searchQuery = "" }) {
                                     Icon(
                                         Icons.Filled.Close,
-                                        contentDescription = "Clear search text",
+                                        contentDescription = stringResource(R.string.home_clear_search_cd),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -188,14 +189,14 @@ fun HomeScreen(
                             IconButton(onClick = { isSearchActive = true }) {
                                 Icon(
                                     Icons.Filled.Search,
-                                    contentDescription = "Search",
+                                    contentDescription = stringResource(R.string.home_search_cd),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             IconButton(onClick = onRefresh) {
                                 Icon(
                                     Icons.Filled.Refresh,
-                                    contentDescription = "Refresh library",
+                                    contentDescription = stringResource(R.string.home_refresh_cd),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -207,9 +208,9 @@ fun HomeScreen(
                                 Icon(
                                     Icons.Filled.Shuffle,
                                     contentDescription = if (randomModeEnabled) {
-                                        "Random clean mode on — tap to turn off"
+                                        stringResource(R.string.home_random_mode_on_cd)
                                     } else {
-                                        "Random clean mode off — tap to turn on"
+                                        stringResource(R.string.home_random_mode_off_cd)
                                     },
                                     tint = if (randomModeEnabled) MaterialTheme.colorScheme.primary
                                            else MaterialTheme.colorScheme.onSurfaceVariant
@@ -218,13 +219,14 @@ fun HomeScreen(
                             IconButton(onClick = onSettingsClick) {
                                 Icon(
                                     Icons.Filled.Settings,
-                                    contentDescription = "Settings",
+                                    contentDescription = stringResource(R.string.home_settings_cd),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             TextButton(onClick = onTrashClick) {
                                 Text(
-                                    if (trashCount > 0) "Trash ($trashCount)" else "Trash",
+                                    if (trashCount > 0) stringResource(R.string.home_trash_count, trashCount)
+                                    else stringResource(R.string.home_trash_label),
                                     color = if (trashCount > 0) MaterialTheme.colorScheme.secondary
                                             else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -284,7 +286,7 @@ fun HomeScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "No photos found.",
+                    stringResource(R.string.home_no_photos_found),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -327,7 +329,7 @@ fun HomeScreen(
 
                 if (onThisDayItems.isNotEmpty()) {
                     item {
-                        SectionLabel("ON THIS DAY")
+                        SectionLabel(stringResource(R.string.home_section_on_this_day))
                         OnThisDayRow(
                             photos = onThisDayItems,
                             onClick = {
@@ -339,7 +341,7 @@ fun HomeScreen(
 
                 if (smartGroups.isNotEmpty()) {
                     item {
-                        SectionLabel("QUICK CLEAN")
+                        SectionLabel(stringResource(R.string.home_section_quick_clean))
                     }
                     items(smartGroups, key = { "smart-${it.key}" }) { group ->
                         SmartCategoryRow(group = group, onClick = { onGroupClick(group) })
@@ -348,13 +350,13 @@ fun HomeScreen(
 
                 item {
                     Spacer(Modifier.height(8.dp))
-                    SectionLabel("SMART DETECTION")
+                    SectionLabel(stringResource(R.string.home_section_smart_detection))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         ScanTriggerRow(
-                            title = "Blurry photos",
+                            title = stringResource(R.string.home_scan_blurry_title),
                             subtitle = when (val s = blurryScanState) {
-                                is ScanState.Done -> if (s.result.isEmpty()) "None found" else "${s.result.size} found — tap to review"
-                                else -> "Find out-of-focus shots on this device"
+                                is ScanState.Done -> if (s.result.isEmpty()) stringResource(R.string.home_scan_none_found) else stringResource(R.string.home_scan_found_count, s.result.size)
+                                else -> stringResource(R.string.home_scan_blurry_idle_subtitle)
                             },
                             scanning = blurryScanState is ScanState.Scanning,
                             onClick = {
@@ -367,10 +369,15 @@ fun HomeScreen(
                             }
                         )
                         ScanTriggerRow(
-                            title = "Similar photos",
+                            title = stringResource(R.string.home_scan_similar_title),
                             subtitle = when (val s = nearDupScanState) {
-                                is ScanState.Done -> if (s.result.isEmpty()) "None found" else "${s.result.sumOf { it.items.size }} photos in ${s.result.size} group${if (s.result.size != 1) "s" else ""} — tap to review"
-                                else -> "Find near-identical burst shots and retakes"
+                                is ScanState.Done -> if (s.result.isEmpty()) stringResource(R.string.home_scan_none_found) else stringResource(
+                                    R.string.home_near_dup_found,
+                                    s.result.sumOf { it.items.size },
+                                    s.result.size,
+                                    if (s.result.size != 1) "s" else ""
+                                )
+                                else -> stringResource(R.string.home_scan_similar_idle_subtitle)
                             },
                             scanning = nearDupScanState is ScanState.Scanning,
                             onClick = {
@@ -388,10 +395,10 @@ fun HomeScreen(
                         // progress% and can be cancelled mid-scan (see
                         // CancellableScanTriggerRow in HomeScreenSections.kt).
                         CancellableScanTriggerRow(
-                            title = "Duplicate files",
+                            title = stringResource(R.string.home_scan_duplicate_title),
                             subtitle = when (val s = duplicateScanState) {
-                                is ScanState.Done -> if (s.result.isEmpty()) "None found" else "${s.result.size} found — tap to review"
-                                else -> "Find exact byte-for-byte copies"
+                                is ScanState.Done -> if (s.result.isEmpty()) stringResource(R.string.home_scan_none_found) else stringResource(R.string.home_scan_found_count, s.result.size)
+                                else -> stringResource(R.string.home_scan_duplicate_idle_subtitle)
                             },
                             scanning = duplicateScanState is ScanState.Scanning,
                             progress = duplicateScanProgress,
@@ -409,7 +416,7 @@ fun HomeScreen(
                 }
 
                 item {
-                    SectionLabel("ALL PHOTOS")
+                    SectionLabel(stringResource(R.string.home_section_all_photos))
                     FilterRow(
                         groupMode = groupMode,
                         sortOption = sortOption,

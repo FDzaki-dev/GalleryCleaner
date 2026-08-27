@@ -107,4 +107,30 @@
     <string name="trash_empty_dialog_body">This will permanently delete all %1$d item(s) in Trash. This can\'t be undone.</string>
     <string name="trash_empty_dialog_confirm">Delete All</string>
     <string name="trash_empty_dialog_cancel">Cancel</string>
+
+    <!-- Batch71 (Audit Gap P2 #11, stage 4/4 FINAL: HomeScreen.kt) -->
+    <string name="home_search_placeholder">Search folders or photos</string>
+    <string name="home_close_search_cd">Close search</string>
+    <string name="home_clear_search_cd">Clear search text</string>
+    <string name="home_search_cd">Search</string>
+    <string name="home_refresh_cd">Refresh library</string>
+    <string name="home_random_mode_on_cd">Random clean mode on — tap to turn off</string>
+    <string name="home_random_mode_off_cd">Random clean mode off — tap to turn on</string>
+    <string name="home_settings_cd">Settings</string>
+    <string name="home_trash_label">Trash</string>
+    <string name="home_trash_count">Trash (%1$d)</string>
+    <string name="home_no_photos_found">No photos found.</string>
+    <string name="home_section_on_this_day">ON THIS DAY</string>
+    <string name="home_section_quick_clean">QUICK CLEAN</string>
+    <string name="home_section_smart_detection">SMART DETECTION</string>
+    <string name="home_section_all_photos">ALL PHOTOS</string>
+    <string name="home_scan_blurry_title">Blurry photos</string>
+    <string name="home_scan_blurry_idle_subtitle">Find out-of-focus shots on this device</string>
+    <string name="home_scan_similar_title">Similar photos</string>
+    <string name="home_scan_similar_idle_subtitle">Find near-identical burst shots and retakes</string>
+    <string name="home_scan_duplicate_title">Duplicate files</string>
+    <string name="home_scan_duplicate_idle_subtitle">Find exact byte-for-byte copies</string>
+    <string name="home_scan_none_found">None found</string>
+    <string name="home_scan_found_count">%1$d found — tap to review</string>
+    <string name="home_near_dup_found">%1$d photos in %2$d group%3$s — tap to review</string>
 </resources>
