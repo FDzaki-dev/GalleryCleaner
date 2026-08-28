@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.gallerycleaner.ui.theme.Neumorph
@@ -66,6 +67,26 @@ import com.example.gallerycleaner.ui.theme.Neumorph
  * drop BOTH shadow layers entirely and swap to a darker flat fill — reads
  * as "flush with the background", which is the correct visual language
  * for "pressed" even without a literal inner shadow.
+ *
+ * **Dense 3-layer stack (new)**: the single flat fill described above is
+ * now 3 solid, fully-opaque rounded-rect layers fanned toward the
+ * top-left — same direction as the light-source highlight above, so the
+ * stack reads as "peeking toward the light" rather than an arbitrary
+ * direction. Each layer is inset from the one behind it by [stackOffset]
+ * (back → front: `pressedFillColor`, a 50/50 [lerp] of `fillColor`/
+ * `pressedFillColor`, then `fillColor`) — mechanically derived from the
+ * two colors already passed in, no new hue. Critically, the front (content)
+ * layer is the one **normal** (non-`matchParentSize`) child, so it alone
+ * determines this composable's own measured size — its `2×stackOffset`
+ * start/top inset is baked directly into that measurement. That means the
+ * fan-out margin is reserved inside this composable's OWN bounds rather
+ * than by overflowing into whatever space a caller's layout happens to
+ * leave around it, so it can't get clipped/truncated by a `LazyRow`/
+ * `LazyColumn` item, a `Row`, or any other ancestor regardless of that
+ * ancestor's own clipping — no call site needs to add spacing for this.
+ * When `pressed`, all 3 layers collapse to the same `pressedFillColor` —
+ * the steps become invisible (flush look preserved) without changing
+ * which child drives sizing, so pressing never jitters the layout.
  */
 @Composable
 fun NeumorphSurface(
@@ -76,6 +97,7 @@ fun NeumorphSurface(
     pressedFillColor: Color = Neumorph.DeepNavy,
     shadowElevation: Dp = 10.dp,
     shadowOffset: Dp = 6.dp,
+    stackOffset: Dp = 4.dp,
     contentPadding: Dp = 16.dp,
     onClick: (() -> Unit)? = null,
     enabled: Boolean = true,
@@ -133,11 +155,40 @@ fun NeumorphSurface(
                     )
             )
         }
-        // Flat fill, no gradient, no border/bevel — the "pure" surface itself.
+        // Dense 3-layer stack, fanned toward the top-left — see class doc
+        // "Dense 3-layer stack" above for why the front layer (not
+        // matchParentSize) is the one that drives this Box's own size, and
+        // why pressed collapses all 3 to one color instead of branching
+        // structure. No gradient, no border/bevel — each layer is still a
+        // flat, monochromatic fill, same "pure" recipe as before, just 3
+        // of them instead of 1.
+        val backColor = pressedFillColor
+        val midColor = lerp(fillColor, pressedFillColor, 0.5f)
+        val frontColor = fillColor
+        val stackInset = stackOffset * 2
+
+        // Layer 3 — back-most, flush to this Box's own top-left corner.
         Box(
             Modifier.matchParentSize()
-                .background(color = if (pressed) pressedFillColor else fillColor, shape = shape)
+                .padding(end = stackInset, bottom = stackInset)
+                .background(color = backColor, shape = shape)
         )
-        Box(modifier = Modifier.padding(contentPadding), content = content)
+        // Layer 2 — middle, one step further toward the bottom-right.
+        Box(
+            Modifier.matchParentSize()
+                .padding(stackOffset)
+                .background(color = if (pressed) backColor else midColor, shape = shape)
+        )
+        // Layer 1 — front, holds the real content. Deliberately NOT
+        // matchParentSize: its start/top inset is what this composable's
+        // own measured size is based on (see doc comment), which is what
+        // keeps the fan-out self-contained instead of overflowing into a
+        // parent's layout space.
+        Box(
+            Modifier.padding(start = stackInset, top = stackInset)
+                .background(color = if (pressed) backColor else frontColor, shape = shape)
+        ) {
+            Box(modifier = Modifier.padding(contentPadding), content = content)
+        }
     }
 }
