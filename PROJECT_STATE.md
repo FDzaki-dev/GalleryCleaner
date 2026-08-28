@@ -12,7 +12,7 @@ Nemu "GalleryCleaner" di kode/config = **BY DESIGN, bukan sisa rebrand kelewat**
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v75 — Batch78 (NeumorphSurface: dense 3-layer top-left stack, 1 file)
+v76 — Batch79 (NeumorphSurface: fix kontras & step stack, 1 file)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **REBRANDING Gallery Cleaner → Snaply — ✅ SELESAI (Batch55-57, kosmetik only)**. Diganti (7 file, semua string display): `strings.xml`, `MainActivity.kt`, `CleaningReminderWorker.kt`, `HomeScreen.kt`, `README.md`/`ROADMAP.md`/`RELEASE_SIGNING.md`, `CHANGELOG.md`.
@@ -67,6 +67,13 @@ v75 — Batch78 (NeumorphSurface: dense 3-layer top-left stack, 1 file)
 Asal insiden: command Termux sempat pakai `-iname "gallery-cleaner"` (kebab-case) buat cari folder lokal, padahal repo aslinya `GalleryCleaner` (tanpa hyphen) — `-iname` cuma case-insensitive, BUKAN hyphen-insensitive, jadi pencarian gagal terus dan fallback bikin folder BARU salah (`~/projects/gallery-cleaner`) alih-alih masuk folder existing. **Dampak**: 0 risiko ke remote GitHub (skrip daily-update gak pernah set git remote, jadi `git push` di folder salah pasti gagal duluan) — tapi mungkin ada folder residu lokal `~/projects/gallery-cleaner` yang perlu dibersihkan manual di device user.
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch79 — NeumorphSurface: fix kontras & step stack (1 file)
+User kirim screenshot + komplain: "Masih terlalu nyaru (ganti warna/apa kek) dan kelihatan cuman 1 layer dibelakang doang!!" — Batch78's stack keliatan/kerasa cuma 1 layer.
+Root cause: `midColor`/`backColor` Batch78 dijejelin ke rentang sempit `fillColor↔pressedFillColor` doang (50/50 blend + `pressedFillColor` polos) — 2 tone itu emang udah deket dari sononya (bagian dari palet monokromatik Neumorph), jadi mid & back kebaca sebagai 1 warna nyaru. `stackOffset` 4dp juga kekecilan buat kelihatan sebagai step terpisah.
+Fix: `stackOffset` default 4dp→8dp (sliver tiap layer 2x lebih lebar). Warna 3 layer sekarang di 3 titik yang di-SPREAD di garis lurus `fillColor→pressedFillColor` yang SAMA (masih teknik "derived, not invented" yang udah dipakai file ini, pola sama kayak `Neumorph.ClassicBrassPressed`'s HLS shift) — TAPI mid digeser ke 80% (dulu 50%) dan back di-OVERSHOOT lewat `pressedFillColor` (160%, dulu nempel pas di 100%) via `lerp()` fraction >1 (linear extrapolation, dikonfirmasi manual gak ada channel RGB yang negatif buat kedua pasangan warna existing di project — Navy pair `NavyCard`/`DeepNavy` dan Brass pair `ClassicBrass`/`ClassicBrassPressed` yang dipakai `GlassButton.kt`). Pressed-state collapse TETAP pakai `pressedFillColor` POLOS (bukan tone stack yang di-extrapolate) — flush-look pas ditekan gak berubah dari Batch78.
+0 file lain disentuh, 0 param baru (cuma ubah default value `stackOffset` + logic warna internal). Doc comment "Dense 3-layer stack" di-update biar akurat (skema warna lama 50/50 udah gak dipakai lagi).
+Verifikasi: brace 7/7 paren 78/78 (`NeumorphSurface.kt`). Belum tervalidasi compiler/device asli — validasi visual sebenarnya nunggu build CI, hasil final tetap perlu dicek user pas APK jadi.
 
 ### Batch78 — NeumorphSurface: dense 3-layer top-left stack (1 file)
 User: "Tambahkan stacked card effect 3 layer padat menghadap ke kiri atas dan gak offset/truncated (tambahkan inset/sejenisnya) pada theme Neumorphism!!" — permintaan baru, 0 catatan sebelumnya di Pending Queue. Ambigu ada 2 kandidat target komponen (`NeumorphSurface.kt` — dasar semua card Amber Reserve, vs `CoverThumbnail` di `HomeScreenFolderRow.kt` — stack 3-foto folder yang SENGAJA sudah dihapus dulu karena "visually messy"), jadi ditanya dulu ke user sebelum eksekusi (STOP→BLOCKER). User pilih `NeumorphSurface` (semua card tema).

@@ -68,25 +68,30 @@ import com.example.gallerycleaner.ui.theme.Neumorph
  * as "flush with the background", which is the correct visual language
  * for "pressed" even without a literal inner shadow.
  *
- * **Dense 3-layer stack (new)**: the single flat fill described above is
- * now 3 solid, fully-opaque rounded-rect layers fanned toward the
- * top-left — same direction as the light-source highlight above, so the
- * stack reads as "peeking toward the light" rather than an arbitrary
- * direction. Each layer is inset from the one behind it by [stackOffset]
- * (back → front: `pressedFillColor`, a 50/50 [lerp] of `fillColor`/
- * `pressedFillColor`, then `fillColor`) — mechanically derived from the
- * two colors already passed in, no new hue. Critically, the front (content)
- * layer is the one **normal** (non-`matchParentSize`) child, so it alone
- * determines this composable's own measured size — its `2×stackOffset`
- * start/top inset is baked directly into that measurement. That means the
- * fan-out margin is reserved inside this composable's OWN bounds rather
- * than by overflowing into whatever space a caller's layout happens to
- * leave around it, so it can't get clipped/truncated by a `LazyRow`/
- * `LazyColumn` item, a `Row`, or any other ancestor regardless of that
- * ancestor's own clipping — no call site needs to add spacing for this.
- * When `pressed`, all 3 layers collapse to the same `pressedFillColor` —
- * the steps become invisible (flush look preserved) without changing
- * which child drives sizing, so pressing never jitters the layout.
+ * **Dense 3-layer stack**: the single flat fill described above is now 3
+ * solid, fully-opaque rounded-rect layers fanned toward the top-left —
+ * same direction as the light-source highlight above, so the stack reads
+ * as "peeking toward the light" rather than an arbitrary direction. Each
+ * layer is inset from the one behind it by [stackOffset]. Colors (back →
+ * front) sit at 3 spread-out points on the straight line through
+ * `fillColor`→`pressedFillColor` — back overshoots PAST `pressedFillColor`
+ * (160% via [lerp]) and mid sits at 80%, rather than crammed into just the
+ * `fillColor`↔`pressedFillColor` gap — mechanically derived from the two
+ * colors already passed in (no new hue), but spread far enough apart to
+ * actually read as 3 distinct layers instead of blending into one. The
+ * front (content) layer is the one **normal** (non-`matchParentSize`)
+ * child, so it alone determines this composable's own measured size — its
+ * `2×stackOffset` start/top inset is baked directly into that
+ * measurement. That means the fan-out margin is reserved inside this
+ * composable's OWN bounds rather than by overflowing into whatever space
+ * a caller's layout happens to leave around it, so it can't get
+ * clipped/truncated by a `LazyRow`/`LazyColumn` item, a `Row`, or any
+ * other ancestor regardless of that ancestor's own clipping — no call
+ * site needs to add spacing for this. When `pressed`, all 3 layers
+ * collapse to the plain `pressedFillColor` (not the extrapolated stack
+ * tones) — the steps become invisible (flush look preserved) without
+ * changing which child drives sizing, so pressing never jitters the
+ * layout.
  */
 @Composable
 fun NeumorphSurface(
@@ -97,7 +102,7 @@ fun NeumorphSurface(
     pressedFillColor: Color = Neumorph.DeepNavy,
     shadowElevation: Dp = 10.dp,
     shadowOffset: Dp = 6.dp,
-    stackOffset: Dp = 4.dp,
+    stackOffset: Dp = 8.dp,
     contentPadding: Dp = 16.dp,
     onClick: (() -> Unit)? = null,
     enabled: Boolean = true,
@@ -162,22 +167,33 @@ fun NeumorphSurface(
         // structure. No gradient, no border/bevel — each layer is still a
         // flat, monochromatic fill, same "pure" recipe as before, just 3
         // of them instead of 1.
-        val backColor = pressedFillColor
-        val midColor = lerp(fillColor, pressedFillColor, 0.5f)
-        val frontColor = fillColor
+        //
+        // Color spread (Batch79 fix — Batch78's plain 50/50 blend crammed
+        // all 3 stops into the narrow fillColor↔pressedFillColor gap,
+        // which read as "1 layer" since mid/back were barely distinguishable
+        // from each other): stops are placed on the SAME straight line
+        // through fillColor→pressedFillColor (same "derived, not invented"
+        // technique this file already uses elsewhere, e.g.
+        // `Neumorph.ClassicBrassPressed`'s HLS shift) but spaced further
+        // apart — mid overshoots to 80% of that line and back overshoots
+        // PAST pressedFillColor entirely (160%) instead of stopping at it,
+        // so all 3 layers land on evenly-spaced, clearly separate tones.
+        val stackBackColor = lerp(fillColor, pressedFillColor, 1.6f)
+        val stackMidColor = lerp(fillColor, pressedFillColor, 0.8f)
+        val stackFrontColor = fillColor
         val stackInset = stackOffset * 2
 
         // Layer 3 — back-most, flush to this Box's own top-left corner.
         Box(
             Modifier.matchParentSize()
                 .padding(end = stackInset, bottom = stackInset)
-                .background(color = backColor, shape = shape)
+                .background(color = if (pressed) pressedFillColor else stackBackColor, shape = shape)
         )
         // Layer 2 — middle, one step further toward the bottom-right.
         Box(
             Modifier.matchParentSize()
                 .padding(stackOffset)
-                .background(color = if (pressed) backColor else midColor, shape = shape)
+                .background(color = if (pressed) pressedFillColor else stackMidColor, shape = shape)
         )
         // Layer 1 — front, holds the real content. Deliberately NOT
         // matchParentSize: its start/top inset is what this composable's
@@ -186,7 +202,7 @@ fun NeumorphSurface(
         // parent's layout space.
         Box(
             Modifier.padding(start = stackInset, top = stackInset)
-                .background(color = if (pressed) backColor else frontColor, shape = shape)
+                .background(color = if (pressed) pressedFillColor else stackFrontColor, shape = shape)
         ) {
             Box(modifier = Modifier.padding(contentPadding), content = content)
         }
