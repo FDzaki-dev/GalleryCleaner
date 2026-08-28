@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -371,11 +372,11 @@ fun HomeScreen(
                         ScanTriggerRow(
                             title = stringResource(R.string.home_scan_similar_title),
                             subtitle = when (val s = nearDupScanState) {
-                                is ScanState.Done -> if (s.result.isEmpty()) stringResource(R.string.home_scan_none_found) else stringResource(
-                                    R.string.home_near_dup_found,
-                                    s.result.sumOf { it.items.size },
+                                is ScanState.Done -> if (s.result.isEmpty()) stringResource(R.string.home_scan_none_found) else pluralStringResource(
+                                    R.plurals.home_near_dup_found_groups,
                                     s.result.size,
-                                    if (s.result.size != 1) "s" else ""
+                                    s.result.sumOf { it.items.size },
+                                    s.result.size
                                 )
                                 else -> stringResource(R.string.home_scan_similar_idle_subtitle)
                             },

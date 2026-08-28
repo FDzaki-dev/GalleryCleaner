@@ -132,7 +132,6 @@
     <string name="home_scan_duplicate_idle_subtitle">Find exact byte-for-byte copies</string>
     <string name="home_scan_none_found">None found</string>
     <string name="home_scan_found_count">%1$d found — tap to review</string>
-    <string name="home_near_dup_found">%1$d photos in %2$d group%3$s — tap to review</string>
 
     <!-- Batch72 (Audit Gap P2 #12, stage 1/2: MainActivity.kt + HomeScreenSections.kt) -->
     <plurals name="main_deleted_photos">
@@ -154,5 +153,11 @@
     <plurals name="home_years_ago">
         <item quantity="one">%1$d year ago</item>
         <item quantity="other">%1$d years ago</item>
+    </plurals>
+
+    <!-- Batch73 (Audit Gap P2 #12, stage 2/2 FINAL: HomeScreen.kt near-dup group count) -->
+    <plurals name="home_near_dup_found_groups">
+        <item quantity="one">%1$d photos in %2$d group — tap to review</item>
+        <item quantity="other">%1$d photos in %2$d groups — tap to review</item>
     </plurals>
 </resources>
