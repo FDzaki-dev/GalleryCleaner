@@ -24,10 +24,11 @@ import com.example.gallerycleaner.ui.theme.MaterialStyle
  * Batch27: this composable is the single branch point between the
  * material languages the app supports. It reads [LocalMaterialStyle] (set
  * once per color style in `GalleryCleanerTheme`, see `MaterialStyle.kt`)
- * and renders `Modifier.glassPanel()` (Signature/Indigo Noir — translucent
- * frosted glass), `Modifier.skeuoPanel()` (unused as of Batch36, see
- * `MaterialStyle.kt`), or — Batch36 — `NeumorphSurface` (Amber Reserve —
- * pure dual-shadow soft-UI). No call site anywhere in the app
+ * and renders `Modifier.glassPanel()` (Signature — translucent frosted
+ * glass), `Modifier.skeuoPanel()` (unused as of Batch36, see
+ * `MaterialStyle.kt`), `NeumorphSurface` (Batch36, Amber Reserve — pure
+ * dual-shadow soft-UI), or `CupertinoSurface` (Batch77, Indigo Noir — flat
+ * opaque grouped-card). No call site anywhere in the app
  * (`HomeScreenSections.kt`, `TrashScreen.kt`, etc.) changed to make this
  * happen or the Batch36 redesign happen — they all still just call
  * `GlassCard { ... }` and get whichever material the active theme maps to.
@@ -36,7 +37,10 @@ import com.example.gallerycleaner.ui.theme.MaterialStyle
  * chain construction below (early `return`), not inside the `.let { when
  * ... } ` — `NeumorphSurface` needs two independently-offset shadow layers
  * (see its doc comment), which can't be expressed as one linear `Modifier`
- * chain the way `glassPanel`/`skeuoPanel` can. Everything else about this
+ * chain the way `glassPanel`/`skeuoPanel` can. Batch77: [MaterialStyle.CUPERTINO]
+ * (Indigo Noir) follows the exact same early-return shape, calling
+ * `CupertinoSurface` instead — see its doc comment for why it's also a
+ * Composable, not a Modifier extension. Everything else about this
  * function (params, [onClick]/[enabled] semantics, the `LocalContentColor`
  * fix from Batch23) is identical either way.
  *
@@ -83,6 +87,25 @@ fun GlassCard(
         return
     }
 
+    // Batch77 (Cupertino stage 2): same early-return shape as NEUMORPH above
+    // — CupertinoSurface is a Composable (needs a shadow layer + separate
+    // fill layer + optional hairline, see its doc comment), not a linear
+    // Modifier chain like glassPanel/skeuoPanel. Indigo Noir only, as of
+    // this batch (see materialStyleFor in MaterialStyle.kt).
+    if (style == MaterialStyle.CUPERTINO) {
+        CupertinoSurface(
+            modifier = modifier,
+            contentPadding = contentPadding,
+            onClick = onClick,
+            enabled = enabled
+        ) {
+            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+                content()
+            }
+        }
+        return
+    }
+
     Box(
         modifier = modifier
             .let {
@@ -90,6 +113,7 @@ fun GlassCard(
                     MaterialStyle.GLASS -> it.glassPanel(shape = shape, elevation = elevation)
                     MaterialStyle.SKEUO_LITE -> it.skeuoPanel()
                     MaterialStyle.NEUMORPH -> it // unreachable — handled by the early return above
+                    MaterialStyle.CUPERTINO -> it // unreachable — handled by the early return above
                 }
             }
             .let { if (onClick != null) it.clickable(enabled = enabled, onClick = onClick) else it }

@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v74_Batch77 — 2026-08-28
+- **Restyling Indigo Noir → Cupertino Style, stage 2/2 FINAL** (4 file): wiring `MaterialStyle` (`CUPERTINO` enum baru) ke `GlassCard.kt`/`GlassButton.kt`/`SwipeScreenControls.kt` (3 titik exhaustive-`when`, WAJIB update bareng biar tetap compile). Indigo Noir sekarang render panel/card/button/chip lewat material iOS asli (shadow tunggal lembut + fill flat opaque + hairline opsional + press-dim `.alpha()`) dari token `CupertinoTokens.kt`/`CupertinoSurface.kt` (stage 1, Batch74) — bukan lagi reskin `glassPanel()` Signature. Detail: `PROJECT_STATE.md` Batch77.
+
 ## v76_Batch76 — 2026-08-28
 - **Bugfix** (2 file): dialog "update available" nunjukin pesan generik "New release available." di SETIAP rilis, bukan cuma sesekali. Root cause: `generate_release_notes: true` di `build.yml` ngelist perubahan dari PR yang di-merge — project ini push langsung ke `main` lewat skrip Termux, gak pernah lewat PR, jadi bodinya selalu kosong (cuma header + link "Full Changelog") dan abis difilter `UpdateChecker.kt` jadi 0 bullet → fallback generik terus. Fix: `build.yml` sekarang generate body rilis sendiri dari `git log` sejak tag sebelumnya (pesan commit yang emang udah ditulis manual tiap push), format persis sama yang sudah diharapkan filter `UpdateChecker.kt` — 0 logic filtering diubah. Detail: `PROJECT_STATE.md` Batch76.
 - **Catatan**: entri CHANGELOG Batch64-75 sempat kelewat gak ditambahkan (gap dokumentasi, ditemukan pas nulis entri ini) — lihat `PROJECT_STATE.md` Batch76 & "Belum Dikerjakan" untuk daftar batch yang belum tercatat di sini.

@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.gallerycleaner.ui.theme.Cupertino
 import com.example.gallerycleaner.ui.theme.LocalMaterialStyle
 import com.example.gallerycleaner.ui.theme.MaterialStyle
 import com.example.gallerycleaner.ui.theme.MidnightGlass
@@ -26,11 +27,12 @@ import com.example.gallerycleaner.ui.theme.SkeuoLite
 /**
  * Shared full-width CTA button for every color style — the `Button`
  * equivalent of `GlassCard`. Same [LocalMaterialStyle] branch point
- * (Batch27): Signature/Indigo Noir render the original glass glow button
- * unchanged; Amber Reserve now renders a distinct skeuomorphism-lite
- * button instead of a recolored glass one.
+ * (Batch27): Signature renders the original glass glow button unchanged;
+ * Amber Reserve renders a distinct skeuomorphism-lite button; Indigo Noir
+ * renders a distinct Cupertino (iOS) button as of Batch77 (was Glass since
+ * Batch27 — see `MaterialStyle.kt`).
  *
- * The two press behaviors are deliberately different MECHANISMS, not just
+ * The press behaviors are deliberately different MECHANISMS, not just
  * different colors — this is the material-language distinction, applied
  * to interaction feedback rather than just idle appearance:
  * - **Glass** (unchanged): press = brighter glow-tinted label + warmer
@@ -45,6 +47,11 @@ import com.example.gallerycleaner.ui.theme.SkeuoLite
  *   hue, not a new color) — same "shadow gone + fill swap" mechanism as
  *   skeuo-lite's press feedback, via `NeumorphSurface`'s `pressed` param
  *   instead of a manual `skeuoPanel`/`skeuoInset` modifier swap.
+ * - **Cupertino** (Batch77, Indigo Noir): press = the WHOLE control (soft
+ *   shadow + flat fill + label together) dims via `Modifier.alpha()` to
+ *   [Cupertino.PRESSED_ALPHA] — no fill-color swap and no shadow removal,
+ *   genuinely the third mechanism, via `CupertinoSurface`'s `pressed`
+ *   param.
  */
 @Composable
 fun GlassButton(
@@ -132,6 +139,38 @@ fun GlassButton(
                     Text(
                         text = text,
                         color = Neumorph.TextOnBrass,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.4.sp
+                    )
+                }
+            }
+        }
+        MaterialStyle.CUPERTINO -> {
+            // Batch77: unlike Glass (fill/edge swap) or Neumorph (shadow
+            // removal + fill swap), Cupertino's real press mechanic is
+            // whole-control `.alpha()` dimming (see CupertinoSurface's doc
+            // comment) — so there's no separate "pressed" fill or text
+            // color to compute here; `pressed = isPressed` alone drives
+            // the dim, same as CupertinoSurface's other call site
+            // (GlassCard.kt). `showHairline = false` because a solid
+            // accent-filled CTA doesn't want a border, unlike a grouped
+            // card.
+            CupertinoSurface(
+                modifier = modifier.height(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                pressed = isPressed,
+                fillColor = Cupertino.AccentFill,
+                shadowElevation = 6.dp,
+                showHairline = false,
+                contentPadding = 0.dp,
+                onClick = onClick,
+                interactionSource = interactionSource // indication=null handled inside CupertinoSurface
+            ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = text,
+                        color = Cupertino.TextOnAccent,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.4.sp

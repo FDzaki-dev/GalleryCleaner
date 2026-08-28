@@ -31,8 +31,9 @@ import com.example.gallerycleaner.AppTheme
  */
 enum class MaterialStyle {
     /** Translucent frosted panels floating over an ambient gradient —
-     *  the original Midnight Blue treatment (Signature), also used as-is
-     *  by Indigo Noir (unchanged this batch — see PROJECT_STATE Batch27). */
+     *  the original Midnight Blue treatment (Signature). Indigo Noir used
+     *  this too through Batch74 stage 1; as of stage 2 (Batch77) it
+     *  renders through [CUPERTINO] instead — see that entry's doc. */
     GLASS,
 
     /** Matte, opaque raised panels with a two-tone bevel edge (light
@@ -56,19 +57,37 @@ enum class MaterialStyle {
      *  [SKEUO_LITE]/[GLASS] color — explicit user requirement for Batch36:
      *  "murni ... tanpa hybrid baseline bersama dari theme lain". New for
      *  Batch36, used exclusively by Amber Reserve. */
-    NEUMORPH
+    NEUMORPH,
+
+    /** iOS-style opaque "grouped card" — ONE soft low-opacity ambient
+     *  shadow (no offset pair), a flat fully-opaque fill, and an optional
+     *  near-invisible hairline border, with press feedback as whole-
+     *  control `.alpha()` dimming rather than a fill/shadow swap. A third,
+     *  genuinely distinct recipe from both [GLASS] (translucent, visible
+     *  gradient edge) and [NEUMORPH] (dual offset shadow, no border) — see
+     *  the comparison table on `CupertinoTokens.kt`'s doc comment. Built
+     *  on `CupertinoTokens.kt` (`Cupertino` object, direct alias of Indigo
+     *  Noir's own existing palette — 0 new hue, same "murni, no hybrid
+     *  baseline" standard as Amber Reserve's [NEUMORPH]) +
+     *  `CupertinoSurface.kt`. Stage 1 (tokens + surface, Batch74) shipped
+     *  unwired; this entry + its wiring is stage 2 (Batch77), used
+     *  exclusively by Indigo Noir. */
+    CUPERTINO
 }
 
-/** [AppTheme] → [MaterialStyle]. Signature and Indigo Noir keep the
- *  original glass material language exactly as before (0 regression —
- *  neither is touched by this mapping existing, nor by Batch36). Amber
- *  Reserve moves to [MaterialStyle.NEUMORPH] as of Batch36 (was
- *  [MaterialStyle.SKEUO_LITE] since Batch27) — another full
- *  material-language swap, not a recolor, per explicit user request. */
+/** [AppTheme] → [MaterialStyle]. Signature keeps the original glass
+ *  material language exactly as before (0 regression). Amber Reserve
+ *  moved to [MaterialStyle.NEUMORPH] at Batch36 (was
+ *  [MaterialStyle.SKEUO_LITE] since Batch27). Indigo Noir moves to
+ *  [MaterialStyle.CUPERTINO] as of Batch77 — stage 2 of the Batch74
+ *  restyle, was [MaterialStyle.GLASS] since Batch27 — same "full
+ *  material-language swap, not a recolor" standard as Amber Reserve's
+ *  Batch36 move, per explicit user request ("restyling total theme
+ *  Indigo Noir -> 'Cupertino Style' murni 100%!!"). */
 fun materialStyleFor(appTheme: AppTheme): MaterialStyle = when (appTheme) {
     AppTheme.SIGNATURE -> MaterialStyle.GLASS
     AppTheme.AMBER_RESERVE -> MaterialStyle.NEUMORPH
-    AppTheme.INDIGO_NOIR -> MaterialStyle.GLASS
+    AppTheme.INDIGO_NOIR -> MaterialStyle.CUPERTINO
 }
 
 /** Defaults to GLASS so any Composable that reads this without a provider

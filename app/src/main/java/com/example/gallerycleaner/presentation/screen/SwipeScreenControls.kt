@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.gallerycleaner.ui.components.CupertinoSurface
 import com.example.gallerycleaner.ui.components.GlassButton
 import com.example.gallerycleaner.ui.components.GlassCard
 import com.example.gallerycleaner.ui.components.NeumorphSurface
@@ -48,13 +49,35 @@ private fun InfoChip(text: String) {
     // the same treatment, not just the cards/buttons.
     // Batch36: NEUMORPH branches to NeumorphSurface (a composable, not a
     // Modifier — see its doc comment) with an early return, same pattern
-    // GlassCard.kt uses, since it can't join the `when` below.
+    // GlassCard.kt uses, since it can't join the `when` below. Batch77:
+    // CUPERTINO (Indigo Noir, was GLASS through Batch76 — see
+    // MaterialStyle.kt) follows the identical early-return shape, calling
+    // CupertinoSurface instead.
     val style = LocalMaterialStyle.current
     if (style == MaterialStyle.NEUMORPH) {
         NeumorphSurface(
             shape = RoundedCornerShape(6.dp),
             shadowElevation = 3.dp,
             shadowOffset = 2.dp,
+            contentPadding = 0.dp
+        ) {
+            Text(
+                text,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+            )
+        }
+        return
+    }
+    // Batch77: CUPERTINO branches the same way NEUMORPH does above —
+    // CupertinoSurface is a Composable, not a Modifier (see its doc
+    // comment) — smaller shadow/no offset to match this chip's existing
+    // "thinner than GlassCard defaults" sizing intent.
+    if (style == MaterialStyle.CUPERTINO) {
+        CupertinoSurface(
+            shape = RoundedCornerShape(6.dp),
+            shadowElevation = 3.dp,
             contentPadding = 0.dp
         ) {
             Text(
@@ -79,6 +102,7 @@ private fun InfoChip(text: String) {
                 borderWidth = 1.dp
             )
             MaterialStyle.NEUMORPH -> Modifier // unreachable — handled by the early return above
+            MaterialStyle.CUPERTINO -> Modifier // unreachable — handled by the early return above
         }
     ) {
         Text(
