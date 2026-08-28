@@ -66,15 +66,27 @@ object UpdateChecker {
     private const val SUMMARY_MAX_CHARS = 320
 
     /**
-     * Batch51 — turns GitHub's auto-generated release body
-     * (`generate_release_notes: true` in `build.yml`) into a short,
-     * human-readable summary instead of the raw commit-log dump: strips
-     * `## ` headers, `by @user in <url>` attribution suffixes, and the
-     * `**Full Changelog**: <compare-url>` line — that link just points
-     * back at a diff, which isn't a substitute for a short in-app summary.
-     * Caps at [SUMMARY_MAX_BULLETS] bullets / [SUMMARY_MAX_CHARS] chars so
-     * the update dialog stays short. Falls back to a generic line when the
-     * body is empty or nothing survives the filtering.
+     * Batch51 — turns the release body into a short, human-readable
+     * summary instead of a raw dump: strips `## ` headers, `by @user in
+     * <url>` attribution suffixes, and the `**Full Changelog**: <compare-
+     * url>` line — that link just points back at a diff, which isn't a
+     * substitute for a short in-app summary. Caps at [SUMMARY_MAX_BULLETS]
+     * bullets / [SUMMARY_MAX_CHARS] chars so the update dialog stays
+     * short. Falls back to a generic line when the body is empty or
+     * nothing survives the filtering.
+     *
+     * Batch76 — the body no longer comes from GitHub's PR-based
+     * `generate_release_notes: true`. This repo's workflow pushes straight
+     * to `main` (Termux scripts, never a PR), so that feature had nothing
+     * to list — every release's "What's Changed" came back empty, which is
+     * exactly why the fallback above used to fire on every single release,
+     * not just one. `build.yml` now builds the body itself from `git log`
+     * messages since the previous tag, in the same `## ` / `- ` /
+     * `**Full Changelog**` shape, so this method's filtering needed 0
+     * changes. The `by @user in <url>` stripping above is now mostly
+     * dormant (this repo's commits aren't PR-attributed) but left in
+     * place — harmless no-op here, still correct if a release is ever cut
+     * with GitHub's PR-based notes again.
      */
     private fun buildShortSummary(rawBody: String): String {
         if (rawBody.isBlank()) return "New release available."

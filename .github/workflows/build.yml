@@ -183,6 +183,49 @@ jobs:
 
           echo "Up to date with origin/main ($LATEST_MAIN) — safe to publish."
 
+      # Batch76 — generate_release_notes: true groups changes by merged PR;
+      # this repo pushes straight to `main` from the Termux scripts (no PR,
+      # ever), so it had nothing to list — every release's body reduced to
+      # just a header + "Full Changelog" line, both of which
+      # UpdateChecker.kt's shortSummary filter (by design) strips, leaving
+      # 0 bullets → the same generic "New release available." fallback on
+      # every single update, not just one. Fix: build the body ourselves
+      # from real commit messages since the previous tag (the person
+      # already writes a meaningful one per push via the Daily Update
+      # script's [Deskripsi Perubahan]) — in the exact `## What's Changed`
+      # / `- <line>` / `**Full Changelog**: <url>` shape UpdateChecker.kt
+      # already expects, so 0 changes needed to that filtering logic.
+      - name: Generate changelog from commits
+        run: |
+          set -euo pipefail
+
+          PREV_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          NEW_TAG="v1.0.${GITHUB_RUN_NUMBER}"
+          NOTES_FILE="$RUNNER_TEMP/release_notes.md"
+
+          # -n 30 (not a `| head` pipe) on purpose: piping git log into
+          # head can SIGPIPE the writer once head's limit is hit, which
+          # `pipefail` above would then treat as a step failure.
+          if [ -n "$PREV_TAG" ]; then
+            BULLETS="$(git log "${PREV_TAG}..HEAD" --no-merges --pretty=format:'- %s')"
+          else
+            BULLETS="$(git log --no-merges --pretty=format:'- %s' -n 30)"
+          fi
+          if [ -z "$BULLETS" ]; then
+            BULLETS="- No commit messages found for this build."
+          fi
+
+          {
+            echo "## What's Changed"
+            echo "$BULLETS"
+            echo ""
+            if [ -n "$PREV_TAG" ]; then
+              echo "**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${PREV_TAG}...${NEW_TAG}"
+            fi
+          } > "$NOTES_FILE"
+
+          echo "NOTES_FILE=$NOTES_FILE" >> "$GITHUB_ENV"
+
       - name: Publish GitHub Release
         id: release
         if: github.ref_name == 'main' || github.ref_name == 'master'
@@ -190,7 +233,7 @@ jobs:
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: GalleryCleaner v1.0.${{ github.run_number }}
-          generate_release_notes: true
+          body_path: ${{ env.NOTES_FILE }}
           files: app/build/outputs/apk/release/${{ env.OUT_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

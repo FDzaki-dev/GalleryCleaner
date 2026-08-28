@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v76_Batch76 — 2026-08-28
+- **Bugfix** (2 file): dialog "update available" nunjukin pesan generik "New release available." di SETIAP rilis, bukan cuma sesekali. Root cause: `generate_release_notes: true` di `build.yml` ngelist perubahan dari PR yang di-merge — project ini push langsung ke `main` lewat skrip Termux, gak pernah lewat PR, jadi bodinya selalu kosong (cuma header + link "Full Changelog") dan abis difilter `UpdateChecker.kt` jadi 0 bullet → fallback generik terus. Fix: `build.yml` sekarang generate body rilis sendiri dari `git log` sejak tag sebelumnya (pesan commit yang emang udah ditulis manual tiap push), format persis sama yang sudah diharapkan filter `UpdateChecker.kt` — 0 logic filtering diubah. Detail: `PROJECT_STATE.md` Batch76.
+- **Catatan**: entri CHANGELOG Batch64-75 sempat kelewat gak ditambahkan (gap dokumentasi, ditemukan pas nulis entri ini) — lihat `PROJECT_STATE.md` Batch76 & "Belum Dikerjakan" untuk daftar batch yang belum tercatat di sini.
+
 ## v63_Batch63 — 2026-08-25
 - **CI output cleanup** (1 file, protected — edit-parsial-only): `.github/workflows/build.yml` — sdkmanager output di-collapse (`::group::`), APK size ditangkap ke env, step "Job summary" baru nulis kartu Markdown ringkas (`$GITHUB_STEP_SUMMARY`: result/commit/APK/release-link/failure-log) di puncak halaman run. 0 logic build/sign/versioning disentuh. Gap ditemukan (belum dikerjakan): "Stale Run Guard" yang diwajibkan instruksi user belum pernah ada di file ini — lihat `PROJECT_STATE.md` Batch63.
 
