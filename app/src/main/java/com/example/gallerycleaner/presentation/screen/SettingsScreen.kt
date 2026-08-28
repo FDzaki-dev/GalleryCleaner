@@ -244,7 +244,7 @@ fun SettingsScreen(
                     // this state being lost until the file is stumbled on
                     // some other way.
                     UpdateChecker.markTagAsKnown(context, info.tagName)
-                    UpdateUiState.ReadyToInstall(result.file, info.tagName)
+                    UpdateUiState.ReadyToInstall(result.file, info.tagName, info.shortSummary)
                 }
                 is ApkDownloader.DownloadResult.Error -> UpdateUiState.Error(result.message)
             }
@@ -653,13 +653,23 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(Modifier.height(8.dp))
+                    // Batch75 — "what's new" summary now persists across the
+                    // whole in-app update flow (Available -> Downloading ->
+                    // ReadyToInstall), not just the initial prompt, so the
+                    // person always sees it directly here instead of needing
+                    // to check anywhere else for what changed.
+                    val summaryText = when (dialogState) {
+                        is UpdateUiState.Available -> dialogState.info.shortSummary
+                        is UpdateUiState.Downloading -> dialogState.info.shortSummary
+                        is UpdateUiState.ReadyToInstall -> dialogState.shortSummary
+                        else -> null
+                    }
+                    if (summaryText != null) {
+                        Text(summaryText, style = MaterialTheme.typography.bodySmall)
+                        Spacer(Modifier.height(8.dp))
+                    }
                     when (dialogState) {
-                        is UpdateUiState.Available -> {
-                            Text(
-                                dialogState.info.shortSummary,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
+                        is UpdateUiState.Available -> {}
                         is UpdateUiState.Downloading -> {
                             LinearProgressIndicator(
                                 progress = dialogState.progress,
@@ -710,7 +720,7 @@ private sealed class UpdateUiState {
     data object UpToDate : UpdateUiState()
     data class Available(val info: UpdateChecker.UpdateInfo) : UpdateUiState()
     data class Downloading(val info: UpdateChecker.UpdateInfo, val progress: Float) : UpdateUiState()
-    data class ReadyToInstall(val file: File, val tagName: String) : UpdateUiState()
+    data class ReadyToInstall(val file: File, val tagName: String, val shortSummary: String? = null) : UpdateUiState()
     data class Error(val message: String) : UpdateUiState()
 }
 

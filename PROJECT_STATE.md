@@ -12,7 +12,7 @@ Nemu "GalleryCleaner" di kode/config = **BY DESIGN, bukan sisa rebrand kelewat**
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v72 — Batch74 (Restyling Indigo Noir → Cupertino Style stage 1/2: token + surface foundation, 2 file baru)
+v73 — Batch75 (Update dialog: ringkasan rilis persisten sepanjang alur Available→Downloading→ReadyToInstall, 1 file)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **REBRANDING Gallery Cleaner → Snaply — ✅ SELESAI (Batch55-57, kosmetik only)**. Diganti (7 file, semua string display): `strings.xml`, `MainActivity.kt`, `CleaningReminderWorker.kt`, `HomeScreen.kt`, `README.md`/`ROADMAP.md`/`RELEASE_SIGNING.md`, `CHANGELOG.md`.
@@ -66,6 +66,13 @@ v72 — Batch74 (Restyling Indigo Noir → Cupertino Style stage 1/2: token + su
 Asal insiden: command Termux sempat pakai `-iname "gallery-cleaner"` (kebab-case) buat cari folder lokal, padahal repo aslinya `GalleryCleaner` (tanpa hyphen) — `-iname` cuma case-insensitive, BUKAN hyphen-insensitive, jadi pencarian gagal terus dan fallback bikin folder BARU salah (`~/projects/gallery-cleaner`) alih-alih masuk folder existing. **Dampak**: 0 risiko ke remote GitHub (skrip daily-update gak pernah set git remote, jadi `git push` di folder salah pasti gagal duluan) — tapi mungkin ada folder residu lokal `~/projects/gallery-cleaner` yang perlu dibersihkan manual di device user.
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch75 — Update dialog: ringkasan rilis persisten, bukan cuma di prompt awal (1 file)
+User: "tambahkan summary feature ditempatkan dibawah compare version, khusus update dari aplikasi langsung (bukan disuruh lihat log untuk selengkapnya!!)".
+Investigasi dulu: `UpdateChecker.kt`'s `shortSummary` (Batch51, dari `buildShortSummary()`) SUDAH ada dan SUDAH dirender persis di bawah baris "compare version" (`settings_update_dialog_version_line`, installed vs incoming tag) — tapi HANYA di state `Available`. Begitu user tap Download (state pindah ke `Downloading`, lalu `ReadyToInstall`), body dialog ganti total ke progress bar lalu teks generik "Downloaded — tap to install." — ringkasan rilis hilang dari layar tepat saat mau dipakai buat mutuskan install atau tidak.
+Fix: `SettingsScreen.kt` — `summaryText` (di-`when` dari `dialogState`) diekstrak keluar dari percabangan state, dirender SEKALI langsung di bawah baris compare-version, berlaku utk ketiga state (Available/Downloading/ReadyToInstall) sekaligus — body per-state (progress bar / teks "tap to install") tetap tampil di bawahnya, tidak dihapus. `UpdateUiState.ReadyToInstall` dapat field baru `shortSummary: String? = null` (default null, backward-compatible) supaya ringkasan ikut terbawa dari `info.shortSummary` saat state ini dibuat setelah download selesai (call site line ~247). Call site KEDUA (`ReadyToInstall`, resume-check leftover-file `LaunchedEffect(Unit)` line ~154) SENGAJA TIDAK diberi summary — path itu murni baca file+tag lokal tanpa hit GitHub API lagi (by design, lihat doc comment `getLastKnownTag`), jadi tidak ada data summary utk dibawa; dialog di path itu tetap tampil tanpa ringkasan seperti sebelumnya, 0 regresi.
+0 komponen baru, 0 import baru, 0 string resource baru (raw `shortSummary` sudah plain `String`, bukan `stringResource`). `UpdateChecker.kt`/`buildShortSummary()` 0 disentuh — ringkasannya sendiri sudah benar dari Batch51, ini murni soal APAKAH tetap dirender saat state berpindah.
+Verifikasi: brace 151/151, paren 419/419 (`SettingsScreen.kt`). Kedua call site `ReadyToInstall(...)` dicek kompatibel dgn signature baru (2-arg pakai default, 3-arg eksplisit). Belum tervalidasi compiler/device asli.
 
 ### Batch74 — Restyling Indigo Noir → Cupertino Style stage 1/2: token + surface foundation (2 file baru)
 User: upload screenshot kartu tema "Indigo Noir" ("Deep indigo, platinum & dusty rose accents") + instruksi "restyling total theme Indigo Noir -> 'Cupertino Style' murni 100%!!".
