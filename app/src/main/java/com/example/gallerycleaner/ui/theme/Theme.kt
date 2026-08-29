@@ -158,6 +158,19 @@ private fun colorSchemeFor(appTheme: AppTheme, darkTheme: Boolean): ColorScheme 
     AppTheme.INDIGO_NOIR -> if (darkTheme) IndigoNoirDark else IndigoNoirLight
 }
 
+/** [appTheme] → [Typography]. Batch80: Amber Reserve now reads its own
+ *  [NeumorphTypography] (font-weight bumped one step per role — see that
+ *  file's doc comment for the rationale) instead of silently inheriting
+ *  [GalleryTypography] unchanged — type was the one axis where Amber
+ *  Reserve wasn't yet "murni" per Batch36's no-hybrid-baseline standard
+ *  (already enforced at the color layer via [NeumorphTokens.kt] and the
+ *  surface layer via [NeumorphSurface.kt]). Signature/Indigo Noir keep
+ *  [GalleryTypography] exactly as before — 0 regression for either. */
+private fun typographyFor(appTheme: AppTheme) = when (appTheme) {
+    AppTheme.AMBER_RESERVE -> NeumorphTypography
+    else -> GalleryTypography
+}
+
 /** [darkTheme] mirrors com.example.gallerycleaner.ThemeMode (brightness);
  *  [appTheme] selects the color style (character) — see AppTheme. Both are
  *  resolved by the caller (MainActivity) from Settings and passed in here
@@ -190,7 +203,7 @@ fun GalleryCleanerTheme(
     CompositionLocalProvider(LocalMaterialStyle provides materialStyleFor(appTheme)) {
         MaterialTheme(
             colorScheme = colorSchemeFor(appTheme, darkTheme),
-            typography = GalleryTypography,
+            typography = typographyFor(appTheme),
             content = content
         )
     }

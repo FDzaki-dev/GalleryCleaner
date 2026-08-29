@@ -3,6 +3,11 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v77_Batch80 — 2026-08-29
+- **Typography Amber Reserve murni** (2 file): `Typography` dulu sama persis di semua 3 theme (`GalleryTypography`, `Type.kt`) — satu-satunya axis Amber Reserve belum "murni" (color/surface sudah sejak Batch36). File baru `NeumorphTypography.kt`: ukuran/spacing identik baseline, font-weight naik 1 step tiap role (rasional: permukaan flat monokromatik nyaris 0 kontras warna/border, jadi weight yang gantiin peran hierarki itu). `Theme.kt` dapat `typographyFor(appTheme)` (paralel `colorSchemeFor`). Signature/Indigo Noir 0 berubah. Detail: `PROJECT_STATE.md` Batch80.
+- *(Catatan versi: `v77` estimasi berurutan dari `v76_Batch79` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+- **Catatan gap**: entri Batch78-79 (NeumorphSurface stack/kontras) juga belum sempat dicatat di sini — lihat `PROJECT_STATE.md` "Belum Dikerjakan" untuk daftar batch yang masih pending backfill.
+
 ## v74_Batch77 — 2026-08-28
 - **Restyling Indigo Noir → Cupertino Style, stage 2/2 FINAL** (4 file): wiring `MaterialStyle` (`CUPERTINO` enum baru) ke `GlassCard.kt`/`GlassButton.kt`/`SwipeScreenControls.kt` (3 titik exhaustive-`when`, WAJIB update bareng biar tetap compile). Indigo Noir sekarang render panel/card/button/chip lewat material iOS asli (shadow tunggal lembut + fill flat opaque + hairline opsional + press-dim `.alpha()`) dari token `CupertinoTokens.kt`/`CupertinoSurface.kt` (stage 1, Batch74) — bukan lagi reskin `glassPanel()` Signature. Detail: `PROJECT_STATE.md` Batch77.
 
