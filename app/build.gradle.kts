@@ -3,17 +3,22 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-fun gitCommitCount(): Int = try {
-    val process = ProcessBuilder("git", "rev-list", "--count", "HEAD")
-        .redirectErrorStream(true)
-        .start()
-    process.waitFor()
-    process.inputStream.bufferedReader().readText().trim().toIntOrNull() ?: 1
-} catch (e: Exception) {
-    1
-}
+// Batch83 — Versioning Lock fix (AUDIT_GAP.md #15, PROJECT_STATE.md "ATURAN
+// PERMANEN SESI" #2): versionCode/versionName WAJIB dari GITHUB_RUN_NUMBER.
+// Function lama di sini pakai `git rev-list --count HEAD` (total commit
+// count) — angka BEDA dari $GITHUB_RUN_NUMBER yang dipakai build.yml untuk
+// APK filename & GitHub Release tag (Batch43 cuma nyamain 2 hal ITU, tidak
+// pernah nyentuh versionCode Gradle asli di sini). Akibatnya versionCode
+// yang ke-bake ke dalam APK (yang dibaca PackageManager/BuildConfig) selalu
+// beda dari angka yang tertulis di nama filenya sendiri. GITHUB_RUN_NUMBER
+// sudah otomatis ada di environment tiap step Actions (proses Gradle
+// mewarisi env shell runner), 0 perubahan workflow diperlukan buat
+// nyediain variabel ini. Fallback ke 1 HANYA untuk build lokal (Termux/
+// Android Studio) di luar CI, di mana GITHUB_RUN_NUMBER memang tidak ada.
+fun ciVersionCode(): Int =
+    System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
 
-val appVersionCode = gitCommitCount()
+val appVersionCode = ciVersionCode()
 
 android {
     namespace = "com.example.gallerycleaner"

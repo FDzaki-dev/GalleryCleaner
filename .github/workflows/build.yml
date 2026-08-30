@@ -115,6 +115,28 @@ jobs:
 
           echo "APK SIGNATURE VERIFIED SUCCESSFULLY"
 
+      - name: Verify versionCode matches GITHUB_RUN_NUMBER (Versioning Lock)
+        run: |
+          set -euo pipefail
+
+          APK="app/build/outputs/apk/release/app-release.apk"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          BADGING="$("$AAPT" dump badging "$APK")"
+
+          BAKED_VERSION_CODE="$(echo "$BADGING" | grep -oP "versionCode='\K[0-9]+")"
+          BAKED_VERSION_NAME="$(echo "$BADGING" | grep -oP "versionName='\K[^']+")"
+          EXPECTED_VERSION_NAME="1.0.${GITHUB_RUN_NUMBER}"
+
+          echo "Baked into APK -> versionCode=$BAKED_VERSION_CODE versionName=$BAKED_VERSION_NAME"
+          echo "Expected (CI)  -> versionCode=$GITHUB_RUN_NUMBER versionName=$EXPECTED_VERSION_NAME"
+
+          if [ "$BAKED_VERSION_CODE" != "$GITHUB_RUN_NUMBER" ] || [ "$BAKED_VERSION_NAME" != "$EXPECTED_VERSION_NAME" ]; then
+            echo "::error::Versioning Lock violated — APK's baked-in versionCode/versionName does not match GITHUB_RUN_NUMBER. This is the exact drift (Batch83, AUDIT_GAP.md #15) that once made the APK disagree with its own filename/GitHub Release tag. Check app/build.gradle.kts's versionCode source."
+            exit 1
+          fi
+
+          echo "Versioning Lock OK — APK versionCode/versionName match GITHUB_RUN_NUMBER."
+
       - name: Rename APK
         run: |
           set -euo pipefail
