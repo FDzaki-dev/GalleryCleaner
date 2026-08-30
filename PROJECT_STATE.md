@@ -19,7 +19,7 @@ versionName/batch latest, beserta 1-2 baris singkat tentang update terkini yang 
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v84 (estimasi berurutan dari v83_Batch86 — run number GitHub Actions aktual belum terkonfirmasi, koreksi kalau beda pas CI jalan) — Batch87 (2 fix dari 1 pesan user: (1) "Dense 3-layer stack" di-rehue magenta ala Blade Runner via token BARU `StackFill`/`StackFillPressed` — dedicated, bukan re-hue `NavyCard`/`DeepNavy` langsung, biar page background & CTA brass gak ikut kesenggol; (2) border fading yang ternyata gak fade di sudut kanan-bawah — `.border()` diganti `drawWithCache` manual biar gradient-nya resolve ke ukuran panel ASLI, bukan implisit. 2 file kode)
+v85 (estimasi berurutan dari v84_Batch87 — run number GitHub Actions aktual belum terkonfirmasi, koreksi kalau beda pas CI jalan) — Batch88 (CI compile-fix run210: `NeumorphSurface.kt` — 2 import hilang, `clipPath`/`drawOutline` dari `androidx.compose.ui.graphics.drawscope`. Batch87 sudah PAKAI keduanya buat fix border-fade, dan PROJECT_STATE.md-nya sendiri sempat salah klaim "0 API baru/eksperimental" — klaimnya soal API stabilitas benar, tapi importnya kelewat ditambahkan. 1 file kode, 0 logic berubah)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **⚠️ NAIK PRIORITAS (Batch85) — NeumorphShape.Button/Chip wiring** — sebelumnya (Batch84) ini cuma gap "murni" biasa (Card 24dp rounded, Button/Chip literal lama 16dp/6dp rounded juga — beda angka doang, tetap serasi bentuknya). Sejak Batch85, `Card` udah pindah total ke `CutCornerShape` (angular/chamfered) sementara `GlassButton.kt`/`SwipeScreenControls.kt` MASIH literal `RoundedCornerShape` lama — sekarang ada **inkonsistensi visual yang kelihatan**: card Neumorph di seluruh app bersudut potong, tapi tombol CTA & info chip masih bersudut bulat. `NeumorphShape.Button`(12dp cut)/`.Chip`(6dp cut) sudah siap dipakai, tinggal 2 file itu diganti dari literal ke referensi token — kandidat kuat jadi batch mikro berikutnya biar konsisten.
@@ -80,6 +80,22 @@ v84 (estimasi berurutan dari v83_Batch86 — run number GitHub Actions aktual be
 Asal insiden: command Termux sempat pakai `-iname "gallery-cleaner"` (kebab-case) buat cari folder lokal, padahal repo aslinya `GalleryCleaner` (tanpa hyphen) — `-iname` cuma case-insensitive, BUKAN hyphen-insensitive, jadi pencarian gagal terus dan fallback bikin folder BARU salah (`~/projects/gallery-cleaner`) alih-alih masuk folder existing. **Dampak**: 0 risiko ke remote GitHub (skrip daily-update gak pernah set git remote, jadi `git push` di folder salah pasti gagal duluan) — tapi mungkin ada folder residu lokal `~/projects/gallery-cleaner` yang perlu dibersihkan manual di device user.
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch88 — CI compile-fix: 2 import hilang di NeumorphSurface.kt (1 file)
+User upload log CI gagal: `log-fail_main_run210-attempt1_b479f31_log.zip` — "debugging sampai tuntas!!". Fast-Track (bug spesifik, bukan minta audit full project).
+
+Error persis dari log: `:app:compileReleaseKotlin FAILED` — 2 baris `Unresolved reference` di `NeumorphSurface.kt:306` (`clipPath`) dan `:307` (`drawOutline`), commit `b479f31`.
+
+Root cause: Batch87's fix border-fade (lihat entry Batch87 di bawah) ganti `.border()` jadi gambar manual pakai `clipPath { drawOutline(...) }` di dalam `drawWithCache` — API-nya sendiri BENAR (public, stable, sudah lama ada di Compose Foundation, persis seperti yang dicatat di baris verifikasi Batch87), tapi 2 statement import-nya (`androidx.compose.ui.graphics.drawscope.clipPath` + `...drawOutline`) kelewat ditambahkan pas nulis kode — file itu sudah import `Stroke` dari package yang SAMA (`androidx.compose.ui.graphics.drawscope`), jadi gampang ke-anggap "satu paket udah ke-cover", padahal tiap top-level function di Kotlin tetap butuh import sendiri-sendiri walau satu package sama class yang udah diimport.
+
+Fix: `NeumorphSurface.kt` — 2 baris import ditambahkan persis di bawah baris `import ...drawscope.Stroke` yang sudah ada:
+```
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.drawOutline
+```
+0 baris logic/formula disentuh — bug ini murni import hilang, bukan bug desain/geometri (resep border-fade Batch87 tetap sama persis: 6dp, `BorderFade`, clip ke outline shape). 0 file lain disentuh (scope CI-fix murni, ZERO-REFACTOR).
+
+Verifikasi: brace/paren balanced, TIDAK BERUBAH dari Batch87 (12/12, 127/127 — cuma nambah 2 baris import, 0 brace/paren baru). Belum tervalidasi compiler asli (sandbox ini 0 toolchain Android) — tapi ini kelas bug yang paling gampang diverifikasi manual (nama fungsi vs package resmi Compose `androidx.compose.ui.graphics.drawscope`, dikonfirmasi cocok dengan API reference resmi), confidence tinggi fix ini closes run210 tanpa perlu iterasi lanjutan. **Rekomendasi user**: push batch ini lalu cek run CI berikutnya — kalau masih gagal di titik lain, upload log fail-nya lagi sama seperti sekarang biar bisa didebug presisi dari pesan compiler asli (bukan tebak-tebak ulang).
 
 ### Batch87 — Stack magenta rehue + fix border gak fade di ujung kanan-bawah (2 file)
 User: (1) "3-dense layer stacked ganti jadi warna magenta ala Blade Runner, tapi jangan terlalu kontras/mencolok", (2) "Border tebal sudah benar, tapi kenapa ujung kanan bawah malah tidak 'fade out'?!!" — 2 request/bug dari 1 pesan, sama-sama di `NeumorphSurface.kt`/`NeumorphTokens.kt` (pola sama Batch86: 1 batch, screenshot dari layar Home Snaply — kartu "Library size"/"Biggest space hogs").

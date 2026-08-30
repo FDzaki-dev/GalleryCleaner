@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v85_Batch88 — 2026-08-31
+- **CI compile-fix** (1 file): build `run210` gagal di `:app:compileReleaseKotlin` — `NeumorphSurface.kt` pakai `clipPath`/`drawOutline` (bagian fix border-fade Batch87) tapi 2 import-nya kelewat ditambahkan. Fix: tambah `import androidx.compose.ui.graphics.drawscope.clipPath` + `...drawOutline`. 0 logic/visual berubah — border-fade tetap persis sama seperti yang dideskripsikan di Batch87 (6dp, `BorderFade`), ini murni resolusi compile error.
+- *(Catatan versi: `v85` estimasi berurutan dari `v84_Batch87` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+
 ## v84_Batch87 — 2026-08-31
 - **Stack magenta rehue + border fade bugfix** (2 file): (1) user minta "3-dense layer stacked" ("Dense 3-layer stack", Batch78/79/86) diganti magenta ala Blade Runner tapi "jangan terlalu kontras/mencolok" — `NeumorphTokens.kt` dapat 2 token baru (`StackFill`/`StackFillPressed`, dedicated, bukan re-hue `NavyCard`/`DeepNavy` langsung supaya page background & CTA brass `GlassButton.kt` gak ikut ke-hue), diverifikasi Python (S/L dipertahankan sama, cuma hue geser H210°→H320° — itu yang jaga hasilnya tetap muted bukan neon). (2) user lapor border yang katanya "fade out ke kanan-bawah" ternyata gak fade di situ — root cause: `.border()`'s implicit gradient-size resolution gak selalu balik ke ukuran panel sebenarnya; fix `NeumorphSurface.kt` ganti ke `Modifier.drawWithCache` manual biar gradient `start`/`end` selalu di sudut ASLI panel (dijamin matematis fully-transparent tepat di kanan-bawah), lebar/hue border 0 berubah dari Batch86 (`6dp`, `BorderFade` alpha 0.50).
 - *(Catatan versi: `v84` estimasi berurutan dari `v83_Batch86` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
