@@ -7,12 +7,19 @@ Project ini punya **2 nama, PERMANEN, keduanya sengaja**:
 
 Nemu "GalleryCleaner" di kode/config = **BY DESIGN, bukan sisa rebrand kelewat** (rebrand eksplisit "kosmetik only" — daftar lengkap di "Belum Dikerjakan" bawah). **JANGAN**: "bereskan" sisa itu jadi Snaply, ganti `-iname`/folder Termux, atau ganti `applicationId`/package tanpa izin eksplisit user.
 
+## ⚠️ ATURAN PERMANEN SESI — WAJIB, TANPA TERKECUALI
+1. Tiap sesi WAJIB tampilkan blok berikut:
+```bash
+versionName/batch latest, beserta 1-2 baris singkat tentang update terkini yang dikerjakan
+```
+2. `versionCode`/`versionName` WAJIB di-generate langsung dari workflow GitHub sendiri (`GITHUB_RUN_NUMBER`). DILARANG KERAS bump versi manual oleh sesi manapun.
+
 ## 🔗 Rilis Terbaru
 - GitHub Release (APK signed, siap install, muncul di sidebar repo): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v78 (estimasi berurutan dari v77_Batch80 — run number GitHub Actions aktual belum terkonfirmasi, koreksi kalau beda pas CI jalan) — Batch81 (Neumorph palette refresh + fading edge-light border, 2 file)
+v79 (estimasi berurutan dari v78_Batch81 — run number GitHub Actions aktual belum terkonfirmasi, koreksi kalau beda pas CI jalan) — Batch82 (Tambah Aturan Permanen Sesi ke PROJECT_STATE.md, docs-only, 0 file kode)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **REBRANDING Gallery Cleaner → Snaply — ✅ SELESAI (Batch55-57, kosmetik only)**. Diganti (7 file, semua string display): `strings.xml`, `MainActivity.kt`, `CleaningReminderWorker.kt`, `HomeScreen.kt`, `README.md`/`ROADMAP.md`/`RELEASE_SIGNING.md`, `CHANGELOG.md`.
@@ -68,6 +75,9 @@ v78 (estimasi berurutan dari v77_Batch80 — run number GitHub Actions aktual be
 Asal insiden: command Termux sempat pakai `-iname "gallery-cleaner"` (kebab-case) buat cari folder lokal, padahal repo aslinya `GalleryCleaner` (tanpa hyphen) — `-iname` cuma case-insensitive, BUKAN hyphen-insensitive, jadi pencarian gagal terus dan fallback bikin folder BARU salah (`~/projects/gallery-cleaner`) alih-alih masuk folder existing. **Dampak**: 0 risiko ke remote GitHub (skrip daily-update gak pernah set git remote, jadi `git push` di folder salah pasti gagal duluan) — tapi mungkin ada folder residu lokal `~/projects/gallery-cleaner` yang perlu dibersihkan manual di device user.
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch82 — Tambah "Aturan Permanen Sesi" ke PROJECT_STATE.md (docs-only, 0 file kode)
+Section baru "⚠️ ATURAN PERMANEN SESI" ditambahkan (lihat atas): (1) wajib tampilkan versionName/batch latest + ringkasan 1-2 baris tiap sesi, (2) `versionCode`/`versionName` wajib otomatis dari `GITHUB_RUN_NUMBER`, dilarang bump manual oleh sesi manapun.
 
 ### Batch81 — Neumorph palette refresh (calmer/menarik) + fading edge-light border (2 file)
 User (via screenshot Snaply, Amber Reserve theme aktif): "ganti komposisi warna jadi lebih menarik, calm, dan tetap sesuai identitas theme Neumorphism. juga tambahkan garis Border yang fade out ke arah kanan bawah pada semua panel!!" — Fast-Track (task mikro, 2 file kode, di bawah cap 3-file, 0 audit full project).
