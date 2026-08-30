@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v78_Batch81 — 2026-08-30
+- **Neumorph (Amber Reserve) palette refresh + fading edge-light border** (2 file): user minta "ganti komposisi warna jadi lebih menarik, calm, tetap sesuai identitas Neumorphism" + "tambahkan garis Border yang fade out ke arah kanan bawah pada semua panel". `NeumorphTokens.kt` — semua nama property tetap sama (0 file lain kesentuh), hex value digeser: base/card navy dari slate-gray flat ke blue-violet lebih kaya (H≈228°), accent gold dari mentah (`#D4AF37`) ke champagne lebih lembut (`#D4AB5E`), shadow pair sedikit dilembutkan. Semua kontras WCAG di-cek ulang, tetap ≥AA. `NeumorphSurface.kt` — border baru 1dp `Brush.linearGradient` (warm off-white → transparent) di layer depan tiap panel, arah top-left→bottom-right konsisten sama light-source yang udah ada. Keep/Delete (oxblood) tidak disentuh, sesuai aturan standing project. Detail: `PROJECT_STATE.md` Batch81.
+- *(Catatan versi: `v78` estimasi berurutan dari `v77_Batch80` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+
 ## v77_Batch80 — 2026-08-29
 - **Typography Amber Reserve murni** (2 file): `Typography` dulu sama persis di semua 3 theme (`GalleryTypography`, `Type.kt`) — satu-satunya axis Amber Reserve belum "murni" (color/surface sudah sejak Batch36). File baru `NeumorphTypography.kt`: ukuran/spacing identik baseline, font-weight naik 1 step tiap role (rasional: permukaan flat monokromatik nyaris 0 kontras warna/border, jadi weight yang gantiin peran hierarki itu). `Theme.kt` dapat `typographyFor(appTheme)` (paralel `colorSchemeFor`). Signature/Indigo Noir 0 berubah. Detail: `PROJECT_STATE.md` Batch80.
 - *(Catatan versi: `v77` estimasi berurutan dari `v76_Batch79` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*

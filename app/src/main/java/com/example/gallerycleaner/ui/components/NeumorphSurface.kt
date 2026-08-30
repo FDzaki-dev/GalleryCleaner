@@ -1,6 +1,7 @@
 package com.example.gallerycleaner.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.lerp
@@ -22,16 +24,22 @@ import com.example.gallerycleaner.ui.theme.Neumorph
  * Core building block for the Amber Reserve Neumorphism (Soft UI) material
  * (Batch36 — full redesign, replaces Skeuomorphism-lite from Batch27/28).
  *
- * Neumorphism's one defining visual cue is a DUAL offset shadow — a light
+ * Neumorphism's defining visual cue is a DUAL offset shadow — a light
  * highlight cast from an implied top-left light source, and a dark shadow
- * from the opposite bottom-right corner — on a FLAT, monochromatic surface
- * with NO border and NO gradient. That's the whole recipe, deliberately:
+ * from the opposite bottom-right corner — on a FLAT, monochromatic surface.
+ * Through Batch80 that surface deliberately had NO border and NO gradient.
+ * Batch81 adds ONE exception, by explicit user request ("tambahkan garis
+ * Border yang fade out ke arah kanan bawah pada semua panel"): a 1dp
+ * border whose gradient FADES from a subtle top-left highlight to fully
+ * transparent at the bottom-right — see "Fading edge-light border (Batch81)"
+ * below. Everything else about the recipe (flat solid fill, no bevel, no
+ * gradient FILL) is unchanged:
  *
  * |                                  | shadow(s)              | fill               | border/bevel |
  * |----------------------------------|-------------------------|---------------------|--------------|
  * | `glassPanel` (Signature/Indigo)  | 1, ambient               | translucent gradient | gradient edge |
  * | `skeuoPanel` (old Amber Reserve) | 1, ambient + specular    | gradient             | gradient bevel |
- * | `NeumorphSurface` (this)         | 2, independently offset  | flat solid           | none |
+ * | `NeumorphSurface` (this)         | 2, independently offset  | flat solid           | 1dp fading gradient edge (Batch81) |
  *
  * **Why this is a `@Composable` and not a `Modifier.neumorphPanel()`
  * extension** like `glassPanel`/`skeuoPanel`: `Modifier.shadow()` (the
@@ -92,6 +100,26 @@ import com.example.gallerycleaner.ui.theme.Neumorph
  * tones) — the steps become invisible (flush look preserved) without
  * changing which child drives sizing, so pressing never jitters the
  * layout.
+ *
+ * **Fading edge-light border (Batch81)**: applied via `Modifier.border()`
+ * with `Brush.linearGradient(listOf(Neumorph.BorderFade, Color.Transparent))`
+ * — deliberately NOT passing explicit `start`/`end` offsets, since Compose
+ * resolves the default (`Offset.Zero` → `Offset.Infinite`) to the actual
+ * drawn bounds at paint time, which already produces exactly "visible at
+ * top-left, fades to nothing at bottom-right" with 0 size/measurement math
+ * needed here. Direction matches this file's existing light-source
+ * convention (the light shadow is top-left, dark shadow bottom-right,
+ * above) instead of introducing a second, unrelated direction. Applied
+ * ONLY to Layer 1 (the front content box), not the back/mid stack layers —
+ * that front layer is the one surface users actually perceive as "the
+ * panel's edge"; bordering all 3 stacked layers as well would visually
+ * compete with the fan-out steps instead of reading as one clean edge.
+ * Same border for `pressed` and non-`pressed` states (the existing pressed
+ * behavior only ever swapped fill/shadow, never introduced a border, so
+ * there's no prior pressed-specific border behavior to preserve or branch
+ * on). Width is a fixed `1.dp` — not exposed as a caller parameter, since
+ * no call site needs a different value yet and every panel in the app
+ * should read as one consistent material.
  */
 @Composable
 fun NeumorphSurface(
@@ -164,9 +192,11 @@ fun NeumorphSurface(
         // "Dense 3-layer stack" above for why the front layer (not
         // matchParentSize) is the one that drives this Box's own size, and
         // why pressed collapses all 3 to one color instead of branching
-        // structure. No gradient, no border/bevel — each layer is still a
-        // flat, monochromatic fill, same "pure" recipe as before, just 3
-        // of them instead of 1.
+        // structure. No gradient FILL, no bevel on any of the 3 layers —
+        // each is still a flat, monochromatic fill, same "pure" recipe as
+        // before. The one exception is the Batch81 fading BORDER on Layer 1
+        // only (see class doc "Fading edge-light border" above) — a border,
+        // not a gradient fill, and deliberately not applied to Layer 2/3.
         //
         // Color spread (Batch79 fix — Batch78's plain 50/50 blend crammed
         // all 3 stops into the narrow fillColor↔pressedFillColor gap,
@@ -203,6 +233,11 @@ fun NeumorphSurface(
         Box(
             Modifier.padding(start = stackInset, top = stackInset)
                 .background(color = if (pressed) pressedFillColor else stackFrontColor, shape = shape)
+                .border(
+                    width = 1.dp,
+                    brush = Brush.linearGradient(listOf(Neumorph.BorderFade, Color.Transparent)),
+                    shape = shape
+                )
         ) {
             Box(modifier = Modifier.padding(contentPadding), content = content)
         }
