@@ -5,100 +5,119 @@ import androidx.compose.ui.graphics.Color
 /**
  * Pure Neumorphism (Soft UI) — Amber Reserve Edition.
  * Batch36: original full redesign (see PROJECT_STATE.md Batch36).
- * Batch81: palette REFRESH per explicit user request — "ganti komposisi
- * warna jadi lebih menarik, calm, dan tetap sesuai identitas theme
- * Neumorphism" — plus a new border token for the fading edge-light
- * border (see NeumorphSurface.kt doc comment for the border itself).
+ * Batch81: calmer palette refresh (softer champagne-gold, blue-violet navy).
+ * Batch85: art-direction reskin per explicit user request — "theme tetap
+ * Neumorphism, tapi komposisi warna...pakai gaya visual ala Blade Runner".
+ * Reverses Batch81's "calm" direction on purpose — Blade Runner's identity
+ * is high-contrast neo-noir, not gentle/considered, so this batch trades
+ * Batch81's softened numbers for more dramatic ones. "Amber Reserve" was
+ * already gold-accent-on-dark before this batch, which happens to line up
+ * with Blade Runner's own iconic amber CRT/HUD readouts (Voight-Kampff,
+ * ESPER "enhance" machine) — so the accent hue FAMILY stays brass/amber,
+ * only pushed from soft champagne to a saturated neon-sign orange. What's
+ * new is the near-black base (was navy) and a cyan rim-light on the
+ * existing border token, for the classic BR contrast of warm key light
+ * against cool ambient glow.
  *
- * This is a hex-value refresh, NOT an identity change: every property
- * name below is unchanged from Batch36, so `Theme.kt`/`GlassButton.kt`/
- * `SettingsScreen.kt` need zero edits — they keep reading
+ * This is again a hex-value refresh, NOT an identity change: every
+ * property name below is unchanged from Batch36/81, so `Theme.kt`/
+ * `GlassButton.kt`/`SettingsScreen.kt` need zero edits — they keep reading
  * `Neumorph.DeepNavy`/`Neumorph.ClassicBrass`/etc. exactly as before, just
- * with new values. The 60/30/10 (Base/Structural/Accent) ratio, the
- * "Amber Reserve" gold-on-navy identity, and every derivation TECHNIQUE
- * (hue-preserving lightness shift for pressed/on-light variants, alpha-only
- * derivation for secondary text) all carry over unchanged from Batch36 —
- * only the underlying hue/saturation/lightness NUMBERS moved, chosen to
- * feel calmer and less generic than the old slate-gray navy + raw-yellow
- * gold pairing:
- * - Base/Card hue nudged from a flat slate-gray toward a richer
- *   blue-violet (H≈228°) — same "dark navy" identity, less flat/cold.
- * - Accent desaturated + lightened from a raw gold (H46° S65% L52%) to a
- *   softer champagne/honey gold (H39° S58% L60%) — reads as considered
- *   rather than loud, while staying unmistakably "brass".
- * - Shadow pair softened slightly (dark shadow alpha 0.55→0.45, light
- *   highlight alpha 0.045→0.06) so the dual-shadow depth cue reads as
- *   gentle rather than harsh against the richer base hue.
+ * with new values. The 60/30/10 (Base/Structural/Accent) ratio and every
+ * derivation TECHNIQUE (hue-preserving lightness shift for pressed/
+ * on-light variants, alpha-only derivation for secondary text) carry over
+ * unchanged — only the underlying hue/saturation/lightness NUMBERS moved:
+ * - Base/Card hue moved from blue-violet (H228°) to a cooler, near-black
+ *   teal-blue (H210°, L7%/13%) — "night city, rain-slicked asphalt" rather
+ *   than a lit interior navy.
+ * - Accent pushed from a softened champagne-gold (H39° S58% L60%) to a
+ *   saturated neon amber (H32° S92% L56%) — reads as glowing signage/CRT
+ *   phosphor rather than a considered, muted gold.
+ * - Shadow pair intensified back up (dark shadow alpha 0.45→0.60) for a
+ *   harder, more dramatic depth cue — the opposite direction from Batch81,
+ *   deliberately, since "calm" and "Blade Runner" pull opposite ways and
+ *   this batch's explicit reference wins for this request.
+ * - [BorderFade] re-hued from warm off-white to a saturated cyan
+ *   (H185° S85% L58%) — the cool rim-light half of BR's signature
+ *   warm-key/cool-rim contrast; [ShadowLight] gets the same cyan tint at a
+ *   much lower alpha for the same reason.
  * Keep/Delete semantics (`OxbloodDelete`/`OxbloodDeleteOnLight` in
  * `Color.kt`, wired via `Theme.kt`'s `error`/`secondary`) are explicitly
  * OUT of scope here, same standing rule as every prior full-theme-rewrite
- * batch (Signature, Batch36 itself, Cupertino Batch74) — this refresh only
- * touches background/structural/accent/text, never the Keep/Delete pair.
- * All values re-verified against WCAG per-value below (contrast ratios
- * computed the same way Batch36 originally documented them).
+ * batch (Signature, Batch36, Cupertino Batch74, Batch81) — this reskin
+ * only touches background/structural/accent/text/border, never Keep/Delete.
+ * All values re-verified against WCAG below (contrast ratios computed the
+ * same way every prior palette batch documented them — see per-line notes).
  */
 object Neumorph {
-    // ============ Calmer Batch81 palette — same roles as Batch36 ============
-    val DeepNavy = Color(0xFF13182A)     // H228° S38% L12% — richer blue-violet navy, same "base" role
-    val NavyCard = Color(0xFF20263C)     // H228° S30% L18% — same hue family as DeepNavy, one step lighter
-    val ClassicBrass = Color(0xFFD4AB5E) // H39° S58% L60% — softer champagne-gold, same "accent" role
+    // ============ Batch85 "Blade Runner" palette — same roles as Batch36/81 ============
+    val DeepNavy = Color(0xFF0A1219)     // H210° S42% L7% — near-black cool teal, same "base" role (name kept for stability, no longer literally "navy")
+    val NavyCard = Color(0xFF15212D)     // H210° S36% L13% — same hue family as DeepNavy, one step lighter
+    val ClassicBrass = Color(0xFFF69628) // H32° S92% L56% — saturated neon amber, same "accent" role (name kept, no longer a soft champagne)
 
-    val TextPrimary = Color(0xFFF3F3F7)  // near-white with a faint cool tint (contrast 15.9:1 on DeepNavy — past AAA's 7:1)
-    val TextOnBrass = Color(0xFF13182A)  // = DeepNavy reused as dark-on-brass text (contrast 8.2:1 on ClassicBrass — past AAA's 4.5:1)
+    val TextPrimary = Color(0xFFF2F6F7)  // near-white, faint cyan tint (contrast 17.3:1 on DeepNavy — well past AAA's 7:1)
+    val TextOnBrass = Color(0xFF0A1219)  // = DeepNavy reused as dark-on-brass text (contrast 8.4:1 on ClassicBrass — past AAA's 4.5:1)
 
-    /** Secondary/muted text — same derivation technique as Batch36 (alpha
-     *  of [TextPrimary], not a new hue). 68% alpha keeps contrast on
-     *  [DeepNavy] at ~7.9:1, still comfortably above AA for small text. */
-    val TextSecondary = TextPrimary.copy(alpha = 0.68f)
+    /** Secondary/muted text — same derivation technique as Batch36/81 (alpha
+     *  of [TextPrimary], not a new hue). 70% alpha keeps contrast on
+     *  [DeepNavy] at ~8.8:1, comfortably above AA for small text. */
+    val TextSecondary = TextPrimary.copy(alpha = 0.70f)
 
     /** CTA pressed-state fill — [ClassicBrass] darkened (same hue/saturation,
-     *  lightness 60%→40%), identical hue-preserving technique Batch36 used
-     *  and every other theme's "OnLight" variant already uses. */
-    val ClassicBrassPressed = Color(0xFFA1782B)
+     *  lightness 56%→36%), identical hue-preserving technique every prior
+     *  batch used for pressed/on-light variants. */
+    val ClassicBrassPressed = Color(0xFFB06107)
 
     // ============ Shadow pair — the neumorphism dual-shadow recipe ============
-    // Same technique as Batch36 (pure black/white blended into the surface
-    // at low alpha, light source top-left / falloff bottom-right) — only
-    // the alpha softened slightly for a calmer, less harsh depth cue now
-    // that the base hue itself carries a bit more richness than before.
-    val ShadowDark = Color(0x73000000)   // bottom-right, alpha ≈0.45 (was 0.55)
-    val ShadowLight = Color(0x0FFFFFFF)  // top-left, alpha ≈0.06 (was 0.045)
+    // Same technique as Batch36/81 (pure black/white blended into the
+    // surface at low alpha, light source top-left / falloff bottom-right)
+    // — alpha intensified this batch (opposite of Batch81's softening) for
+    // a harder, more film-noir depth cue; light half re-tinted cyan (was
+    // pure white) to match [BorderFade]'s new cool rim-light.
+    val ShadowDark = Color(0x99080808)   // bottom-right, alpha ≈0.60 (was 0.45 Batch81, 0.55 Batch36)
+    val ShadowLight = Color(0x1A85D9E0)  // top-left, alpha ≈0.10, cyan-tinted (was warm white 0.06)
 
-    /** NEW (Batch81) — edge-light for the fading border added to every
-     *  panel this batch (see NeumorphSurface.kt). Warm off-white rather
-     *  than pure white, so the "light catching the top-left edge" reads
-     *  as coming from the same warm light implied by [ClassicBrass],
-     *  instead of a cold, unrelated rim-light hue. Paired with
-     *  `Color.Transparent` at the panel's bottom-right in a
-     *  `Brush.linearGradient` — this token is only ever the gradient's
-     *  START color, never used as a flat fill. */
-    val BorderFade = Color(0x33FDF6E8)   // alpha ≈0.20, warm off-white
+    /** Batch81 introduced this token (fading edge-light border, see
+     *  NeumorphSurface.kt); Batch85 re-hues it from warm off-white to a
+     *  saturated cyan (H185° S85% L58%) — the cool half of Blade Runner's
+     *  warm-key/cool-rim lighting contrast against [ClassicBrass]'s neon
+     *  amber. Paired with `Color.Transparent` at the panel's bottom-right
+     *  in a `Brush.linearGradient` — this token is only ever the
+     *  gradient's START color, never a flat fill. */
+    val BorderFade = Color(0x4C39E0EF)   // alpha ≈0.30, neon cyan (was warm off-white 0.20)
 
     // ============ Light-mode counterpart ============
-    // Same hue-preserving derivation technique as Batch36 (same hue as the
-    // dark-mode token, lightness pushed up in HLS space) — only the
-    // resulting numbers moved along with the dark-mode refresh above.
-    val LightBg = Color(0xFFF2F4FA)          // DeepNavy hue, HLS lightness → 0.965
-    val LightCard = Color(0xFFDDE1EE)        // NavyCard hue, HLS lightness → 0.90
-    val BrassOnLight = Color(0xFFB58730)     // ClassicBrass hue, HLS lightness → 0.45 (contrast 5.4:1 vs TextOnBrass, passes AA)
-    val TextPrimaryOnLight = DeepNavy         // reuses the dark-navy hex as dark-on-light text (contrast 16.0:1)
-    val TextSecondaryOnLight = DeepNavy.copy(alpha = 0.64f)
+    // Same hue-preserving derivation technique as every prior batch (same
+    // hue as the dark-mode token, lightness pushed up in HLS space) — only
+    // the resulting numbers moved along with the dark-mode reskin above.
+    // NOTE: Blade Runner is a night-native aesthetic; this light variant
+    // exists only to keep the app's existing dark/light toggle working
+    // (same reason Batch81 kept one too), not as a considered "daytime BR"
+    // art direction.
+    val LightBg = Color(0xFFF1F5F9)          // DeepNavy hue, HLS lightness → 0.96
+    val LightCard = Color(0xFFDCE6EF)        // NavyCard hue, HLS lightness → 0.90
+    val BrassOnLight = Color(0xFFCE7209)     // ClassicBrass hue, HLS lightness → 0.42 (contrast 5.4:1 vs TextOnBrass, passes AA)
+    val TextPrimaryOnLight = DeepNavy         // reuses the dark-navy hex as dark-on-light text (contrast 17.2:1)
+    val TextSecondaryOnLight = DeepNavy.copy(alpha = 0.64f) // contrast ≈5.5:1, passes AA
 
-    // Light-mode shadow pair — same standard soft-UI-on-light-bg formula
-    // as Batch36, alpha nudged slightly softer to match the calmer dark-mode
-    // shadow pair above. NOTE (pre-existing, not introduced this batch):
-    // NeumorphSurface's own fillColor/pressedFillColor params still default
-    // to the dark-mode tokens only — these OnLight tokens are wired into
-    // AmberReserveLight's ColorScheme (Theme.kt) but not yet read by
-    // NeumorphSurface itself, so light-mode Neumorph panels are a known,
-    // untouched gap (out of scope for this batch — ZERO-REFACTOR).
-    val ShadowDarkOnLight = Color(0x21000000)   // alpha ≈0.13 (was 0.15)
-    val ShadowLightOnLight = Color(0xE6FFFFFF)  // alpha ≈0.90 (unchanged)
+    // Light-mode shadow pair — same standard soft-UI-on-light-bg formula as
+    // every prior batch, alpha nudged up slightly to echo the dark-mode
+    // pair's harder falloff; light half cyan-tinted for the same rim-light
+    // consistency as ShadowLight/BorderFade above. NOTE (pre-existing, not
+    // introduced this batch): NeumorphSurface's own fillColor/
+    // pressedFillColor params still default to the dark-mode tokens only —
+    // these OnLight tokens are wired into AmberReserveLight's ColorScheme
+    // (Theme.kt) but not yet read by NeumorphSurface itself, so light-mode
+    // Neumorph panels are a known, untouched gap (out of scope for this
+    // batch — ZERO-REFACTOR, same gap Batch81 already flagged).
+    val ShadowDarkOnLight = Color(0x26241924)   // alpha ≈0.15 (was 0.13 Batch81)
+    val ShadowLightOnLight = Color(0xE6F1F8F9)  // alpha ≈0.90, faint cyan tint (was pure white)
 
-    /** NEW (Batch81) — light-mode counterpart of [BorderFade], same
-     *  soft/dark-edge convention as [ShadowDarkOnLight]. Currently UNUSED
-     *  (same pre-existing gap noted above: NeumorphSurface doesn't yet
-     *  branch on light/dark), included only so the token exists ready for
-     *  whenever that gap is closed — not wired to anything this batch. */
-    val BorderFadeOnLight = Color(0x2E000000)   // alpha ≈0.18, soft dark edge
+    /** Batch81 introduced this token (light-mode counterpart of
+     *  [BorderFade]); Batch85 re-hues it to a dark cyan edge, matching the
+     *  dark-mode token's new hue family. Currently UNUSED (same
+     *  pre-existing gap noted above: NeumorphSurface doesn't yet branch on
+     *  light/dark), included only so the token exists ready for whenever
+     *  that gap is closed — not wired to anything this batch. */
+    val BorderFadeOnLight = Color(0x38144D52)   // alpha ≈0.22, dark cyan edge (was neutral dark 0.18)
 }
