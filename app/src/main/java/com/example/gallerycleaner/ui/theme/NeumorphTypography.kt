@@ -33,8 +33,41 @@ import androidx.compose.ui.unit.sp
  * That is a textbook soft-UI typography rule, not a freehand aesthetic
  * pick, and it is applied uniformly (same +1 step, every role) rather
  * than picked per-value.
+ *
+ * **Batch83 addition — 4 previously-missing roles**: investigated first
+ * (grep every `MaterialTheme.typography.*` call site project-wide, same
+ * "read before touching" discipline as every prior audit item) and found
+ * `displayLarge`/`headlineSmall`/`labelMedium`/`labelSmall` ARE actually
+ * used (`OnboardingScreen.kt`'s emoji + page title, `MainActivity.kt`'s
+ * lock-screen title, `HomeScreenSections.kt`/`SettingsScreen.kt`/
+ * `TrashScreen.kt`/`HomeScreenFolderRow.kt`'s small labels/badges) but
+ * were undefined in BOTH this file and [GalleryTypography] — meaning those
+ * specific `Text()` calls silently fell through to Compose Material3's own
+ * hardcoded, un-themed default `Typography()` (not Signature's look, not
+ * Amber Reserve's — literally neither custom type system this project
+ * has), the one remaining "not murni" gap Batch80 didn't know to close.
+ * Sizes/letter-spacing below are Material3's own official default values
+ * for these 4 roles (the true pre-existing baseline these calls were
+ * already rendering at — 0 layout risk, same as the "sizes unchanged"
+ * rule above), fontFamily set to match the rest of this file, and weight
+ * bumped the same mechanical +1 step. [GalleryTypography] (Signature/
+ * Indigo Noir) has the identical gap for these same 4 roles — untouched
+ * here, out of scope for an Amber-Reserve-only "Neumorphism murni" batch,
+ * flagged in PROJECT_STATE.md's Pending Queue.
  */
 val NeumorphTypography = Typography(
+    displayLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Medium, // M3 default: Normal
+        fontSize = 57.sp,
+        letterSpacing = (-0.25).sp
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Medium, // M3 default: Normal
+        fontSize = 24.sp,
+        letterSpacing = 0.sp
+    ),
     headlineMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Bold, // GalleryTypography: SemiBold
@@ -76,5 +109,17 @@ val NeumorphTypography = Typography(
         fontWeight = FontWeight.Bold, // GalleryTypography: SemiBold
         fontSize = 12.sp,
         letterSpacing = 0.1.em
+    ),
+    labelMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold, // M3 default: Medium
+        fontSize = 12.sp,
+        letterSpacing = 0.5.sp
+    ),
+    labelSmall = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold, // M3 default: Medium
+        fontSize = 11.sp,
+        letterSpacing = 0.5.sp
     )
 )

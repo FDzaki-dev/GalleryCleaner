@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -19,6 +18,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.gallerycleaner.ui.theme.Neumorph
+import com.example.gallerycleaner.ui.theme.NeumorphShape
 
 /**
  * Core building block for the Amber Reserve Neumorphism (Soft UI) material
@@ -29,17 +29,18 @@ import com.example.gallerycleaner.ui.theme.Neumorph
  * from the opposite bottom-right corner — on a FLAT, monochromatic surface.
  * Through Batch80 that surface deliberately had NO border and NO gradient.
  * Batch81 adds ONE exception, by explicit user request ("tambahkan garis
- * Border yang fade out ke arah kanan bawah pada semua panel"): a 1dp
- * border whose gradient FADES from a subtle top-left highlight to fully
+ * Border yang fade out ke arah kanan bawah pada semua panel"): a border
+ * whose gradient FADES from a subtle top-left highlight to fully
  * transparent at the bottom-right — see "Fading edge-light border (Batch81)"
- * below. Everything else about the recipe (flat solid fill, no bevel, no
- * gradient FILL) is unchanged:
+ * below. Batch83 (explicit user request, "pertebal garis border") thickens
+ * that border from 1dp to 2dp — everything else about the recipe (flat
+ * solid fill, no bevel, no gradient FILL) is unchanged:
  *
  * |                                  | shadow(s)              | fill               | border/bevel |
  * |----------------------------------|-------------------------|---------------------|--------------|
  * | `glassPanel` (Signature/Indigo)  | 1, ambient               | translucent gradient | gradient edge |
  * | `skeuoPanel` (old Amber Reserve) | 1, ambient + specular    | gradient             | gradient bevel |
- * | `NeumorphSurface` (this)         | 2, independently offset  | flat solid           | 1dp fading gradient edge (Batch81) |
+ * | `NeumorphSurface` (this)         | 2, independently offset  | flat solid           | 2dp fading gradient edge (Batch81, thickened Batch83) |
  *
  * **Why this is a `@Composable` and not a `Modifier.neumorphPanel()`
  * extension** like `glassPanel`/`skeuoPanel`: `Modifier.shadow()` (the
@@ -117,14 +118,23 @@ import com.example.gallerycleaner.ui.theme.Neumorph
  * Same border for `pressed` and non-`pressed` states (the existing pressed
  * behavior only ever swapped fill/shadow, never introduced a border, so
  * there's no prior pressed-specific border behavior to preserve or branch
- * on). Width is a fixed `1.dp` — not exposed as a caller parameter, since
- * no call site needs a different value yet and every panel in the app
- * should read as one consistent material.
+ * on). Width is a fixed `2.dp` (Batch83, was `1.dp` at Batch81 introduction)
+ * — not exposed as a caller parameter, since no call site needs a
+ * different value yet and every panel in the app should read as one
+ * consistent material.
+ *
+ * **Shape (Batch83)**: the `shape` default below now reads
+ * [com.example.gallerycleaner.ui.theme.NeumorphShape.Card] instead of a
+ * bare `RoundedCornerShape(20.dp)` literal — same 24dp-vs-20dp bump and
+ * "murni, theme-owned source" rationale documented in `NeumorphShape.kt`,
+ * which also covers why [com.example.gallerycleaner.ui.theme.GalleryShapes]
+ * (`Shape.kt`) was investigated and found NOT to be this default's prior
+ * baseline (it's unwired app-wide, not just for this composable).
  */
 @Composable
 fun NeumorphSurface(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(20.dp),
+    shape: Shape = NeumorphShape.Card, // Batch83: was bare RoundedCornerShape(20.dp) — see NeumorphShape.kt
     pressed: Boolean = false,
     fillColor: Color = Neumorph.NavyCard,
     pressedFillColor: Color = Neumorph.DeepNavy,
@@ -234,7 +244,7 @@ fun NeumorphSurface(
             Modifier.padding(start = stackInset, top = stackInset)
                 .background(color = if (pressed) pressedFillColor else stackFrontColor, shape = shape)
                 .border(
-                    width = 1.dp,
+                    width = 2.dp, // Batch83: thickened from 1dp (Batch81) per explicit user request
                     brush = Brush.linearGradient(listOf(Neumorph.BorderFade, Color.Transparent)),
                     shape = shape
                 )
