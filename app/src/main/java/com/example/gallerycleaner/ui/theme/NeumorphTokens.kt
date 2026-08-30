@@ -84,6 +84,12 @@ import androidx.compose.ui.graphics.Color
  * only touches background/structural/accent/text/border, never Keep/Delete.
  * All values re-verified against WCAG below (contrast ratios computed the
  * same way every prior palette batch documented them — see per-line notes).
+ *
+ * **Batch87 — stacked-panel magenta rehue**: adds [StackFill]/
+ * [StackFillPressed], dedicated magenta counterparts of [NavyCard]/
+ * [DeepNavy] used only as `NeumorphSurface`'s new stack-fill DEFAULTS —
+ * see those tokens' own doc comment below for the full rationale (why
+ * dedicated tokens instead of re-huing [NavyCard]/[DeepNavy] directly).
  */
 object Neumorph {
     // ============ Batch85 "Blade Runner" palette — same roles as Batch36/81 ============
@@ -156,4 +162,30 @@ object Neumorph {
      *  light/dark), included only so the token exists ready for whenever
      *  that gap is closed — not wired to anything this batch. */
     val BorderFadeOnLight = Color(0x38144D52)   // alpha ≈0.22, dark cyan edge (was neutral dark 0.18)
+
+    // ============ Batch87 — stacked-panel magenta rehue ============
+    /** User: "3-dense layer stacked ganti jadi warna magenta ala Blade
+     *  Runner, tapi jangan terlalu kontras/mencolok". These are dedicated
+     *  tokens for `NeumorphSurface`'s stack-fill default — deliberately
+     *  NOT a hue edit to [NavyCard]/[DeepNavy] themselves, since those two
+     *  are also read directly by `Theme.kt` (page `background`/`surface`/
+     *  `outline`) and by `NeumorphSurface`'s stack-derivation math for
+     *  ANY caller that passes a different `fillColor` (e.g.
+     *  `GlassButton.kt`'s CTA passes [ClassicBrass] explicitly) — editing
+     *  the shared tokens would've re-hued the page background and bled
+     *  into the brass CTA button's own stack shadow, neither of which the
+     *  user asked for. Wiring only touches `NeumorphSurface.kt`'s two
+     *  DEFAULT parameter values, so callers that already override
+     *  fillColor/pressedFillColor (`GlassButton.kt`) are unaffected, and
+     *  `Theme.kt`'s direct [NavyCard]/[DeepNavy] reads are unaffected too.
+     *  Derivation: same hue-preserving-lightness technique as every prior
+     *  reskin batch (verified in Python) — [NavyCard]'s exact S/L
+     *  (H211° S36% L17%) and [DeepNavy]'s exact S/L (H208° S43% L7%)
+     *  carried over unchanged, only hue rotated to H320° (a muted
+     *  plum-magenta, not a saturated neon pink) — same saturation/
+     *  lightness budget as before is exactly what keeps this "tidak
+     *  terlalu kontras/mencolok" per the request, since nothing about how
+     *  LOUD the color reads (S/L) changed, only its hue family. */
+    val StackFill = Color(0xFF3B1C31)         // H320° S36% L17% — magenta counterpart of NavyCard
+    val StackFillPressed = Color(0xFF190A14)  // H320° S43% L7% — magenta counterpart of DeepNavy
 }

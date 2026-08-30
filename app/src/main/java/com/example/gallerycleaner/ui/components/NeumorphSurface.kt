@@ -1,7 +1,6 @@
 package com.example.gallerycleaner.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -10,10 +9,15 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.addOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -34,15 +38,16 @@ import com.example.gallerycleaner.ui.theme.NeumorphShape
  * transparent at the bottom-right — see "Fading edge-light border (Batch81)"
  * below. Batch83 thickened it 1dp→2dp ("pertebal garis border"); Batch86
  * thickens it again, decisively, 2dp→6dp — explicit user request, verbatim
- * "garis Border nya wajib 'ultra Bold'. gak mau tahu!!" — everything else
- * about the recipe (flat solid fill, no bevel, no gradient FILL) stays
- * unchanged:
+ * "garis Border nya wajib 'ultra Bold'. gak mau tahu!!"; Batch87 fixes a bug
+ * where the bottom-right corner wasn't actually fading (see "Fading
+ * edge-light border" below for the fix) — width/hue/recipe unchanged, only
+ * HOW the gradient's endpoints get resolved:
  *
  * |                                  | shadow(s)              | fill               | border/bevel |
  * |----------------------------------|-------------------------|---------------------|--------------|
  * | `glassPanel` (Signature/Indigo)  | 1, ambient               | translucent gradient | gradient edge |
  * | `skeuoPanel` (old Amber Reserve) | 1, ambient + specular    | gradient             | gradient bevel |
- * | `NeumorphSurface` (this)         | 2, independently offset  | flat solid           | 6dp fading gradient edge (Batch81→83→86) |
+ * | `NeumorphSurface` (this)         | 2, independently offset  | flat solid           | 6dp fading gradient edge (Batch81→83→86→87) |
  *
  * **Why this is a `@Composable` and not a `Modifier.neumorphPanel()`
  * extension** like `glassPanel`/`skeuoPanel`: `Modifier.shadow()` (the
@@ -102,32 +107,48 @@ import com.example.gallerycleaner.ui.theme.NeumorphShape
  * collapse to the plain `pressedFillColor` (not the extrapolated stack
  * tones) — the steps become invisible (flush look preserved) without
  * changing which child drives sizing, so pressing never jitters the
- * layout.
+ * layout. **Batch87**: this composable's own `fillColor`/`pressedFillColor`
+ * DEFAULTS moved from [Neumorph.NavyCard]/[Neumorph.DeepNavy] to the new
+ * [Neumorph.StackFill]/[Neumorph.StackFillPressed] (muted magenta, same
+ * S/L budget as before — see those tokens' doc comment in
+ * `NeumorphTokens.kt` for the full rationale) per explicit user request,
+ * "3-dense layer stacked ganti jadi warna magenta ala Blade Runner, tapi
+ * jangan terlalu kontras/mencolok". Only the DEFAULTS changed — callers
+ * that already pass their own `fillColor` (`GlassButton.kt`'s brass CTA)
+ * are untouched, still deriving their stack from whatever color they pass.
  *
- * **Fading edge-light border (Batch81)**: applied via `Modifier.border()`
- * with `Brush.linearGradient(listOf(Neumorph.BorderFade, Color.Transparent))`
- * — deliberately NOT passing explicit `start`/`end` offsets, since Compose
- * resolves the default (`Offset.Zero` → `Offset.Infinite`) to the actual
- * drawn bounds at paint time, which already produces exactly "visible at
- * top-left, fades to nothing at bottom-right" with 0 size/measurement math
- * needed here. Direction matches this file's existing light-source
- * convention (the light shadow is top-left, dark shadow bottom-right,
- * above) instead of introducing a second, unrelated direction. Applied
- * ONLY to Layer 1 (the front content box), not the back/mid stack layers —
- * that front layer is the one surface users actually perceive as "the
- * panel's edge"; bordering all 3 stacked layers as well would visually
- * compete with the fan-out steps instead of reading as one clean edge.
- * Same border for `pressed` and non-`pressed` states (the existing pressed
- * behavior only ever swapped fill/shadow, never introduced a border, so
- * there's no prior pressed-specific border behavior to preserve or branch
- * on). Width is a fixed `6.dp` (Batch86 — was `2.dp` at Batch83, `1.dp` at
- * Batch81 introduction; Batch86's jump is deliberately large, not another
- * incremental step, per the user's explicit "ultra bold" wording) — not
- * exposed as a caller parameter, since no call site needs a different
- * value yet and every panel in the app should read as one consistent
- * material. [Neumorph.BorderFade]'s alpha was bumped alongside this
- * (0.30→0.50, see `NeumorphTokens.kt`) so the wider stroke reads as a
- * crisp bold edge rather than a wide-but-diluted smear.
+ * **Fading edge-light border (Batch81, fixed Batch87)**: introduced via
+ * `Modifier.border()` with `Brush.linearGradient(listOf(Neumorph.BorderFade,
+ * Color.Transparent))`, relying on Compose's default `Offset.Zero`→
+ * `Offset.Infinite` resolving to the drawn bounds at paint time. Batch87
+ * user report: "border tebal sudah benar, tapi ujung kanan bawah malah
+ * tidak 'fade out'" — in practice that implicit resolution did not
+ * reliably land on this panel's actual full measured size (border()'s
+ * internal draw path picks its own resolution size per shape/width
+ * combination, not guaranteed to be the outer bounds), so the gradient
+ * could reach its transparent stop well before the true bottom-right
+ * corner, reading as "not fading" there. Fix: `.border()` replaced with a
+ * hand-drawn stroke via `Modifier.drawWithCache` — `size` there is this
+ * panel's real measured `Size` every frame, so `start = Offset.Zero` /
+ * `end = Offset(size.width, size.height)` are the panel's ACTUAL corners,
+ * no implicit resolution anywhere: top-left is always
+ * [Neumorph.BorderFade] at full strength, bottom-right is always exactly
+ * 0 alpha. To keep the stroke fully INSIDE the panel bounds (the same
+ * visual contract `.border()` had — no bleed onto Layer 2's stack step
+ * behind it), the stroke is drawn at DOUBLE the target width and clipped
+ * to the shape's own outline (`Path().apply { addOutline(outline) }`) so
+ * only the inner half survives — lands on the identical visible `6.dp`
+ * (Batch86) as before. Direction/placement otherwise unchanged from
+ * Batch81: matches this file's light-source convention (top-left
+ * highlight, bottom-right falloff), applied ONLY to Layer 1 (the front
+ * content box, the surface users perceive as "the panel's edge") not the
+ * back/mid stack layers, same for `pressed`/non-`pressed`. Width stays the
+ * fixed `6.dp` from Batch86 ("ultra bold", was `2.dp` Batch83/`1.dp`
+ * Batch81 introduction) — not exposed as a caller parameter, same
+ * reasoning as before (every panel should read as one consistent
+ * material). [Neumorph.BorderFade]'s hue/alpha (Batch86: 0.50) are
+ * unchanged by this fix — this was a geometry/resolution bug, not a color
+ * one.
  *
  * **Shape (Batch84)**: the `shape` default below now reads
  * [com.example.gallerycleaner.ui.theme.NeumorphShape.Card] instead of a
@@ -142,8 +163,8 @@ fun NeumorphSurface(
     modifier: Modifier = Modifier,
     shape: Shape = NeumorphShape.Card, // Batch84: was bare RoundedCornerShape(20.dp) — see NeumorphShape.kt
     pressed: Boolean = false,
-    fillColor: Color = Neumorph.NavyCard,
-    pressedFillColor: Color = Neumorph.DeepNavy,
+    fillColor: Color = Neumorph.StackFill, // Batch87: was Neumorph.NavyCard — see NeumorphTokens.kt "Batch87" note
+    pressedFillColor: Color = Neumorph.StackFillPressed, // Batch87: was Neumorph.DeepNavy
     shadowElevation: Dp = 10.dp,
     shadowOffset: Dp = 6.dp,
     stackOffset: Dp = 8.dp,
@@ -249,11 +270,48 @@ fun NeumorphSurface(
         Box(
             Modifier.padding(start = stackInset, top = stackInset)
                 .background(color = if (pressed) pressedFillColor else stackFrontColor, shape = shape)
-                .border(
-                    width = 6.dp, // Batch86: "ultra bold" per explicit user request — was 2dp (Batch83), 1dp (Batch81)
-                    brush = Brush.linearGradient(listOf(Neumorph.BorderFade, Color.Transparent)),
-                    shape = shape
-                )
+                // Batch87 fix — user-reported bug: "border tebal sudah
+                // benar, tapi ujung kanan bawah malah tidak 'fade out'".
+                // Root cause: plain `.border(width, brush, shape)` resolves
+                // the brush's Offset.Infinite end-point using whatever
+                // internal size Compose's border draw path happens to use
+                // for THAT shape/width combo (varies by shape fast-path) —
+                // not reliably the panel's full measured bounds, so the
+                // gradient could evaluate against a much smaller area and
+                // never actually reach its "fully transparent" stop by the
+                // true bottom-right corner. Fix: draw the stroke by hand
+                // via `drawWithCache`, which hands us the panel's real
+                // `size` every frame — the gradient's `start`/`end` are set
+                // explicitly to `Offset.Zero`/`Offset(size.width,
+                // size.height)` (the ACTUAL corners), so top-left is
+                // guaranteed [Neumorph.BorderFade] and bottom-right is
+                // guaranteed fully transparent, no implicit resolution
+                // involved anywhere. To keep the border fully INSIDE the
+                // panel bounds (same visual contract `.border()` had, no
+                // bleed into Layer 2's stack step behind it) the stroke is
+                // drawn at 2× width then clipped to the shape's own
+                // outline — only the inner half survives, landing on
+                // exactly the same 6dp (Batch86) visible width as before.
+                .drawWithCache {
+                    val strokePx = 6.dp.toPx()
+                    val outline = shape.createOutline(size, layoutDirection, this)
+                    val clip = Path().apply { addOutline(outline) }
+                    val fadeBrush = Brush.linearGradient(
+                        colors = listOf(Neumorph.BorderFade, Color.Transparent),
+                        start = Offset.Zero,
+                        end = Offset(size.width, size.height)
+                    )
+                    onDrawWithContent {
+                        drawContent()
+                        clipPath(clip) {
+                            drawOutline(
+                                outline = outline,
+                                brush = fadeBrush,
+                                style = Stroke(width = strokePx * 2)
+                            )
+                        }
+                    }
+                }
         ) {
             Box(modifier = Modifier.padding(contentPadding), content = content)
         }
