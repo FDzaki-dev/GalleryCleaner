@@ -32,15 +32,17 @@ import com.example.gallerycleaner.ui.theme.NeumorphShape
  * Border yang fade out ke arah kanan bawah pada semua panel"): a border
  * whose gradient FADES from a subtle top-left highlight to fully
  * transparent at the bottom-right — see "Fading edge-light border (Batch81)"
- * below. Batch83 (explicit user request, "pertebal garis border") thickens
- * that border from 1dp to 2dp — everything else about the recipe (flat
- * solid fill, no bevel, no gradient FILL) is unchanged:
+ * below. Batch83 thickened it 1dp→2dp ("pertebal garis border"); Batch86
+ * thickens it again, decisively, 2dp→6dp — explicit user request, verbatim
+ * "garis Border nya wajib 'ultra Bold'. gak mau tahu!!" — everything else
+ * about the recipe (flat solid fill, no bevel, no gradient FILL) stays
+ * unchanged:
  *
  * |                                  | shadow(s)              | fill               | border/bevel |
  * |----------------------------------|-------------------------|---------------------|--------------|
  * | `glassPanel` (Signature/Indigo)  | 1, ambient               | translucent gradient | gradient edge |
  * | `skeuoPanel` (old Amber Reserve) | 1, ambient + specular    | gradient             | gradient bevel |
- * | `NeumorphSurface` (this)         | 2, independently offset  | flat solid           | 2dp fading gradient edge (Batch81, thickened Batch83) |
+ * | `NeumorphSurface` (this)         | 2, independently offset  | flat solid           | 6dp fading gradient edge (Batch81→83→86) |
  *
  * **Why this is a `@Composable` and not a `Modifier.neumorphPanel()`
  * extension** like `glassPanel`/`skeuoPanel`: `Modifier.shadow()` (the
@@ -118,12 +120,16 @@ import com.example.gallerycleaner.ui.theme.NeumorphShape
  * Same border for `pressed` and non-`pressed` states (the existing pressed
  * behavior only ever swapped fill/shadow, never introduced a border, so
  * there's no prior pressed-specific border behavior to preserve or branch
- * on). Width is a fixed `2.dp` (Batch83, was `1.dp` at Batch81 introduction)
- * — not exposed as a caller parameter, since no call site needs a
- * different value yet and every panel in the app should read as one
- * consistent material.
+ * on). Width is a fixed `6.dp` (Batch86 — was `2.dp` at Batch83, `1.dp` at
+ * Batch81 introduction; Batch86's jump is deliberately large, not another
+ * incremental step, per the user's explicit "ultra bold" wording) — not
+ * exposed as a caller parameter, since no call site needs a different
+ * value yet and every panel in the app should read as one consistent
+ * material. [Neumorph.BorderFade]'s alpha was bumped alongside this
+ * (0.30→0.50, see `NeumorphTokens.kt`) so the wider stroke reads as a
+ * crisp bold edge rather than a wide-but-diluted smear.
  *
- * **Shape (Batch83)**: the `shape` default below now reads
+ * **Shape (Batch84)**: the `shape` default below now reads
  * [com.example.gallerycleaner.ui.theme.NeumorphShape.Card] instead of a
  * bare `RoundedCornerShape(20.dp)` literal — same 24dp-vs-20dp bump and
  * "murni, theme-owned source" rationale documented in `NeumorphShape.kt`,
@@ -134,7 +140,7 @@ import com.example.gallerycleaner.ui.theme.NeumorphShape
 @Composable
 fun NeumorphSurface(
     modifier: Modifier = Modifier,
-    shape: Shape = NeumorphShape.Card, // Batch83: was bare RoundedCornerShape(20.dp) — see NeumorphShape.kt
+    shape: Shape = NeumorphShape.Card, // Batch84: was bare RoundedCornerShape(20.dp) — see NeumorphShape.kt
     pressed: Boolean = false,
     fillColor: Color = Neumorph.NavyCard,
     pressedFillColor: Color = Neumorph.DeepNavy,
@@ -244,7 +250,7 @@ fun NeumorphSurface(
             Modifier.padding(start = stackInset, top = stackInset)
                 .background(color = if (pressed) pressedFillColor else stackFrontColor, shape = shape)
                 .border(
-                    width = 2.dp, // Batch83: thickened from 1dp (Batch81) per explicit user request
+                    width = 6.dp, // Batch86: "ultra bold" per explicit user request — was 2dp (Batch83), 1dp (Batch81)
                     brush = Brush.linearGradient(listOf(Neumorph.BorderFade, Color.Transparent)),
                     shape = shape
                 )

@@ -41,6 +41,42 @@ import androidx.compose.ui.graphics.Color
  *   (H185° S85% L58%) — the cool rim-light half of BR's signature
  *   warm-key/cool-rim contrast; [ShadowLight] gets the same cyan tint at a
  *   much lower alpha for the same reason.
+ *
+ * **Batch86 fix — stacked-card contrast + border boost**: user-reported
+ * bug, "efek stacked card nya terlalu nyaru sama background belakang".
+ * Root cause traced to `NeumorphSurface.kt`'s "Dense 3-layer stack" (3
+ * flat panels fanned toward the light source, see that file's own doc
+ * comment) — its back/mid layer colors are `lerp(fillColor=[NavyCard],
+ * pressedFillColor=[DeepNavy], 1.6f/0.8f)`, extrapolated PAST [DeepNavy]
+ * on the same line. [DeepNavy] is also the page/Scaffold background
+ * itself, so that extrapolation's headroom is "how much darker than the
+ * page background can we go" — Batch85 pushed both [DeepNavy] (L7%) and
+ * [NavyCard] (L13%) so close together (both near the bottom of the
+ * lightness range for the "near-black" Blade Runner mood) that the
+ * extrapolated stack layers landed only ~6-10 RGB units from the actual
+ * background, easily lost to a phone screen/JPEG's shadow crushing — the
+ * literal cause of "nyaru". [ShadowDark] had the same problem for a
+ * different reason: at H0/S0/L3%(≈8,8,8)/alpha 0.60 composited onto
+ * [DeepNavy], the blended result landed only 1-10 RGB units from
+ * [DeepNavy] itself. Fix (values only, same derivation techniques,
+ * verified in Python before committing — see below): [NavyCard] lightness
+ * bumped 13%→17% (widens the fillColor↔pressedFillColor line the stack
+ * extrapolates along, without changing [DeepNavy]/the page bg at all —
+ * the "near-black base" mood users see on first load is unchanged, only
+ * the ELEVATED-panel tone lightened enough to give the stack somewhere to
+ * separate to); [ShadowDark] pushed toward true black (H0 S0 L1%≈3,3,3)
+ * at higher alpha (0.60→0.82) so it no longer half-vanishes into
+ * [DeepNavy] when composited. Re-verified in Python: the back stack layer
+ * now sits ~11-20 RGB units from the page background (was ~7-12), and
+ * [ShadowDark] composited on [DeepNavy] now differs by ~6-18 RGB units
+ * (was ~1-10) — real, computed improvement, though final judgment is a
+ * real-device call this sandbox can't render-test.
+ * Second, unrelated user request same message: "garis Border nya wajib
+ * 'ultra Bold'" (border WIDTH lives in `NeumorphSurface.kt`, not this
+ * file — see that file's own Batch86 note) — [BorderFade]'s alpha is
+ * bumped 0.30→0.50 alongside the width increase there, same hue/direction
+ * unchanged, purely so the now much-thicker stroke reads as a crisp bold
+ * edge instead of a wide-but-diluted one.
  * Keep/Delete semantics (`OxbloodDelete`/`OxbloodDeleteOnLight` in
  * `Color.kt`, wired via `Theme.kt`'s `error`/`secondary`) are explicitly
  * OUT of scope here, same standing rule as every prior full-theme-rewrite
@@ -52,7 +88,7 @@ import androidx.compose.ui.graphics.Color
 object Neumorph {
     // ============ Batch85 "Blade Runner" palette — same roles as Batch36/81 ============
     val DeepNavy = Color(0xFF0A1219)     // H210° S42% L7% — near-black cool teal, same "base" role (name kept for stability, no longer literally "navy")
-    val NavyCard = Color(0xFF15212D)     // H210° S36% L13% — same hue family as DeepNavy, one step lighter
+    val NavyCard = Color(0xFF1C2B3B)     // H210° S36% L17% (Batch86: was L13%) — widens the fillColor↔pressedFillColor gap the 3-layer stack extrapolates along, see class doc "Batch86 fix"
     val ClassicBrass = Color(0xFFF69628) // H32° S92% L56% — saturated neon amber, same "accent" role (name kept, no longer a soft champagne)
 
     val TextPrimary = Color(0xFFF2F6F7)  // near-white, faint cyan tint (contrast 17.3:1 on DeepNavy — well past AAA's 7:1)
@@ -74,7 +110,7 @@ object Neumorph {
     // — alpha intensified this batch (opposite of Batch81's softening) for
     // a harder, more film-noir depth cue; light half re-tinted cyan (was
     // pure white) to match [BorderFade]'s new cool rim-light.
-    val ShadowDark = Color(0x99080808)   // bottom-right, alpha ≈0.60 (was 0.45 Batch81, 0.55 Batch36)
+    val ShadowDark = Color(0xD1030303)   // bottom-right, alpha ≈0.82, near-true-black (Batch86: was 0.60/RGB 8,8,8 — see class doc "Batch86 fix")
     val ShadowLight = Color(0x1A85D9E0)  // top-left, alpha ≈0.10, cyan-tinted (was warm white 0.06)
 
     /** Batch81 introduced this token (fading edge-light border, see
@@ -84,7 +120,7 @@ object Neumorph {
      *  amber. Paired with `Color.Transparent` at the panel's bottom-right
      *  in a `Brush.linearGradient` — this token is only ever the
      *  gradient's START color, never a flat fill. */
-    val BorderFade = Color(0x4C39E0EF)   // alpha ≈0.30, neon cyan (was warm off-white 0.20)
+    val BorderFade = Color(0x8039E0EF)   // alpha ≈0.50, neon cyan (Batch86: was 0.30 — pairs with the width bump in NeumorphSurface.kt, see that file)
 
     // ============ Light-mode counterpart ============
     // Same hue-preserving derivation technique as every prior batch (same
