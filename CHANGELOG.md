@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v86_Batch89 — 2026-08-31
+- **CI compile-fix lanjutan** (1 file): run berikutnya masih gagal — `drawOutline` tetap "Unresolved reference", termasuk di baris import-nya sendiri. Root cause: Batch88 taruh `drawOutline` di package yang salah (`androidx.compose.ui.graphics.drawscope`). Dikonfirmasi baca source resmi AndroidX: `drawOutline` sebenarnya ada di `androidx.compose.ui.graphics` (satu file sama dengan `addOutline`), bukan di `.drawscope` (itu punya `clipPath`, yang sudah benar dari Batch88). Fix: pindahkan import `drawOutline` ke package yang benar. 0 logic/visual berubah.
+- *(Catatan versi: `v86` estimasi berurutan dari `v85_Batch88` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+
 ## v85_Batch88 — 2026-08-31
 - **CI compile-fix** (1 file): build `run210` gagal di `:app:compileReleaseKotlin` — `NeumorphSurface.kt` pakai `clipPath`/`drawOutline` (bagian fix border-fade Batch87) tapi 2 import-nya kelewat ditambahkan. Fix: tambah `import androidx.compose.ui.graphics.drawscope.clipPath` + `...drawOutline`. 0 logic/visual berubah — border-fade tetap persis sama seperti yang dideskripsikan di Batch87 (6dp, `BorderFade`), ini murni resolusi compile error.
 - *(Catatan versi: `v85` estimasi berurutan dari `v84_Batch87` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
