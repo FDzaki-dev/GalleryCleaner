@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v95_Batch98 — 2026-09-10
+- **Fix rename-folder dialog hilang + ketikan ilang saat rotasi** (1 file): `HomeScreenFolderRow.kt`'s `GroupRow`'s `showRenameDialog` (trigger dialog) DAN `RenameFolderDialog`'s `text` (isi ketikan) sama-sama `remember{}` polos — rotasi layar bikin `showRenameDialog` reset `false` (dialog nutup sendiri di tengah orang ngetik nama folder baru) SEKALIGUS buang ketikannya, 0 peringatan. Sekarang keduanya `rememberSaveable` — fix lengkap end-to-end (dialog tetap kebuka + ketikan ke-ingat setelah rotasi), bukan cuma salah satu. Lanjutan investigasi mandiri Batch97 — cakupan penuh gap serupa (banyak dialog/toggle lain) sekarang ditracker bertahap di `PROJECT_STATE.md` ("UI STATE ROTASI-SURVIVAL SWEEP"), dikerjakan 1 site/batch bukan sekaligus. 0 perubahan happy-path.
+- *(Catatan versi: `v95` estimasi berurutan dari `v94_Batch97` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+
 ## v94_Batch97 — 2026-09-10
 - **Fix search state hilang saat rotasi layar** (1 file): `HomeScreen.kt`'s `isSearchActive`/`searchQuery` (search bar Home) pakai `remember{}` polos — `MainActivity`'s `<activity>` (`AndroidManifest.xml`) 0 punya `configChanges` override, jadi rotasi = Activity destroy+recreate normal, dan state itu ke-reset diam-diam (user lagi ngetik pencarian, rotate HP, ketikan hilang tanpa indikasi). Sekarang `rememberSaveable` — pola yang sudah dipakai `MainActivity.kt`'s `isUnlocked` (App Lock), sekarang konsisten juga di `HomeScreen.kt`. `debouncedQuery`/`searchFocusRequester` sengaja tidak diubah (self-heal lewat `LaunchedEffect` yang sudah ada). 0 perubahan happy-path. Ditemukan lewat investigasi mandiri, bukan dari `AUDIT_GAP.md`.
 - *(Catatan versi: `v94` estimasi berurutan dari `v93_Batch96` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*

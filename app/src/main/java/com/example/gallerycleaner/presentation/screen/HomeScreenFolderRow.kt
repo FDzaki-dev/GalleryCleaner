@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,7 +45,12 @@ internal fun GroupRow(
     onRename: ((String) -> Unit)?
 ) {
     var reviewed by remember(group.key) { mutableStateOf(0) }
-    var showRenameDialog by remember { mutableStateOf(false) }
+    // Batch98: rememberSaveable, same reasoning as Batch97's HomeScreen
+    // search fix — MainActivity has no configChanges override, so a
+    // rotation while this dialog is open used to just silently close it
+    // (Boolean resets to false on Activity recreate), discarding
+    // whatever rename the person was mid-typing with 0 warning.
+    var showRenameDialog by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(group.key, progressStore) {
         if (progressStore != null) {
@@ -186,7 +192,10 @@ internal fun RenameFolderDialog(
     onConfirm: (String) -> Unit,
     onResetToOriginal: () -> Unit
 ) {
-    var text by remember { mutableStateOf(currentName) }
+    // Paired with GroupRow's showRenameDialog fix above — without this one
+    // too, the dialog would survive rotation now but reopen with the
+    // *original* name instead of whatever the person had already typed.
+    var text by rememberSaveable { mutableStateOf(currentName) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Rename Folder") },
