@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -86,8 +87,9 @@ fun SwipeScreen(
     var restored by remember(group.key) { mutableStateOf(false) }
     var lastDecision by remember(group.key) { mutableStateOf<Pair<MediaItem, SwipeDecision>?>(null) }
     var buttonDecision by remember(group.key) { mutableStateOf<SwipeDecision?>(null) }
-    var showFullscreen by remember { mutableStateOf(false) }
-    var showInfo by remember { mutableStateOf(false) }
+    // Batch99: rememberSaveable, same reasoning as Batch97/98 — rotation survival sweep
+    var showFullscreen by rememberSaveable { mutableStateOf(false) }
+    var showInfo by rememberSaveable { mutableStateOf(false) }
     // Blocks a NEW decision from starting until the current one has fully
     // resolved (animation finished, index advanced, progress saved). Without
     // this, spamming Delete/Keep rapidly could change `buttonDecision`
@@ -223,7 +225,8 @@ fun SwipeScreen(
                     // sortOption be changed without leaving to Home first.
                     // Available in both view modes (Grid benefits from it
                     // just as much as Swipe does).
-                    var showSortMenu by remember { mutableStateOf(false) }
+                    // Batch99: rememberSaveable, same reasoning as Batch97/98 — rotation survival sweep
+                    var showSortMenu by rememberSaveable { mutableStateOf(false) }
                     Box {
                         IconButton(onClick = { showSortMenu = true }) {
                             Icon(Icons.Filled.Sort, contentDescription = "Sort: ${sortOption.label}")

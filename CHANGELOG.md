@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v96_Batch99 — 2026-09-10
+- **UI STATE ROTASI-SURVIVAL SWEEP, Stage 3** (1 file): `SwipeScreen.kt`'s `showFullscreen`/`showInfo`/`showSortMenu` (fullscreen viewer toggle, info dialog toggle, sort dropdown toggle) pakai `remember{}` polos — rotasi bikin ketiganya nutup sendiri diam-diam. Kelas risiko lebih ringan dari Stage 1/2 (0 ketikan yang bisa hilang, cuma overlay/menu ke-reset). Sekarang `rememberSaveable`, ketiganya. Lanjutan langsung tracker "UI STATE ROTASI-SURVIVAL SWEEP" di `PROJECT_STATE.md` — sisa kandidat aman (`HomeScreenSections.kt`/`TrashScreen.kt`) menyusul batch berikutnya. 0 perubahan happy-path.
+- *(Catatan versi: `v96` estimasi berurutan dari `v95_Batch98` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+
 ## v95_Batch98 — 2026-09-10
 - **Fix rename-folder dialog hilang + ketikan ilang saat rotasi** (1 file): `HomeScreenFolderRow.kt`'s `GroupRow`'s `showRenameDialog` (trigger dialog) DAN `RenameFolderDialog`'s `text` (isi ketikan) sama-sama `remember{}` polos — rotasi layar bikin `showRenameDialog` reset `false` (dialog nutup sendiri di tengah orang ngetik nama folder baru) SEKALIGUS buang ketikannya, 0 peringatan. Sekarang keduanya `rememberSaveable` — fix lengkap end-to-end (dialog tetap kebuka + ketikan ke-ingat setelah rotasi), bukan cuma salah satu. Lanjutan investigasi mandiri Batch97 — cakupan penuh gap serupa (banyak dialog/toggle lain) sekarang ditracker bertahap di `PROJECT_STATE.md` ("UI STATE ROTASI-SURVIVAL SWEEP"), dikerjakan 1 site/batch bukan sekaligus. 0 perubahan happy-path.
 - *(Catatan versi: `v95` estimasi berurutan dari `v94_Batch97` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
