@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v94_Batch97 — 2026-09-10
+- **Fix search state hilang saat rotasi layar** (1 file): `HomeScreen.kt`'s `isSearchActive`/`searchQuery` (search bar Home) pakai `remember{}` polos — `MainActivity`'s `<activity>` (`AndroidManifest.xml`) 0 punya `configChanges` override, jadi rotasi = Activity destroy+recreate normal, dan state itu ke-reset diam-diam (user lagi ngetik pencarian, rotate HP, ketikan hilang tanpa indikasi). Sekarang `rememberSaveable` — pola yang sudah dipakai `MainActivity.kt`'s `isUnlocked` (App Lock), sekarang konsisten juga di `HomeScreen.kt`. `debouncedQuery`/`searchFocusRequester` sengaja tidak diubah (self-heal lewat `LaunchedEffect` yang sudah ada). 0 perubahan happy-path. Ditemukan lewat investigasi mandiri, bukan dari `AUDIT_GAP.md`.
+- *(Catatan versi: `v94` estimasi berurutan dari `v93_Batch96` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+
 ## v93_Batch96 — 2026-09-10
 - **Fix permanent-delete legacy path (API<30)** (2 file): (1) `DeleteHelper.kt`'s `deleteDirectly` menangkap `RecoverableSecurityException` lewat blanket `catch (e: Exception)` — bikin recovery-dialog handler yang sudah ada di `MainActivity.kt` gak pernah ke-trigger (khusus API29, delete tanpa izin gagal diam-diam tanpa pernah nawarin dialog konfirmasi). Sekarang di-rethrow sebelum catch generik, konsisten pola `MoveHelper`/`ImageCompressor`. (2) `MainActivity.kt`'s `proceedWithPermanentDeletion` manggil `MediaStore.createDeleteRequest()`/`DeleteHelper.deleteDirectly()` langsung di Main thread (pelanggaran aturan project "no blocking Main") — sekarang `suspend`, kedua call dibungkus `Dispatchers.IO`. 0 perubahan UX di happy-path. Ditemukan lewat investigasi mandiri, bukan dari `AUDIT_GAP.md`.
 - *(Catatan versi: `v93` estimasi berurutan dari `v92_Batch95` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*

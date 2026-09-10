@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -77,8 +78,23 @@ fun HomeScreen(
     cleanupGoalBytes: Long = DEFAULT_CLEANUP_GOAL_BYTES,
     onCleanupGoalChange: (Long) -> Unit = {}
 ) {
-    var isSearchActive by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
+    // Batch97: was plain remember{} — MainActivity's <activity> has no
+    // configChanges override (AndroidManifest.xml, protected, out of
+    // scope), so a rotation destroys+recreates the Activity the normal
+    // Android way. Plain remember{} state doesn't survive that; a person
+    // mid-search who rotates their phone had isSearchActive/searchQuery
+    // silently reset to closed/empty, losing whatever they'd typed —
+    // exactly the class of bug project rule "UI State dan input wajib
+    // bertahan dari rotasi (rememberSaveable/ViewModel)" exists to
+    // prevent. Both are primitives (Boolean/String), so this is a direct
+    // drop-in swap — Bundle-saveable natively, no custom Saver needed, 0
+    // signature/behavior change on the happy path (no rotation).
+    // debouncedQuery deliberately NOT changed: LaunchedEffect(searchQuery)
+    // below re-fires on fresh composition after restore (its key,
+    // searchQuery, is now itself restored), so debouncedQuery self-heals
+    // via that existing effect within 150ms — no independent save needed.
+    var isSearchActive by rememberSaveable { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
     val searchFocusRequester = remember { FocusRequester() }
 
     // Reconstructed from `groups` rather than passed in separately — every
