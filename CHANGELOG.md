@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v92_Batch95 — 2026-09-10
+- **Fix orphan backup entry** (1 file): `BackupHelper.kt` (opt-in backup-before-delete) bikin row MediaStore/`File` tujuan dulu sebelum nyalin byte-nya — kalau copy gagal atau throw di tengah jalan (disk full, source URI dicabut), sisa row/file kosong-atau-terpotong itu nyangkut permanen di `Pictures|Movies/GalleryCleaner/Backup/` (folder user-visible), gak pernah ke-bersihin. Sekarang copy dibungkus try/catch di kedua jalur (API29+ MediaStore & legacy API24-28 File) — gagal = cleanup otomatis sebelum error dilempar ke pemanggil. 0 perubahan signature publik, 0 perubahan happy-path. Ditemukan lewat investigasi mandiri (file yang belum pernah diaudit batch manapun), bukan dari `AUDIT_GAP.md`.
+- *(Catatan versi: `v92` estimasi berurutan dari `v91_Batch94` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+
 ## v91_Batch94 — 2026-09-10
 - **Filmstrip delete-dimming, stage 2/2 FINAL** (2 file): sambungan langsung Batch93 — pola bug identik (item ahead-of-position via Grid bulk action gak ke-dim) ternyata juga berlaku buat bulk-delete, bukan cuma organize. `Filmstrip()` dapat param `deletedIds`, dim+checkmark overlay ke-trigger juga buat item itu. Sekarang KEDUA kategori (organize + delete) konsisten ke-dim — gap dimming filmstrip (terbuka sejak Batch17) selesai total.
 - *(Catatan versi: `v91` estimasi berurutan dari `v90_Batch93` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*

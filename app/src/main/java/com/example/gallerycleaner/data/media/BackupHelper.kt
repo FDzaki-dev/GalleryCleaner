@@ -77,7 +77,22 @@ object BackupHelper {
                 put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
             }
             val destUri = resolver.insert(collection, values) ?: return false
-            return copyBytes(resolver, item.uri, destUri)
+            // Bug fix (found during review, no prior tracker entry): copyBytes()
+            // can fail (openOutputStream returns null) or throw partway through
+            // (disk full, source revoked mid-copy) — either way the MediaStore
+            // row from insert() above already exists by then. Without this
+            // cleanup, every failed backup left a permanent 0-byte orphan file
+            // sitting in the user's visible Pictures|Movies/GalleryCleaner/Backup/
+            // folder forever, since nothing else in the app ever queries or
+            // removes stray entries there.
+            return try {
+                val success = copyBytes(resolver, item.uri, destUri)
+                if (!success) resolver.delete(destUri, null, null)
+                success
+            } catch (e: Exception) {
+                resolver.delete(destUri, null, null)
+                throw e
+            }
         } else {
             // API 24-28 fallback — RELATIVE_PATH needs API 29+, same
             // exception CrashLogger documents for its own legacy path.
@@ -86,10 +101,18 @@ object BackupHelper {
             val backupDir = java.io.File(publicDir, "$APP_FOLDER/$BACKUP_SUBDIR")
             if (!backupDir.exists()) backupDir.mkdirs()
             val destFile = java.io.File(backupDir, item.displayName)
-            resolver.openInputStream(item.uri)?.use { input ->
-                destFile.outputStream().use { output -> input.copyTo(output) }
-            } ?: return false
-            return true
+            // Same orphan class as the API29+ branch above, different shape: a
+            // copyTo() that throws mid-stream used to leave a truncated file
+            // sitting at destFile permanently (nothing ever swept this folder).
+            return try {
+                resolver.openInputStream(item.uri)?.use { input ->
+                    destFile.outputStream().use { output -> input.copyTo(output) }
+                } ?: return false
+                true
+            } catch (e: Exception) {
+                destFile.delete()
+                throw e
+            }
         }
     }
 
