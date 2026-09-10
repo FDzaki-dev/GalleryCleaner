@@ -23,6 +23,7 @@ import com.example.gallerycleaner.ui.components.glassPanel
 import com.example.gallerycleaner.ui.components.skeuoPanel
 import com.example.gallerycleaner.ui.theme.LocalMaterialStyle
 import com.example.gallerycleaner.ui.theme.MaterialStyle
+import com.example.gallerycleaner.ui.theme.NeumorphShape
 
 @Composable
 internal fun InfoBar(item: MediaItem, position: Int, total: Int) {
@@ -56,7 +57,7 @@ private fun InfoChip(text: String) {
     val style = LocalMaterialStyle.current
     if (style == MaterialStyle.NEUMORPH) {
         NeumorphSurface(
-            shape = RoundedCornerShape(6.dp),
+            shape = NeumorphShape.Chip,
             shadowElevation = 3.dp,
             shadowOffset = 2.dp,
             contentPadding = 0.dp

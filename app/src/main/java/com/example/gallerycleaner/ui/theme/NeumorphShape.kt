@@ -51,31 +51,28 @@ import androidx.compose.ui.unit.dp
  * (standard `CornerBasedShape` behavior), so [Chip] is safe even on the
  * smallest badge.
  *
- * **Wiring status (unchanged from Batch84)**: only [Card] is wired — it's
- * `NeumorphSurface`'s own `shape` default, which is what `GlassCard.kt`
- * renders (by far the most common Neumorph panel in the app: every
- * dashboard tile, list row, dialog) — so the cut-corner look already
- * reaches the app's main surfaces from this file alone. [Button] and
- * [Chip] are defined here with their new cut-corner values ready, but
- * `GlassButton.kt`'s NEUMORPH branch and `SwipeScreenControls.kt`'s
- * `InfoChip` still pass their OLD bare `RoundedCornerShape(16.dp)` /
- * `RoundedCornerShape(6.dp)` literals directly — meaning the CTA button
- * and small info chip will still render ROUNDED (not yet reskinned) until
- * those 2 call sites are wired to read from here. Deferred again this
- * batch to stay inside the 3-file-per-batch code cap (this file +
- * `NeumorphTokens.kt` + `NeumorphTypography.kt` already fill this batch's
- * 3 slots) — flagged with elevated priority in PROJECT_STATE.md's Pending
- * Queue this time, since it's now a visible style inconsistency (angular
- * cards next to rounded button/chip) rather than just an unfinished
- * "murni" cleanup.
+ * **Wiring status (Batch91 — all 3 roles now wired)**: [Card] was already
+ * `NeumorphSurface`'s own `shape` default since Batch84 (what `GlassCard.kt`
+ * renders — by far the most common Neumorph panel in the app: every
+ * dashboard tile, list row, dialog). As of Batch91, [Button] and [Chip] are
+ * wired too — `GlassButton.kt`'s NEUMORPH branch now passes `NeumorphShape.Button`
+ * (was bare `RoundedCornerShape(16.dp)`) and `SwipeScreenControls.kt`'s
+ * `InfoChip` NEUMORPH branch now passes `NeumorphShape.Chip` (was bare
+ * `RoundedCornerShape(6.dp)`) — both call sites read from this file instead
+ * of carrying their own stale rounded literal. The angular cut-corner look
+ * (Batch85's "Blade Runner" reskin) now reaches every Neumorph surface in
+ * the app — card, CTA button, and info chip alike; the inconsistency flagged
+ * in PROJECT_STATE.md's Pending Queue since Batch85 is closed. Only 2
+ * call sites existed for [Button]/[Chip] project-wide (grepped, confirmed
+ * before editing) — no other file references these tokens.
  */
 object NeumorphShape {
     /** Wired — see [com.example.gallerycleaner.ui.components.NeumorphSurface]'s `shape` default. */
     val Card: Shape = CutCornerShape(16.dp)
 
-    /** Defined, NOT yet wired — `GlassButton.kt` still passes `RoundedCornerShape(16.dp)` inline (still rounded). */
+    /** Wired (Batch91) — `GlassButton.kt`'s NEUMORPH branch passes this directly. */
     val Button: Shape = CutCornerShape(12.dp)
 
-    /** Defined, NOT yet wired — `SwipeScreenControls.kt`'s `InfoChip` still passes `RoundedCornerShape(6.dp)` inline (still rounded). */
+    /** Wired (Batch91) — `SwipeScreenControls.kt`'s `InfoChip` NEUMORPH branch passes this directly. */
     val Chip: Shape = CutCornerShape(6.dp)
 }

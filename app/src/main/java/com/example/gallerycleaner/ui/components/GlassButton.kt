@@ -22,6 +22,7 @@ import com.example.gallerycleaner.ui.theme.LocalMaterialStyle
 import com.example.gallerycleaner.ui.theme.MaterialStyle
 import com.example.gallerycleaner.ui.theme.MidnightGlass
 import com.example.gallerycleaner.ui.theme.Neumorph
+import com.example.gallerycleaner.ui.theme.NeumorphShape
 import com.example.gallerycleaner.ui.theme.SkeuoLite
 
 /**
@@ -125,7 +126,7 @@ fun GlassButton(
             // color" swap for the TEXT here, only the surface swaps.
             NeumorphSurface(
                 modifier = modifier.height(52.dp),
-                shape = RoundedCornerShape(16.dp),
+                shape = NeumorphShape.Button,
                 pressed = isPressed,
                 fillColor = Neumorph.ClassicBrass,
                 pressedFillColor = Neumorph.ClassicBrassPressed,

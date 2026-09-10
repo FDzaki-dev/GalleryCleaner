@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v88_Batch91 — 2026-09-10
+- **NeumorphShape.Button/Chip wiring** (3 file): `Card` sudah cut-corner (angular) sejak Batch85, tapi `GlassButton.kt`'s CTA dan `SwipeScreenControls.kt`'s `InfoChip` masih literal `RoundedCornerShape` lama (masih bulat) — inkonsistensi visual yang kelihatan. Fix: kedua file sekarang baca `NeumorphShape.Button`/`.Chip` alih-alih literal sendiri. `NeumorphShape.kt` doc comment disinkronkan (status "belum wired" → "wired"). Semua 3 role shape (Card/Button/Chip) sekarang konsisten cut-corner. 0 logic/behavior berubah, murni shape geometry.
+- *(Catatan versi: `v88` estimasi berurutan dari `v87_Batch90` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+
 ## v87_Batch90 — 2026-09-10
 - **Optimalisasi scrolling/recomposition Compose** (3 file): 2 grid multi-select (`TrashScreen.kt`, `SwipeScreenGrid.kt`) tiap cell-nya baca membership `selected` langsung dari `SnapshotStateList` — toggle 1 item bikin SEMUA cell yang lagi terlihat ikut recompose (known gotcha `SnapshotStateList`: baca structural meregistrasi di level objek, bukan per-elemen). Dibungkus `derivedStateOf` per-item biar cuma cell yang membership-nya benar berubah yang recompose. `MediaPreview.kt` (dipakai semua layar bergambar) — Coil `ImageRequest` sekarang di-`remember`, gak dibangun ulang tiap recomposition kalau `uri`/`decodeSize`/`lowMemory`-nya sama. 0 logic/visual berubah, murni performa.
 - *(Catatan versi: `v87` estimasi berurutan dari `v86_Batch89` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
