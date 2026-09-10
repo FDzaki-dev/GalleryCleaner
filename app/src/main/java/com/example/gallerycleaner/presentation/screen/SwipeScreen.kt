@@ -362,7 +362,8 @@ fun SwipeScreen(
                     onSelect = { tapped ->
                         index = tapped
                         scope.launch { progressStore.saveProgress(group.key, index) }
-                    }
+                    },
+                    organizedIds = pendingOrganizedIds
                 )
 
                 if (currentItem != null) {

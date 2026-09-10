@@ -3,6 +3,14 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v90_Batch93 — 2026-09-10
+- **Filmstrip organize-dimming** (2 file): item yang di-organize lewat bulk "Organize N selected" di Grid mode, kalau posisinya ADA DI DEPAN foto yang lagi di-review (`currentIndex`), tetap tampil normal (belum ke-dim) di strip thumbnail bawah swipe screen — padahal udah diputuskan. Root cause: `Filmstrip()` cuma dim berdasarkan posisi (`i < currentIndex`), gak pernah tau soal `pendingOrganizedIds`. Fix: param baru `organizedIds`, dim+checkmark overlay yang udah ada sekarang ke-trigger juga kalau item id ada di situ — reuse overlay 100%, 0 komponen baru. Gap terbuka sejak Batch17. Ditemukan juga (belum difix, di luar scope): bug identik berlaku buat item yang di-bulk-delete ahead-of-position — dicatat di `PROJECT_STATE.md` buat batch depan.
+- *(Catatan versi: `v90` estimasi berurutan dari `v89_Batch92` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+
+## v89_Batch92 — 2026-09-10
+- **Verifikasi Audit Gap Tracker** (docs-only, 0 file kode): investigasi ulang sisa temuan `AUDIT_GAP.md` sebelum lanjut kerja baru. P2 #13 (README diklaim divergen dari implementasi) ternyata sudah akurat duluan — audit basisnya sebelum video/biometric dikerjakan (P0 #1/#4, Batch39-40), README sekarang sudah bener. P2 #18 (exact-duplicate belum ada persistent hash cache) ternyata sudah closed sejak Batch45 sebagai bagian P1 #6 — 2 temuan audit asli yang mendeskripsikan gap sama, dikonfirmasi lewat kode (`HashCacheStore` sudah dipakai `findExactDuplicates()`). Kedua item ditandai selesai di tracker. Sisa gap asli (Gradle Wrapper — blocked no network; minify/largeHeap — butuh compiler/profiling asli buat validasi aman; test coverage lintas-versi — butuh device/emulator) diklarifikasi kenapa masing-masing genuinely tertunda, bukan diabaikan.
+- *(Catatan versi: `v89` estimasi berurutan dari `v88_Batch91` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+
 ## v88_Batch91 — 2026-09-10
 - **NeumorphShape.Button/Chip wiring** (3 file): `Card` sudah cut-corner (angular) sejak Batch85, tapi `GlassButton.kt`'s CTA dan `SwipeScreenControls.kt`'s `InfoChip` masih literal `RoundedCornerShape` lama (masih bulat) — inkonsistensi visual yang kelihatan. Fix: kedua file sekarang baca `NeumorphShape.Button`/`.Chip` alih-alih literal sendiri. `NeumorphShape.kt` doc comment disinkronkan (status "belum wired" → "wired"). Semua 3 role shape (Card/Button/Chip) sekarang konsisten cut-corner. 0 logic/behavior berubah, murni shape geometry.
 - *(Catatan versi: `v88` estimasi berurutan dari `v87_Batch90` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*

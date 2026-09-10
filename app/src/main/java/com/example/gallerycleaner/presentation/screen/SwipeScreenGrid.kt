@@ -172,7 +172,12 @@ internal fun GridSelectContent(
 }
 
 @Composable
-internal fun Filmstrip(items: List<MediaItem>, currentIndex: Int, onSelect: (Int) -> Unit) {
+internal fun Filmstrip(
+    items: List<MediaItem>,
+    currentIndex: Int,
+    onSelect: (Int) -> Unit,
+    organizedIds: Set<Long> = emptySet()
+) {
     val listState = rememberLazyListState()
     LaunchedEffect(currentIndex) {
         listState.animateScrollToItem(currentIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0)))
@@ -185,7 +190,16 @@ internal fun Filmstrip(items: List<MediaItem>, currentIndex: Int, onSelect: (Int
         items(items.size, key = { i -> items[i].id }) { i ->
             val item = items[i]
             val isCurrent = i == currentIndex
-            val isReviewed = i < currentIndex
+            // i < currentIndex alone only catches items passed sequentially
+            // in swipe order. An item organized via the Grid view's bulk
+            // "Organize N selected" can sit AHEAD of currentIndex (its
+            // position in `items` is untouched — SwipeScreen.kt keeps
+            // organized items in `sortedItems`, only skipping them via
+            // pendingOrganizedIds when picking currentItem), so it would
+            // otherwise still render as if undecided. `organizedIds` closes
+            // that gap without a new visual state — same dim+check overlay
+            // below, just a second reason to trigger it.
+            val isReviewed = i < currentIndex || item.id in organizedIds
             Box(
                 modifier = Modifier
                     .size(48.dp)
