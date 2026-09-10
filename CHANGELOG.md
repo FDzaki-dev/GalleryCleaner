@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v87_Batch90 — 2026-09-10
+- **Optimalisasi scrolling/recomposition Compose** (3 file): 2 grid multi-select (`TrashScreen.kt`, `SwipeScreenGrid.kt`) tiap cell-nya baca membership `selected` langsung dari `SnapshotStateList` — toggle 1 item bikin SEMUA cell yang lagi terlihat ikut recompose (known gotcha `SnapshotStateList`: baca structural meregistrasi di level objek, bukan per-elemen). Dibungkus `derivedStateOf` per-item biar cuma cell yang membership-nya benar berubah yang recompose. `MediaPreview.kt` (dipakai semua layar bergambar) — Coil `ImageRequest` sekarang di-`remember`, gak dibangun ulang tiap recomposition kalau `uri`/`decodeSize`/`lowMemory`-nya sama. 0 logic/visual berubah, murni performa.
+- *(Catatan versi: `v87` estimasi berurutan dari `v86_Batch89` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+
 ## v86_Batch89 — 2026-08-31
 - **CI compile-fix lanjutan** (1 file): run berikutnya masih gagal — `drawOutline` tetap "Unresolved reference", termasuk di baris import-nya sendiri. Root cause: Batch88 taruh `drawOutline` di package yang salah (`androidx.compose.ui.graphics.drawscope`). Dikonfirmasi baca source resmi AndroidX: `drawOutline` sebenarnya ada di `androidx.compose.ui.graphics` (satu file sama dengan `addOutline`), bukan di `.drawscope` (itu punya `clipPath`, yang sudah benar dari Batch88). Fix: pindahkan import `drawOutline` ke package yang benar. 0 logic/visual berubah.
 - *(Catatan versi: `v86` estimasi berurutan dari `v85_Batch88` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*

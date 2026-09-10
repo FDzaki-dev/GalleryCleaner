@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -58,20 +59,30 @@ fun MediaPreview(
     modifier: Modifier = Modifier,
     lowMemory: Boolean = false
 ) {
+    val context = LocalContext.current
+    // Previously built inline (no remember) — a fresh ImageRequest was
+    // allocated on every recomposition of this function even when the image
+    // itself hadn't changed, which is wasted allocation + Coil pipeline work
+    // in every scrolling grid/row/filmstrip that calls this. Keyed on the
+    // actual inputs, so it only rebuilds when the image, its decode size, or
+    // its memory mode genuinely change — same request, computed less often.
+    val request = remember(item.uri, decodeSize, lowMemory) {
+        ImageRequest.Builder(context)
+            .data(item.uri)
+            .size(decodeSize)
+            .apply {
+                if (lowMemory) {
+                    allowHardware(false)
+                    bitmapConfig(Bitmap.Config.RGB_565)
+                } else {
+                    crossfade(120)
+                }
+            }
+            .build()
+    }
     Box(modifier = modifier) {
         AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(item.uri)
-                .size(decodeSize)
-                .apply {
-                    if (lowMemory) {
-                        allowHardware(false)
-                        bitmapConfig(Bitmap.Config.RGB_565)
-                    } else {
-                        crossfade(120)
-                    }
-                }
-                .build(),
+            model = request,
             contentDescription = item.displayName,
             contentScale = contentScale,
             modifier = Modifier.matchParentSize()

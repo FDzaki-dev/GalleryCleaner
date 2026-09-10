@@ -89,7 +89,12 @@ internal fun GridSelectContent(
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
             items(visibleItems, key = { it.id }) { item ->
-                val isSelected = item.id in selected
+                // Same fix as TrashScreen.kt's grid: `selected` is a shared
+                // SnapshotStateList, so checking membership directly here would
+                // recompose every visible cell on any toggle, not just this one.
+                // derivedStateOf narrows the invalidation to just the cell whose
+                // membership actually changed.
+                val isSelected by remember(item.id) { derivedStateOf { item.id in selected } }
                 Box(
                     modifier = Modifier
                         .aspectRatio(1f)

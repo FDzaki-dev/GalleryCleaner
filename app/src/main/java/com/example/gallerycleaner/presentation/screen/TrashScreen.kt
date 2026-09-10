@@ -139,7 +139,16 @@ fun TrashScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(items, key = { it.id }) { item ->
-                    val isSelected = item.id in selected
+                    // Reading `selected.contains()` directly here ties EVERY visible
+                    // cell's recomposition scope to the same SnapshotStateList
+                    // instance — toggling any one item would recompose the whole
+                    // visible grid, not just that cell (structural reads on a
+                    // SnapshotStateList invalidate at the object level, not per
+                    // element). derivedStateOf still re-evaluates the `contains`
+                    // check on every `selected` write, but its `.value` — and thus
+                    // this cell's recomposition — only changes when THIS item's own
+                    // membership actually flips.
+                    val isSelected by remember(item.id) { derivedStateOf { item.id in selected } }
                     Box(
                         modifier = Modifier
                             .aspectRatio(1f)
