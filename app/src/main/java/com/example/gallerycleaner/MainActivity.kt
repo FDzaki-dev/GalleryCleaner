@@ -775,15 +775,38 @@ fun AppRoot(
     // functions must already be in scope at their point of use — including
     // inside a nested lambda — so declaring this after the function that
     // references it would be an "Unresolved reference" build failure.
-    fun proceedWithPermanentDeletion(items: List<MediaItem>) {
+    // Bug fix (found during review, no prior tracker entry): both branches
+    // below used to run their MediaStore call directly on whichever thread
+    // called this function — for the no-backup delete path (see
+    // performPermanentDeletion below), that's the Main/UI thread, in
+    // violation of this project's own "I/O and heavy computation must use
+    // Coroutines (Dispatchers.IO/Default), never block Main" rule.
+    // `MediaStore.createDeleteRequest()` is the same category of synchronous
+    // binder call `performCompression` already runs on Dispatchers.IO for
+    // its `MediaStore.createWriteRequest()` equivalent (see that function,
+    // above) — and `DeleteHelper.deleteDirectly()` is worse in practice,
+    // since it loops a blocking `ContentResolver.delete()` once per item.
+    // Now `suspend`, with both blocking calls wrapped in
+    // `withContext(Dispatchers.IO)`; every Compose-state write and every
+    // `ActivityResultLauncher.launch()` call stays exactly where it already
+    // was relative to those calls — a `withContext` block always resumes
+    // back on the dispatcher that entered it, so nothing here needed to
+    // move. Call site below (`performPermanentDeletion`'s no-backup branch)
+    // updated to `scope.launch { }` since it's no longer callable directly
+    // from a non-suspend context; the backup-enabled branch already calls
+    // this from inside a coroutine (`withContext(Dispatchers.Main) { }`),
+    // so it needed no change.
+    suspend fun proceedWithPermanentDeletion(items: List<MediaItem>) {
         val uris = items.map { it.uri }
         if (Build.VERSION.SDK_INT >= 30) {
             pendingDeleteRetry = items
-            val pendingIntent = MediaStore.createDeleteRequest(context.contentResolver, uris)
+            val pendingIntent = withContext(Dispatchers.IO) {
+                MediaStore.createDeleteRequest(context.contentResolver, uris)
+            }
             deleteRequestLauncher.launch(IntentSenderRequest.Builder(pendingIntent.intentSender).build())
         } else {
             try {
-                val failed = DeleteHelper.deleteDirectly(context, uris)
+                val failed = withContext(Dispatchers.IO) { DeleteHelper.deleteDirectly(context, uris) }
                 val deleted = items.filterNot { failed.contains(it.uri) }
                 val deletedIds = deleted.map { it.id }
                 allMedia = allMedia.filterNot { item -> deletedIds.contains(item.id) }.toPersistentList()
@@ -831,7 +854,7 @@ fun AppRoot(
                 withContext(Dispatchers.Main) { proceedWithPermanentDeletion(items) }
             }
         } else {
-            proceedWithPermanentDeletion(items)
+            scope.launch { proceedWithPermanentDeletion(items) }
         }
     }
 

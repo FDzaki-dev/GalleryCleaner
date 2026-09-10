@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v93_Batch96 — 2026-09-10
+- **Fix permanent-delete legacy path (API<30)** (2 file): (1) `DeleteHelper.kt`'s `deleteDirectly` menangkap `RecoverableSecurityException` lewat blanket `catch (e: Exception)` — bikin recovery-dialog handler yang sudah ada di `MainActivity.kt` gak pernah ke-trigger (khusus API29, delete tanpa izin gagal diam-diam tanpa pernah nawarin dialog konfirmasi). Sekarang di-rethrow sebelum catch generik, konsisten pola `MoveHelper`/`ImageCompressor`. (2) `MainActivity.kt`'s `proceedWithPermanentDeletion` manggil `MediaStore.createDeleteRequest()`/`DeleteHelper.deleteDirectly()` langsung di Main thread (pelanggaran aturan project "no blocking Main") — sekarang `suspend`, kedua call dibungkus `Dispatchers.IO`. 0 perubahan UX di happy-path. Ditemukan lewat investigasi mandiri, bukan dari `AUDIT_GAP.md`.
+- *(Catatan versi: `v93` estimasi berurutan dari `v92_Batch95` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+
 ## v92_Batch95 — 2026-09-10
 - **Fix orphan backup entry** (1 file): `BackupHelper.kt` (opt-in backup-before-delete) bikin row MediaStore/`File` tujuan dulu sebelum nyalin byte-nya — kalau copy gagal atau throw di tengah jalan (disk full, source URI dicabut), sisa row/file kosong-atau-terpotong itu nyangkut permanen di `Pictures|Movies/GalleryCleaner/Backup/` (folder user-visible), gak pernah ke-bersihin. Sekarang copy dibungkus try/catch di kedua jalur (API29+ MediaStore & legacy API24-28 File) — gagal = cleanup otomatis sebelum error dilempar ke pemanggil. 0 perubahan signature publik, 0 perubahan happy-path. Ditemukan lewat investigasi mandiri (file yang belum pernah diaudit batch manapun), bukan dari `AUDIT_GAP.md`.
 - *(Catatan versi: `v92` estimasi berurutan dari `v91_Batch94` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
