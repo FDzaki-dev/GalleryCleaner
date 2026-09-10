@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## v91_Batch94 — 2026-09-10
+- **Filmstrip delete-dimming, stage 2/2 FINAL** (2 file): sambungan langsung Batch93 — pola bug identik (item ahead-of-position via Grid bulk action gak ke-dim) ternyata juga berlaku buat bulk-delete, bukan cuma organize. `Filmstrip()` dapat param `deletedIds`, dim+checkmark overlay ke-trigger juga buat item itu. Sekarang KEDUA kategori (organize + delete) konsisten ke-dim — gap dimming filmstrip (terbuka sejak Batch17) selesai total.
+- *(Catatan versi: `v91` estimasi berurutan dari `v90_Batch93` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
+
 ## v90_Batch93 — 2026-09-10
 - **Filmstrip organize-dimming** (2 file): item yang di-organize lewat bulk "Organize N selected" di Grid mode, kalau posisinya ADA DI DEPAN foto yang lagi di-review (`currentIndex`), tetap tampil normal (belum ke-dim) di strip thumbnail bawah swipe screen — padahal udah diputuskan. Root cause: `Filmstrip()` cuma dim berdasarkan posisi (`i < currentIndex`), gak pernah tau soal `pendingOrganizedIds`. Fix: param baru `organizedIds`, dim+checkmark overlay yang udah ada sekarang ke-trigger juga kalau item id ada di situ — reuse overlay 100%, 0 komponen baru. Gap terbuka sejak Batch17. Ditemukan juga (belum difix, di luar scope): bug identik berlaku buat item yang di-bulk-delete ahead-of-position — dicatat di `PROJECT_STATE.md` buat batch depan.
 - *(Catatan versi: `v90` estimasi berurutan dari `v89_Batch92` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*

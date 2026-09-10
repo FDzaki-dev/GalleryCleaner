@@ -176,7 +176,8 @@ internal fun Filmstrip(
     items: List<MediaItem>,
     currentIndex: Int,
     onSelect: (Int) -> Unit,
-    organizedIds: Set<Long> = emptySet()
+    organizedIds: Set<Long> = emptySet(),
+    deletedIds: Set<Long> = emptySet()
 ) {
     val listState = rememberLazyListState()
     LaunchedEffect(currentIndex) {
@@ -191,15 +192,13 @@ internal fun Filmstrip(
             val item = items[i]
             val isCurrent = i == currentIndex
             // i < currentIndex alone only catches items passed sequentially
-            // in swipe order. An item organized via the Grid view's bulk
-            // "Organize N selected" can sit AHEAD of currentIndex (its
-            // position in `items` is untouched — SwipeScreen.kt keeps
-            // organized items in `sortedItems`, only skipping them via
-            // pendingOrganizedIds when picking currentItem), so it would
-            // otherwise still render as if undecided. `organizedIds` closes
-            // that gap without a new visual state — same dim+check overlay
-            // below, just a second reason to trigger it.
-            val isReviewed = i < currentIndex || item.id in organizedIds
+            // in swipe order. Both organizedIds (Batch93) and deletedIds
+            // (Batch94, same root cause found during Batch93's investigation
+            // — SwipeScreen.kt keeps pending-deleted items in `sortedItems`
+            // too, at their original position) can sit AHEAD of currentIndex
+            // via a Grid-mode bulk action, so position alone isn't enough —
+            // same dim+check overlay below, now 3 reasons to trigger it.
+            val isReviewed = i < currentIndex || item.id in organizedIds || item.id in deletedIds
             Box(
                 modifier = Modifier
                     .size(48.dp)

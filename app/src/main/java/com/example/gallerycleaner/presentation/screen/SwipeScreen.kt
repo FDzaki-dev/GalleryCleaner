@@ -363,7 +363,8 @@ fun SwipeScreen(
                         index = tapped
                         scope.launch { progressStore.saveProgress(group.key, index) }
                     },
-                    organizedIds = pendingOrganizedIds
+                    organizedIds = pendingOrganizedIds,
+                    deletedIds = pendingDeleteIds
                 )
 
                 if (currentItem != null) {
