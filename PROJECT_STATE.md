@@ -1,25 +1,19 @@
 # PROJECT_STATE — GalleryCleaner *(nama app di layar: **Snaply**)*
 
-## ⚠️ IDENTITAS PROJECT — WAJIB DIBACA SEBELUM BATCH APAPUN
-Project ini punya **2 nama, PERMANEN, keduanya sengaja**:
-- **Display (dilihat user)**: **Snaply** — launcher label, notifikasi, semua teks UI. Sejak Batch55-57.
-- **Kode/repo (tidak pernah ikut berubah)**: **`GalleryCleaner`** / `com.example.gallerycleaner` — repo GitHub, folder Termux lokal, `applicationId`/package Kotlin, `rootProject.name`, nama class/style resource internal, folder storage on-device.
+## ⚠️ IDENTITAS PROJECT
+- Display: **Snaply**. Kode/repo: **`GalleryCleaner`** / `com.example.gallerycleaner` (repo GitHub, folder Termux, `applicationId`, package Kotlin, `rootProject.name`, class/style resource internal, folder storage on-device).
+- DILARANG: ganti sisa "GalleryCleaner" di kode/config jadi "Snaply"; ganti `-iname`/folder Termux; ganti `applicationId`/package — tanpa izin eksplisit user.
 
-Nemu "GalleryCleaner" di kode/config = **BY DESIGN, bukan sisa rebrand kelewat** (rebrand eksplisit "kosmetik only" — daftar lengkap di "Belum Dikerjakan" bawah). **JANGAN**: "bereskan" sisa itu jadi Snaply, ganti `-iname`/folder Termux, atau ganti `applicationId`/package tanpa izin eksplisit user.
-
-## ⚠️ ATURAN PERMANEN SESI — WAJIB, TANPA TERKECUALI
-1. Tiap sesi WAJIB tampilkan blok berikut:
-```bash
-versionName/batch latest, beserta 1-2 baris singkat tentang update terkini yang dikerjakan
-```
-2. `versionCode`/`versionName` WAJIB di-generate langsung dari workflow GitHub sendiri (`GITHUB_RUN_NUMBER`). DILARANG KERAS bump versi manual oleh sesi manapun.
+## ⚠️ ATURAN PERMANEN SESI
+1. Tiap sesi WAJIB tampilkan: versionName/batch latest + 1-2 baris update terkini.
+2. `versionCode`/`versionName` WAJIB dari `GITHUB_RUN_NUMBER`. DILARANG bump versi manual.
 
 ## 🔗 Rilis Terbaru
 - GitHub Release (APK signed, siap install, muncul di sidebar repo): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v96 (estimasi berurutan dari v95_Batch98 — run number GitHub Actions aktual belum terkonfirmasi, koreksi kalau beda pas CI jalan) — Batch99 (UI STATE ROTASI-SURVIVAL SWEEP Stage 3, 1 file: `SwipeScreen.kt`'s `showFullscreen`/`showInfo`/`showSortMenu` — 3 toggle Boolean `remember{}` polos, kena pola sama Stage 1/2 tapi kelas risiko lebih ringan (0 ketikan yang bisa hilang, cuma overlay/menu nutup sendiri saat rotasi). Sekarang `rememberSaveable`, ketiganya. Lanjutan langsung tracker "Sisa kandidat AMAN" dari Batch98 — lihat Batch99 di "Riwayat Batch" bawah)
+v96 (belum berubah dari Batch99 — Batch100 dokumentasi doang, 0 kode/build) — Batch100 (pangkas ulang rule permanen `PROJECT_STATE.md`, lihat Riwayat Batch bawah)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **UI STATE ROTASI-SURVIVAL SWEEP (mulai Batch97, ditemukan investigasi mandiri, BUKAN dari `AUDIT_GAP.md`)** — guard project "UI State dan input wajib bertahan dari rotasi (`rememberSaveable`/ViewModel)" belum konsisten diterapkan di seluruh app; `MainActivity.kt`'s `isUnlocked` (App Lock, sebelum Batch97) adalah satu-satunya tempat yang sudah benar. Grep project-wide (`remember { mutableStateOf`) nemu banyak site lain — dikerjakan bertahap per batch (1 file/batch, pola sama kayak P1 #6/P2 #11/P2 #12/Filmstrip dimming), BUKAN 1 batch raksasa (beberapa butuh custom `Saver`, di luar cap 1-file-aman). Status:
@@ -81,14 +75,17 @@ v96 (estimasi berurutan dari v95_Batch98 — run number GitHub Actions aktual be
 - .gitignore
 - release.keystore (tidak disertakan di repo, via secrets)
 
-## ⚠️ Insiden Operasional (permanen — bukan bagian Riwayat Batch, gak ada kode berubah)
-
-### Batch46 — Termux PROJ_DIR case-mismatch bikin folder baru salah, bukan nemu folder existing
-**Aturan permanen**: nama folder/repo Termux HARUS PERSIS `GalleryCleaner` (PascalCase, tanpa hyphen) di setiap `-iname`/fallback path skrip — JANGAN di-kebab-case-kan, walau aturan gaya penamaan umum project bilang folder proyek baru harus kebab-case. Precedence: nama repo GitHub yang **sudah eksis** > aturan gaya umum instruksi project.
-
-Asal insiden: command Termux sempat pakai `-iname "gallery-cleaner"` (kebab-case) buat cari folder lokal, padahal repo aslinya `GalleryCleaner` (tanpa hyphen) — `-iname` cuma case-insensitive, BUKAN hyphen-insensitive, jadi pencarian gagal terus dan fallback bikin folder BARU salah (`~/projects/gallery-cleaner`) alih-alih masuk folder existing. **Dampak**: 0 risiko ke remote GitHub (skrip daily-update gak pernah set git remote, jadi `git push` di folder salah pasti gagal duluan) — tapi mungkin ada folder residu lokal `~/projects/gallery-cleaner` yang perlu dibersihkan manual di device user.
+## ⚠️ Insiden Operasional (permanen)
+- **Aturan (asal: Batch46)**: nama folder/repo Termux WAJIB PERSIS `GalleryCleaner` (PascalCase, tanpa hyphen) di tiap `-iname`/fallback path skrip. Precedence: nama repo GitHub existing > gaya penamaan umum project.
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch100 — Pangkas ulang rule permanen di PROJECT_STATE.md (1 file, dokumentasi doang)
+User: "arsipkan total seluruh stale documentation, pangkas total narasi panjang lebar pada isi rule permanen yang ada dalam document project (hanya benar-benar menyisakan instruksi/arahan saja), lalu terapkan adaptasi 100% pada document latest modified only!!" — audit seluruh 7 file docs (`ARCHIVE_HISTORY.md`/`PROJECT_STATE.md`/`README.md`/`ROADMAP.md`/`RELEASE_SIGNING.md`/`CHANGELOG.md`/`AUDIT_GAP.md`): 0 stale documentation ditemukan (semua sudah konsisten versi terkini, `ARCHIVE_HISTORY.md`/`CHANGELOG.md` memang arsip by design, bukan stale) — jadi bagian "arsipkan stale docs" nihil kerja. "Latest modified" ditentukan via cross-check nomor batch tertinggi antar file (`CHANGELOG.md` top-entry `v96_Batch99` vs `PROJECT_STATE.md` top-entry Batch99, keduanya sinkron) — `PROJECT_STATE.md` satu-satunya file dengan section "rule permanen" (IDENTITAS PROJECT, ATURAN PERMANEN SESI, Insiden Operasional Batch46); `README.md`/`RELEASE_SIGNING.md` sudah berupa docs faktual ringkas (bukan rule-narrative bergaya Riwayat Batch), tidak disentuh.
+
+Pangkas (pola sama Batch66, 3 section yang sama — narasi investigasi/rasional/redundansi dibuang, isi keputusan 100% dipertahankan verbatim maknanya): "IDENTITAS PROJECT" & "ATURAN PERMANEN SESI" dipadatkan ke poin instruksi murni; "Insiden Operasional Batch46" dipadatkan jadi 1 baris aturan (root-cause/dampak dibuang, sudah tidak actionable buat sesi depan). `Riwayat Batch`/`Belum Dikerjakan`/`AUDIT GAP TRACKER` 0 disentuh (bukan rule permanen, fakta historis + tracker aktif — pangkas di sini = data loss operasional, di luar scope task).
+
+Hasil: 158.800 → ~155.9k karakter sebelum entry log ini ditulis. Judul section tetap verbatim. 0 file lain disentuh.
 
 ### Batch99 — UI STATE ROTASI-SURVIVAL SWEEP Stage 3: SwipeScreen fullscreen/info/sort (1 file)
 User: "next" — tidak ada ZIP baru, lanjut dari state internal (`GalleryCleaner_v98.zip` tetap sumber terakhir, kerja Batch99 dilanjut dari situ). Tracker "Belum Dikerjakan" sudah eksplisit nunjuk urutan: Stage 1/2 (Batch97/98) selesai, sisa "kandidat AMAN" berikutnya adalah `SwipeScreen.kt`'s `showFullscreen`/`showInfo`/`showSortMenu` — didaftar duluan dari `HomeScreenSections.kt`/`TrashScreen.kt` di tracker yang sama, jadi diambil duluan (bukan lompat ke yang butuh custom `Saver`, sesuai urutan eksplisit tracker).
