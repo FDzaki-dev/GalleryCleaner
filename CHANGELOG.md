@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch117 — 2026-09-12
+- **Fix: rotasi hp (portrait↔landscape) saat review folder selalu balik ke Home** (1 file): `MainActivity.kt` — layar yang lagi dibuka (`selectedGroup`/`showTrash`/`showSettings`) pakai `remember{}` polos, jadi rotasi hp (Activity destroy+recreate, default Android tanpa `configChanges`) bikin app lupa lagi ada di mana dan jatuh balik ke Home. Sekarang survive rotasi buat: grup bulan/album, folder, kategori smart (Screenshots dll.), Largest files, On this day. **Belum ketutup** (masih balik ke Home kalau dirotasi pas lagi buka ini, bukan bug baru): Blurry photos, Similar photos, Duplicate files, hasil Search — detail teknis di `PROJECT_STATE.md`.
+
 ## Batch116 — 2026-09-12
 - **Hotfix: CI gagal pasca Batch115** (1 file): `TrashScreen.kt` — `compileReleaseKotlin` gagal (`run236`), `Unresolved reference: SnapshotStateList` di deklarasi `listSaver<SnapshotStateList<Long>, Long>`. Root cause: class `SnapshotStateList` ada di `androidx.compose.runtime.snapshots`, bukan `androidx.compose.runtime` (beda dari fungsi `mutableStateListOf`/`toMutableStateList` yang memang di `androidx.compose.runtime` dan resolve normal). Fix: tambah `import androidx.compose.runtime.snapshots.SnapshotStateList`. 0 logic berubah — nunggu build ulang buat konfirmasi hijau.
 

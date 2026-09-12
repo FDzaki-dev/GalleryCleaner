@@ -458,9 +458,32 @@ fun AppRoot(
         groupMode = settingsStore.groupModeFlow.first()
         sortOption = settingsStore.sortOptionFlow.first()
     }
+    // [Batch117] Bug report: rotating the device (portrait<->landscape) while
+    // reviewing a folder always dumped the user back to Home first. Root
+    // cause: AndroidManifest declares 0 configChanges for MainActivity, so
+    // Android's default behavior applies — rotation DESTROYS AND RECREATES
+    // the Activity. selectedGroup/showTrash/showSettings below were plain
+    // remember{} (process-memory only, not Bundle-backed), so recreation
+    // wiped them to null/false/false — currentScreen's when-cascade (bottom
+    // of this function) then had nothing left to match but its final `else
+    // -> Screen.Home` branch. Every other screen (Trash/Settings/Swipe) was
+    // equally reachable from this same bug, not just Swipe.
+    // showTrash/showSettings: cheap Booleans, safe to rememberSaveable
+    // directly, 0 reconstruction needed.
+    var showTrash by rememberSaveable { mutableStateOf(false) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
+    // selectedGroup: deliberately NOT rememberSaveable directly. A MediaGroup
+    // can carry hundreds/thousands of MediaItem (an entire month/album) —
+    // Bundle-backed saved-instance-state shares one small Binder transaction
+    // ceiling (~1MB) across the WHOLE Bundle, not per-field, so serializing
+    // every item's 11 fields on every rotation risks
+    // TransactionTooLargeException on any real-sized library. Instead, only
+    // the lightweight String key survives rotation (selectedGroupKey) —
+    // selectedGroup itself is reconstructed by key-lookup once its source
+    // data is ready again, see the LaunchedEffect right after `groups`/
+    // `smartGroups`/`largestItems`/`onThisDayItems` are all declared below.
     var selectedGroup by remember { mutableStateOf<MediaGroup?>(null) }
-    var showTrash by remember { mutableStateOf(false) }
-    var showSettings by remember { mutableStateOf(false) }
+    var selectedGroupKey by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Handles both cold start (pendingShortcutAction set from the launch
     // Intent in onCreate) and the app already running (updated via
@@ -660,6 +683,44 @@ fun AppRoot(
     // the user hunt through folders or the generic Large Files category.
     val largestItems = remember(activeMedia) {
         activeMedia.sortedByDescending { it.sizeBytes }.take(5)
+    }
+
+    // [Batch117] Reconstructs selectedGroup after Activity recreation (see
+    // doc comment on selectedGroupKey above for the full root-cause + why
+    // the MediaGroup itself isn't just rememberSaveable directly).
+    // groups/smartGroups/largestItems/onThisDayItems are ALL cheap,
+    // automatic recomputations from activeMedia (their own LaunchedEffects
+    // above — none of them wait on a user-triggered action), so they're
+    // reliably available again shortly after rotation, same timing as a
+    // cold start. Re-fires as each of those sources fills in progressively;
+    // `selectedGroup != null` guards it from clobbering a restore that
+    // already succeeded, or firing at all on a normal (non-rotation)
+    // session where selectedGroupKey stays null throughout.
+    // Deliberately does NOT cover "Blurry photos"/"Similar photos"/
+    // "Duplicate files" — those come from blurryScanState/nearDupScanState/
+    // duplicateScanState, on-demand USER-triggered scans (Batch52/54/61)
+    // that are genuinely lost on rotation, not auto-recomputed; silently
+    // re-running one of those here would mean the user gets an expensive
+    // scan they never asked for a second time. Also doesn't cover "Search
+    // results" — query/results live in HomeScreen's own local state, a
+    // separate lift out of scope for this fix. Rotating out of those 4
+    // specific categories still falls back to Home — same as before this
+    // fix, not a new regression, just a narrower residual gap (documented
+    // in PROJECT_STATE.md).
+    LaunchedEffect(selectedGroupKey, groups, smartGroups, largestItems, onThisDayItems) {
+        val keyToRestore = selectedGroupKey ?: return@LaunchedEffect
+        if (selectedGroup != null) return@LaunchedEffect
+        val found = groups.find { it.key == keyToRestore }
+            ?: smartGroups.find { it.key == keyToRestore }
+            ?: (if (keyToRestore == "Largest files" && largestItems.isNotEmpty())
+                    MediaGroup("Largest files", largestItems) else null)
+            ?: (if (keyToRestore == "On this day" && onThisDayItems.isNotEmpty())
+                    MediaGroup("On this day", onThisDayItems) else null)
+            ?: return@LaunchedEffect
+        // Same reshuffle-on-(re)entry rule the original onGroupClick handler
+        // below already applies when randomModeEnabled — kept identical here
+        // for consistency rather than inventing a second rule for this path.
+        selectedGroup = if (randomModeEnabled) found.copy(items = found.items.shuffled()) else found
     }
 
     var pendingDeleteRetry by remember { mutableStateOf<List<MediaItem>?>(null) }
@@ -1093,7 +1154,7 @@ fun AppRoot(
                     // which matches how every other shared setting in this
                     // app already behaves (groupMode, randomModeEnabled).
                     onSortChange = { sortOption = it; scope.launch { settingsStore.setSortOption(it) } },
-                    onBack = { selectedGroup = null },
+                    onBack = { selectedGroup = null; selectedGroupKey = null },
                     onFinishWithDeletions = { deletions ->
                         scope.launch {
                             try {
@@ -1164,6 +1225,11 @@ fun AppRoot(
                         } else {
                             group
                         }
+                        // [Batch117] selectedGroupKey mirrors selectedGroup's
+                        // key here — the one real navigation entry point — so
+                        // the rotation-restore effect above has something to
+                        // look up if the Activity gets recreated mid-review.
+                        selectedGroupKey = group.key
                     },
                     onTrashClick = { showTrash = true },
                     onSettingsClick = { showSettings = true },
