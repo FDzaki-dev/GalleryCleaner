@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch118 — 2026-09-12
+- **Hotfix: seleksi hilang saat rotasi hp di mode pilih-file Trash (regresi tak-terlihat sejak Batch115/116, kebuka Batch117)** (1 file): `TrashScreen.kt` — efek pembersih seleksi (`selected.retainAll(...)`, jalan tiap daftar trash berubah) sebelumnya jalan juga di composition PERTAMA pasca rotasi hp, padahal saat itu daftar trash-nya sendiri masih kosong sementara (nunggu reload) — langsung ngosongin seleksi yang baru aja berhasil di-restore. Sekarang firing pertama itu di-skip, seleksi beneran survive rotasi end-to-end. Kasus normal (trash beneran jadi kosong abis permanent-delete) tetap bersih seperti biasa.
+
 ## Batch117 — 2026-09-12
 - **Fix: rotasi hp (portrait↔landscape) saat review folder selalu balik ke Home** (1 file): `MainActivity.kt` — layar yang lagi dibuka (`selectedGroup`/`showTrash`/`showSettings`) pakai `remember{}` polos, jadi rotasi hp (Activity destroy+recreate, default Android tanpa `configChanges`) bikin app lupa lagi ada di mana dan jatuh balik ke Home. Sekarang survive rotasi buat: grup bulan/album, folder, kategori smart (Screenshots dll.), Largest files, On this day. **Belum ketutup** (masih balik ke Home kalau dirotasi pas lagi buka ini, bukan bug baru): Blurry photos, Similar photos, Duplicate files, hasil Search — detail teknis di `PROJECT_STATE.md`.
 

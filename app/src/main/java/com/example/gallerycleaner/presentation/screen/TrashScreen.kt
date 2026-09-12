@@ -55,10 +55,31 @@ fun TrashScreen(
     ) { mutableStateListOf<Long>() }
     var showEmptyTrashConfirm by rememberSaveable { mutableStateOf(false) }
 
-    // Selection resets cleanly whenever the trash contents change (e.g. after
-    // a permanent delete completes and items disappear from the list).
+    // [Batch118] Regression found after Batch117 unblocked Trash from
+    // surviving rotation: this effect used to run unconditionally on every
+    // `items` change, INCLUDING the very first composition right after an
+    // Activity recreation — at that instant `items` (MainActivity's
+    // trashItems, sourced from allMedia -> derivedMedia) is still its
+    // default empty list, because reloading from MediaStore after rotation
+    // hasn't finished yet. `retainAll(emptySet())` against that transient
+    // empty snapshot wiped the selection `selected` had JUST restored via
+    // its own listSaver (Batch115/116) — by the time the real trash list
+    // arrived a moment later, there was nothing left to retain. This bug
+    // was already latent in Batch115/116, just unreachable: before Batch117,
+    // rotating always bounced back to Home before TrashScreen ever got to
+    // compose far enough to hit this effect at all.
+    // Fix: skip exactly the first firing in this composable instance's
+    // lifetime (hasSyncedOnce) — a transiently-empty items snapshot can no
+    // longer clobber a just-restored selection. Every firing AFTER that
+    // first one still prunes normally against real data, so the original
+    // intent (drop selected ids that fall out of trash — permanent delete
+    // completing, trash genuinely going empty) is unchanged.
+    var hasSyncedOnce by remember { mutableStateOf(false) }
     LaunchedEffect(items.map { it.id }) {
-        selected.retainAll(items.map { it.id }.toSet())
+        if (hasSyncedOnce) {
+            selected.retainAll(items.map { it.id }.toSet())
+        }
+        hasSyncedOnce = true
     }
 
     Scaffold(
