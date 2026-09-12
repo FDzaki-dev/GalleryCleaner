@@ -26,7 +26,17 @@ android {
 
     defaultConfig {
         applicationId = "com.example.gallerycleaner"
-        minSdk = 24
+        // Batch105 — instruksi eksplisit user: naikkan ke scope asli project
+        // ("WAJIB Kotlin+Compose murni, minSdk=31"), gap sejak dulu cuma
+        // di-flag (Batch64/Batch85), sengaja gak disentuh sampai user
+        // approve karena mempersempit device support. Efek samping: seluruh
+        // percabangan Build.VERSION.SDK_INT untuk API24-30 (MoveHelper,
+        // ImageCompressor, MediaDataSource, dst.) jadi structurally dead
+        // code (selalu ambil jalur >=30/>=31), begitu juga 1 baris manifest
+        // WRITE_EXTERNAL_STORAGE (maxSdkVersion=28) — TIDAK dihapus batch
+        // ini (cleanup terpisah, di luar scope "naikkan minSdk", butuh izin
+        // eksplisit lagi), cuma dead tapi harmless, 0 risiko compile/regresi.
+        minSdk = 31
         targetSdk = 35
         versionCode = appVersionCode
         versionName = "1.0.$appVersionCode"
