@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch108 — 2026-09-12
+- **Investigasi app-size bloat** (docs-only, 0 file kode — diminta eksplisit user, urgent): audit source-level nemu 2 root cause. (1) `isMinifyEnabled`/`isShrinkResources` = `false` di `app/build.gradle.kts` sejak awal project — R8 gak pernah jalan, 0 dead-code/resource elimination dari SELURUH dependency. (2) `material-icons-extended` (deskripsi resmi Maven: "very large dependency, should not be included directly", ~2000+ icon) — project cuma pakai 24 icon unik, kemungkinan besar cukup dari `material-icons-core` yang lebih kecil. Belum ada fix dieksekusi (2 opsi beda resiko didokumentasikan di `PROJECT_STATE.md`, nunggu keputusan user — sandbox 0 compiler buat verifikasi aman sebelum push).
+
 ## Batch107 — 2026-09-12
 - **Dead-code cleanup pasca `minSdk` 31, Stage 2** (1 file): `GalleryCleanerApp.kt`'s `newImageLoader()` punya percabangan `Build.VERSION.SDK_INT >= 28` buat milih decoder GIF — sejak `minSdk` dinaikkan ke 31 (Batch105), kondisi ini selalu true, jadi else-branch (`GifDecoder.Factory()`) gak pernah kepakai lagi. Dihapus, `ImageDecoderDecoder.Factory()` jadi unconditional; import `android.os.Build` + `coil.decode.GifDecoder` ikut dihapus (udah gak dipakai). Lanjutan Stage 1 (`HapticFeedback.kt`+`AndroidManifest.xml`) — 9 file sisa kandidat menyusul bertahap. 0 perubahan behavior (kondisi yang dihapus memang selalu true).
 - *(Catatan versi: label `v` SENGAJA tidak dicantumkan — entri Batch100-106 gak pernah tercatat di sini (gap baru, didokumentasikan di `PROJECT_STATE.md`), jadi estimasi sequential lama (`v96_Batch99` +1 per batch) udah gak valid buat batch ini, bakal cuma nebak. Nomor versionCode/versionName ASLI tetap otomatis dari `GITHUB_RUN_NUMBER` saat push — lihat GitHub Release terbaru buat angka pasti.)*
