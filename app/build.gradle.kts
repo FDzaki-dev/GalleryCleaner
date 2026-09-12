@@ -85,8 +85,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -132,11 +132,12 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    // Batch109 (Audit Batch108 remediation, Opsi A): material-icons-extended dihapus.
-    // Project cuma pakai 18 Icons.Filled.* unik (grep-verified), semua ditarget sudah
-    // ke-cover material-icons-core (transitif via material3). Kalau CI gagal compile
-    // "Unresolved reference" pada salah satu icon, itu berarti icon itu extended-only —
-    // revert baris ini (lihat PROJECT_STATE.md Batch109 utk daftar 18 icon).
+    // Batch110 (revert Batch109): material-icons-extended dikembalikan. CI run231
+    // (compileReleaseKotlin) konfirmasi 7/18 icon project genuinely extended-only —
+    // Shuffle/Folder/GridView/Sort/Undo/ViewCarousel/ZoomIn — "Unresolved reference"
+    // di HomeScreen.kt/HomeScreenFolderRow.kt/SwipeScreen.kt/SwipeScreenGrid.kt.
+    // Opsi A (audit Batch108) resmi GAGAL, lihat PROJECT_STATE.md Batch110.
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("io.coil-kt:coil-gif:2.6.0")
     // Batch40 (Audit Gap P0 #1): video frame thumbnails. Registered once in
