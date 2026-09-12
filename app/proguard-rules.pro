@@ -60,3 +60,30 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+
+# 5) [Batch113 hotfix, missed by the Batch111 audit above] Compose Material
+# Icons Extended (`androidx.compose.material:material-icons-extended`).
+# CONFIRMED regression (user-reported, real build/device): after Batch111
+# turned on isMinifyEnabled/isShrinkResources, exactly 7 icons render blank —
+# Shuffle/Folder/Sort/Undo/ViewCarousel/ZoomIn/GridView (HomeScreen.kt,
+# HomeScreenFolderRow.kt, SwipeScreen.kt x3, SwipeScreenGrid.kt) — while every
+# other icon in the app (Close/Check/ArrowBack/Search/Settings/Edit/Lock/
+# PlayArrow/Info/Share/Refresh, all from the small material-icons-core set)
+# renders fine. Root cause: material-icons-extended is ~1100+ near-identical
+# generated singleton objects, each backed by a private lazily-cached
+# `ImageVector?` field filled on first access — R8 full-mode's horizontal
+# class-merging + field-value-propagation (only active now that minify is on)
+# collapses these structurally-identical classes together and corrupts that
+# per-icon cache, so the icon silently renders empty instead of crashing.
+# material-icons-core ships pre-built/small and doesn't hit this path, which
+# is exactly why core icons were unaffected. Grep-verified this project only
+# ever calls `Icons.Filled.*` (0 Outlined/Rounded/Sharp/TwoTone/AutoMirrored
+# usage anywhere) — so the keep is scoped to the `filled` package only,
+# instead of blanket-keeping all of material-icons-extended.
+# NOTE: this is independent of the Batch112 local-vector-drawable migration
+# (Stage 1 only, not yet wired) — that migration, if/when Stage 2 is
+# explicitly requested, would let this dependency (and this rule) be removed
+# entirely. Until then, this rule is the fix that keeps the current
+# architecture (dependency still in use) actually working under R8.
+-keep class androidx.compose.material.icons.filled.** { *; }
+-dontwarn androidx.compose.material.icons.**

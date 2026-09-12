@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch113 — 2026-09-12
+- **Hotfix: 7 icon blank pasca R8 minify (Batch111 regression)** (1 file): `app/proguard-rules.pro` — rule ke-5 ditambah, `-keep class androidx.compose.material.icons.filled.** { *; }`. User konfirmasi lewat build/device asli: `Shuffle`/`Folder`/`Sort`/`Undo`/`ViewCarousel`/`ZoomIn`/`GridView` (satu-satunya 7 icon yang genuinely dari `material-icons-extended`, lihat Batch110) render kosong sejak `isMinifyEnabled`/`isShrinkResources` nyala Batch111 — 11 icon `-core` lainnya normal. Root cause: R8 full-mode class-merging ngerusak cache internal icon-icon `-extended` (~1100+ file singleton nyaris identik), gak kena di `-core` yang lebih kecil/pre-built. Scoped ke package `filled` doang (project 0 pakai varian lain). Independen dari migrasi vector-drawable-lokal Batch112 (masih Stage 1, belum di-wire) — dua jalur ini jalan paralel, bukan saling gantiin. Belum tervalidasi compiler/CI/device asli — nunggu build berikutnya + user re-cek ke-7 icon itu di APK baru.
+
 ## Batch112 — 2026-09-12
 - **App-size, icon migration Stage 1/2 (foundation)** (7 file baru, 0 file existing): tambah 7 vector drawable lokal (`ic_shuffle`, `ic_folder`, `ic_sort`, `ic_undo`, `ic_view_carousel`, `ic_zoom_in`, `ic_grid_view`) di `app/src/main/res/drawable/`, pengganti 7 icon `material-icons-extended` yang genuinely gak ada di `-core` (dikonfirmasi CI `run231`, lihat Batch110). Tujuan akhir: kalau semua titik pakai sudah pindah ke drawable lokal ini, dependency `material-icons-extended` (~2000+ icon, sangat besar) bisa dicabut permanen tanpa resiko `Unresolved reference` lagi. Batch ini murni nambah resource baru — belum ada kode yang pakai, 0 perubahan visual/behavior ke app yang jalan sekarang. Stage 2 (batch depan): pasang drawable ini di 4 layar + cabut dependency-nya.
 
