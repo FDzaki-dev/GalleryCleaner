@@ -1,0 +1,16 @@
+<!-- Stage 1/2 icon-migration (app-size, AUDIT_GAP P2 #16 follow-up): local
+     redraw of Icons.Filled.Shuffle (extended-only, CI run231 confirmed
+     Unresolved reference when material-icons-extended was removed).
+     pathData reproduced from memory of the public Material Symbols/Icons set
+     (Apache 2.0) — sandbox has 0 network to fetch the source asset, so treat
+     as pending visual QA, not guaranteed pixel-identical. Used by:
+     HomeScreen.kt (random-mode toggle). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M10.59,9.17L5.41,4L4,5.41l5.17,5.17L10.59,9.17z M14.5,4l2.04,2.04L4,18.59L5.41,20L17.96,7.46L20,9.5V4H14.5z M14.83,13.41l-1.41,1.41l3.13,3.13L14.5,20H20v-5.5l-2.04,2.04L14.83,13.41z"/>
+</vector>

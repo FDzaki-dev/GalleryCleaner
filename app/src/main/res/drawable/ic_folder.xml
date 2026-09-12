@@ -1,0 +1,12 @@
+<!-- Stage 1/2 icon-migration: local redraw of Icons.Filled.Folder
+     (extended-only, CI run231 confirmed). See ic_shuffle.xml header for
+     provenance/confidence note. Used by: HomeScreenFolderRow.kt. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M10,4H4C2.9,4,2.01,4.9,2.01,6L2,18c0,1.1,0.9,2,2,2h16c1.1,0,2,-0.9,2,-2V8c0,-1.1,-0.9,-2,-2,-2h-8L10,4z"/>
+</vector>

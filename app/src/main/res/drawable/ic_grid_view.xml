@@ -1,0 +1,19 @@
+<!-- Stage 1/2 icon-migration: local SAFE REDRAW (not a reproduction of the
+     official asset) for Icons.Filled.GridView (extended-only, CI run231
+     confirmed). This specific icon has the most name/family ambiguity in
+     Material's set (grid_view vs dashboard vs view_module all look similar
+     but differ in exact geometry) — rather than risk a wrong "exact" path,
+     this is a plain, unambiguous 2x2 equal-square grid glyph that reads
+     correctly as "switch to grid view". FLAG: visually compare against the
+     old Icons.Filled.GridView render before Stage 2 ships, swap this file's
+     pathData if the design wants a closer match. Used by: SwipeScreen.kt
+     (view-mode toggle, Swipe mode state). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M3,3h8v8H3V3z M13,3h8v8h-8V3z M3,13h8v8H3v-8z M13,13h8v8h-8v-8z"/>
+</vector>
