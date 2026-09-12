@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch109 — 2026-09-12
+- **App-size remediation, Opsi A** (1 file): `app/build.gradle.kts` — dependency `androidx.compose.material:material-icons-extended` dicabut (project cuma pakai 18 `Icons.Filled.*` unik, target sudah ke-cover `material-icons-core` yang lebih kecil, transitif via `material3`). Koreksi angka: audit Batch108 sempat salah tulis "24 icon unik" — re-grep project-wide konfirmasi 18 (daftar namanya sendiri di Batch108 sudah benar). Belum tervalidasi compiler/CI asli (sandbox 0 Android SDK/network) — kalau ada icon extended-only, next build CI bakal gagal "Unresolved reference", gampang di-revert 1 baris. Opsi B (R8 minify+shrink) masih terpisah, belum dieksekusi.
+
 ## Batch108 — 2026-09-12
 - **Investigasi app-size bloat** (docs-only, 0 file kode — diminta eksplisit user, urgent): audit source-level nemu 2 root cause. (1) `isMinifyEnabled`/`isShrinkResources` = `false` di `app/build.gradle.kts` sejak awal project — R8 gak pernah jalan, 0 dead-code/resource elimination dari SELURUH dependency. (2) `material-icons-extended` (deskripsi resmi Maven: "very large dependency, should not be included directly", ~2000+ icon) — project cuma pakai 24 icon unik, kemungkinan besar cukup dari `material-icons-core` yang lebih kecil. Belum ada fix dieksekusi (2 opsi beda resiko didokumentasikan di `PROJECT_STATE.md`, nunggu keputusan user — sandbox 0 compiler buat verifikasi aman sebelum push).
 

@@ -132,7 +132,11 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation("androidx.compose.material:material-icons-extended")
+    // Batch109 (Audit Batch108 remediation, Opsi A): material-icons-extended dihapus.
+    // Project cuma pakai 18 Icons.Filled.* unik (grep-verified), semua ditarget sudah
+    // ke-cover material-icons-core (transitif via material3). Kalau CI gagal compile
+    // "Unresolved reference" pada salah satu icon, itu berarti icon itu extended-only —
+    // revert baris ini (lihat PROJECT_STATE.md Batch109 utk daftar 18 icon).
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("io.coil-kt:coil-gif:2.6.0")
     // Batch40 (Audit Gap P0 #1): video frame thumbnails. Registered once in
