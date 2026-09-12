@@ -165,4 +165,36 @@ dependencies {
     // loading the whole response body into RAM (project rule "Release
     // Downloader (Anti-OOM)").
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    // Batch121 (user bug report): the app has scanned + shown video
+    // thumbnails since Batch40 (Audit Gap P0 #1, coil-video above), but
+    // tapping a video to inspect/fullscreen it only ever decoded ONE
+    // still frame via Coil's VideoFrameDecoder — there was never an
+    // actual player behind it, which read as "can't play/inspect it at
+    // all". media3-exoplayer + media3-ui add real playback (controls,
+    // seek) to SwipeScreenCard.kt's FullscreenViewer, for video items
+    // only — photo/GIF preview is untouched.
+    // Pinned to 1.4.1 (Aug 27, 2024, verified via
+    // mvnrepository.com/artifact/androidx.media3/media3-exoplayer — a
+    // real released version, not the newest available) instead of the
+    // current latest stable (1.11.0, per
+    // developer.android.com/jetpack/androidx/releases/media3): that
+    // changelog's own "Common library" entry for 1.11.0 says it upgraded
+    // its internal Kotlin toolchain from 2.0.20 to 2.2.0, and this
+    // project is pinned to Kotlin 1.9.24 (root build.gradle.kts,
+    // protected file, out of scope to bump for this task) — same class
+    // of risk already hit once in this project with
+    // kotlinx-collections-immutable (Batch44, pinned to 0.3.8 for the
+    // identical reason: a newer release needed a newer Kotlin than this
+    // project has). 1.4.1 predates that Kotlin bump by roughly two
+    // years and sits in the same era as this project's other pinned
+    // build tooling (Kotlin 1.9.24, compose-bom 2024.06.00, AGP 8.5.0).
+    // No new proguard-rules.pro entry: Media3/ExoPlayer artifacts ship
+    // their own consumer ProGuard rules bundled in the AAR (unlike Coil,
+    // which needs this file's existing manual -keep rules because it
+    // discovers decoders via reflection) — recorded here as the
+    // reasoning, not re-verified against an actual R8 build in this
+    // sandbox (same "belum tervalidasi compiler asli" caveat as every
+    // other dependency change in this project).
+    implementation("androidx.media3:media3-exoplayer:1.4.1")
+    implementation("androidx.media3:media3-ui:1.4.1")
 }

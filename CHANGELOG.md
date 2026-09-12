@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch121 — 2026-09-13
+- **Fix: video sekarang bisa benar-benar diputar saat dibuka fullscreen** (`app/build.gradle.kts`, `SwipeScreenCard.kt`): sebelumnya, membuka sebuah video (dari mode swipe maupun grid) cuma menampilkan satu frame diam tanpa kontrol apa pun — sekarang muncul pemutar video sungguhan (Media3 ExoPlayer) dengan play/pause dan seek bar, dan dibaca dari file secara streaming jadi aman dipakai untuk video berukuran besar. Tombol close (✕) ditambahkan khusus untuk video karena tap-untuk-tutup lama akan bentrok dengan kontrol pemutar. Preview foto/GIF tidak berubah. **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch121.
+
 ## Batch120 — 2026-09-13
 - **Sage Wash — perbaikan warna** (`ui/theme/PaintedTokens.kt`, `ui/components/PaintedSurface.kt`): warna dasar gelap digeser dari coklat hangat ke charcoal hijau-tua yang lebih dingin & kaya, accent terracotta digeser dari oranye ke brick-rose yang lebih tenang, dan tekstur watercolor-nya dibikin lebih kelihatan. Perbaikan langsung dari feedback tampilan v1 yang kebaca murahan — sekarang harusnya kebaca lebih tenang & premium sesuai niatnya.
 
