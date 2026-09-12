@@ -10,12 +10,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Sort
-import androidx.compose.material.icons.filled.Undo
-import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -23,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.imageLoader
 import coil.request.ImageRequest
@@ -217,7 +214,7 @@ fun SwipeScreen(
                                     scope.launch { progressStore.saveProgress(group.key, index) }
                                 }
                             ) {
-                                Icon(Icons.Filled.Undo, contentDescription = "Undo last swipe")
+                                Icon(painterResource(id = R.drawable.ic_undo), contentDescription = "Undo last swipe")
                             }
                         }
                     }
@@ -229,7 +226,7 @@ fun SwipeScreen(
                     var showSortMenu by rememberSaveable { mutableStateOf(false) }
                     Box {
                         IconButton(onClick = { showSortMenu = true }) {
-                            Icon(Icons.Filled.Sort, contentDescription = "Sort: ${sortOption.label}")
+                            Icon(painterResource(id = R.drawable.ic_sort), contentDescription = "Sort: ${sortOption.label}")
                         }
                         DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
                             SortOption.values().forEach { option ->
@@ -257,7 +254,7 @@ fun SwipeScreen(
                         gridSelected.clear()
                     }) {
                         Icon(
-                            if (viewMode == SwipeViewMode.Swipe) Icons.Filled.GridView else Icons.Filled.ViewCarousel,
+                            if (viewMode == SwipeViewMode.Swipe) painterResource(id = R.drawable.ic_grid_view) else painterResource(id = R.drawable.ic_view_carousel),
                             contentDescription = if (viewMode == SwipeViewMode.Swipe) "Switch to grid view" else "Switch to swipe view"
                         )
                     }

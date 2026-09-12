@@ -80,10 +80,19 @@
 # ever calls `Icons.Filled.*` (0 Outlined/Rounded/Sharp/TwoTone/AutoMirrored
 # usage anywhere) — so the keep is scoped to the `filled` package only,
 # instead of blanket-keeping all of material-icons-extended.
-# NOTE: this is independent of the Batch112 local-vector-drawable migration
-# (Stage 1 only, not yet wired) — that migration, if/when Stage 2 is
-# explicitly requested, would let this dependency (and this rule) be removed
-# entirely. Until then, this rule is the fix that keeps the current
-# architecture (dependency still in use) actually working under R8.
+# [Updated Batch114] The Stage 2 migration this note anticipated HAS now been
+# executed: all 7 extended-only icons were moved to local vector drawables
+# and `material-icons-extended` was removed from app/build.gradle.kts (see
+# Batch114 in PROJECT_STATE.md/CHANGELOG.md). This rule is DELIBERATELY LEFT
+# IN PLACE rather than deleted: `androidx.compose.material.icons.filled` is
+# the SAME package used by the small material-icons-CORE set (Close/Check/
+# ArrowBack/Search/Settings/Edit/Lock/PlayArrow/Info/Share/Refresh — still
+# used throughout this app, still on the classpath via material3). Keeping
+# ~20 small core-icon classes fully is cheap, and with the ~1100-file
+# extended set gone the original class-merging collision risk this rule
+# targeted is much smaller anyway — but with 0 compiler/CI access in this
+# sandbox to re-verify that removing the rule is safe, the conservative
+# choice is to leave a working safety net in place rather than strip it on
+# an unverified assumption (Anti-Breaking / Regression-Check guard).
 -keep class androidx.compose.material.icons.filled.** { *; }
 -dontwarn androidx.compose.material.icons.**

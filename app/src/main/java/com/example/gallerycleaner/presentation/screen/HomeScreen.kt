@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -27,6 +26,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -223,7 +223,7 @@ fun HomeScreen(
                             // when on so its state is visible at a glance.
                             IconButton(onClick = { onRandomModeToggle(!randomModeEnabled) }) {
                                 Icon(
-                                    Icons.Filled.Shuffle,
+                                    painterResource(id = R.drawable.ic_shuffle),
                                     contentDescription = if (randomModeEnabled) {
                                         stringResource(R.string.home_random_mode_on_cd)
                                     } else {

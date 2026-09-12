@@ -132,12 +132,16 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    // Batch110 (revert Batch109): material-icons-extended dikembalikan. CI run231
-    // (compileReleaseKotlin) konfirmasi 7/18 icon project genuinely extended-only —
-    // Shuffle/Folder/GridView/Sort/Undo/ViewCarousel/ZoomIn — "Unresolved reference"
-    // di HomeScreen.kt/HomeScreenFolderRow.kt/SwipeScreen.kt/SwipeScreenGrid.kt.
-    // Opsi A (audit Batch108) resmi GAGAL, lihat PROJECT_STATE.md Batch110.
-    implementation("androidx.compose.material:material-icons-extended")
+    // Batch114 (Opsi (b) Stage 2, FINAL): material-icons-extended DICABUT lagi —
+    // beda dari percobaan Batch109 (Opsi A, gagal karena masih ada 7 titik pakai
+    // Icons.Filled.{Shuffle,Folder,GridView,Sort,Undo,ViewCarousel,ZoomIn} yang
+    // genuinely extended-only, CI run231). Kali ini ke-7 titik itu SUDAH dipindah
+    // ke vector drawable lokal (app/src/main/res/drawable/ic_*.xml, foundation-nya
+    // ditambah Batch112) sebelum baris ini dicabut — HomeScreen.kt/
+    // HomeScreenFolderRow.kt/SwipeScreen.kt/SwipeScreenGrid.kt di-update ATOMIK
+    // bareng commit yang sama (5 file total, precedent STABILITY WINS Batch77).
+    // proguard-rules.pro rule #5 (Batch113 hotfix) SENGAJA dibiarkan (sekarang
+    // cuma cover sisa material-icons-core kecil di package yang sama, harmless).
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("io.coil-kt:coil-gif:2.6.0")
     // Batch40 (Audit Gap P0 #1): video frame thumbnails. Registered once in
