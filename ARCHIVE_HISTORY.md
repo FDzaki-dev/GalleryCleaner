@@ -1,12 +1,23 @@
-# ARCHIVE_HISTORY — Riwayat Batch Lama (Batch1–101)
+# ARCHIVE_HISTORY — Riwayat Batch Lama (Batch1–103)
 
 > Diarsipkan dari `PROJECT_STATE.md` sesi ini (dipindah verbatim, 0 kata diubah) — permintaan user: "arsipkan total isi project_state.md except current progress and rule!!". `PROJECT_STATE.md` sekarang cuma nyimpen rule permanen (IDENTITAS PROJECT / ATURAN PERMANEN SESI / Protected Assets / Insiden Operasional) + status-progress aktif (Rilis Terbaru / Versi Saat Ini / Belum Dikerjakan). Seluruh Riwayat Batch (Batch58-101, 43 entry) dipindah ke sini, ditaruh di atas arsip Batch1-57 yang sudah ada duluan — notice archival lama tetap dipertahankan verbatim di bawah pembatas berikut.
+>
+> Batch102 (archival move itu sendiri) tidak dapat entry terpisah — sudah terekam di notice ini. Sejak Batch103, entry baru ditulis LANGSUNG ke file ini (bukan lagi ke `PROJECT_STATE.md`), biar `PROJECT_STATE.md` tetap ramping sesuai mission archival ini.
 >
 > Status project saat ini, item pending, dan rule permanen: lihat `PROJECT_STATE.md`.
 
 ---
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch103 — UI STATE ROTASI-SURVIVAL SWEEP Stage 4: HomeScreenSections showGoalDialog/sliderBytes (1 file)
+User: "kerjakan next task" — tidak ada ZIP baru, lanjut dari tracker "Belum Dikerjakan" di `PROJECT_STATE.md`: sisa kandidat aman berikutnya dalam urutan eksplisit tracker adalah `HomeScreenSections.kt`'s `showGoalDialog`+`sliderBytes` (didaftar duluan dari `TrashScreen.kt`'s `showEmptyTrashConfirm`).
+
+`HomeScreenSections.kt` — 2 state diganti `remember`→`rememberSaveable`, pola identik Batch97/98/99: `showGoalDialog` (Boolean, kontrol visibility `CleanupGoalDialog` di `StorageDashboard`) dan `sliderBytes` (Float, nilai slider goal-pembersihan yang sedang di-drag di dalam `CleanupGoalDialog` — composable terpisah dari `showGoalDialog`, tapi 1 file yang sama). Import baru: `androidx.compose.runtime.saveable.rememberSaveable`. 0 custom `Saver` dibutuhkan (keduanya primitif). Verifikasi: brace/paren balanced (93/93, 284/284).
+
+Tracker diupdate: Stage 4 SELESAI. Sisa kandidat aman: `TrashScreen.kt`'s `showEmptyTrashConfirm`.
+
+---
 
 ### Batch101 — Pangkas narasi bertele-tele di README.md & ROADMAP.md (2 file, dokumentasi doang)
 User koreksi Batch100: "seluruh lini dokumentasi except project_state.md — seluruhnya masih kegemukan oleh narasi gak penting banget/bertele-tele" — scope diperluas dari "rule permanen doang" ke seluruh narasi bertele-tele di semua docs.

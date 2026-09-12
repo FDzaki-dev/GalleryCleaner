@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -167,7 +168,8 @@ internal fun StorageDashboard(
     cleanupGoalBytes: Long = DEFAULT_CLEANUP_GOAL_BYTES,
     onCleanupGoalChange: (Long) -> Unit = {}
 ) {
-    var showGoalDialog by remember { mutableStateOf(false) }
+    // Batch103: rememberSaveable, same reasoning as Batch97/98/99 — rotation survival sweep
+    var showGoalDialog by rememberSaveable { mutableStateOf(false) }
 
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
@@ -275,7 +277,8 @@ private fun CleanupGoalDialog(
     onDismiss: () -> Unit
 ) {
     val presetsBytes = listOf(500_000_000L, 1_000_000_000L, 2_000_000_000L, 5_000_000_000L, 10_000_000_000L)
-    var sliderBytes by remember { mutableStateOf(currentGoalBytes.toFloat()) }
+    // Batch103: rememberSaveable, same reasoning as Batch97/98/99 — rotation survival sweep
+    var sliderBytes by rememberSaveable { mutableStateOf(currentGoalBytes.toFloat()) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
