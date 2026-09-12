@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,10 +40,18 @@ fun TrashScreen(
     onRestore: (List<Long>) -> Unit,
     onDeletePermanently: (List<Long>) -> Unit
 ) {
-    val selected = remember { mutableStateListOf<Long>() }
-    // Batch104: rememberSaveable, same reasoning as Batch97/98/99/103 — rotation survival sweep.
-    // `selected` (SnapshotStateList<Long>) sengaja TIDAK diubah di sini — butuh custom `listSaver`,
-    // di luar scope stage ini (lihat tracker "Belum Dikerjakan").
+    // Batch115 (UI State Rotation-Survival Sweep, kelas custom-Saver — lanjutan
+    // Stage 1-5 Batch97/98/99/103/104): `selected` (SnapshotStateList<Long>)
+    // sekarang rotation-survival lewat listSaver. Elemen Long primitif, langsung
+    // didukung Bundle — 0 custom encode/decode dibutuhkan, beda kelas masalah dari
+    // organizeTarget/zoomedItem (bawa MediaItem) atau updateState (sealed class),
+    // yang MASIH pending (lihat tracker "Belum Dikerjakan").
+    val selected = rememberSaveable(
+        saver = listSaver<SnapshotStateList<Long>, Long>(
+            save = { it.toList() },
+            restore = { it.toMutableStateList() }
+        )
+    ) { mutableStateListOf<Long>() }
     var showEmptyTrashConfirm by rememberSaveable { mutableStateOf(false) }
 
     // Selection resets cleanly whenever the trash contents change (e.g. after
