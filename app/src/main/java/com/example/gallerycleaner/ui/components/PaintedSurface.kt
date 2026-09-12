@@ -146,18 +146,24 @@ fun PaintedSurface(
                     val radiusB = maxDim * 0.55f
                     val radiusC = maxDim * 0.6f
 
+                    // Batch120: alpha raised from v1 (0.24/0.16/0.18) — real-device
+                    // screenshot feedback (see PaintedTokens.kt class doc) showed the
+                    // wash reading as an almost-invisible flat fill rather than visible
+                    // watercolor texture at the original values, especially against
+                    // Batch120's now-darker/cooler [fillColor]. Raised until the wash
+                    // is clearly perceptible without overpowering foreground content.
                     val washA = Brush.radialGradient(
-                        colors = listOf(washColorA.copy(alpha = 0.24f), Color.Transparent),
+                        colors = listOf(washColorA.copy(alpha = 0.34f), Color.Transparent),
                         center = centerA,
                         radius = radiusA
                     )
                     val washB = Brush.radialGradient(
-                        colors = listOf(washColorB.copy(alpha = 0.16f), Color.Transparent),
+                        colors = listOf(washColorB.copy(alpha = 0.24f), Color.Transparent),
                         center = centerB,
                         radius = radiusB
                     )
                     val washC = Brush.radialGradient(
-                        colors = listOf(washColorC.copy(alpha = 0.18f), Color.Transparent),
+                        colors = listOf(washColorC.copy(alpha = 0.26f), Color.Transparent),
                         center = centerC,
                         radius = radiusC
                     )

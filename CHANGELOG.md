@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch120 — 2026-09-13
+- **Sage Wash — perbaikan warna** (`ui/theme/PaintedTokens.kt`, `ui/components/PaintedSurface.kt`): warna dasar gelap digeser dari coklat hangat ke charcoal hijau-tua yang lebih dingin & kaya, accent terracotta digeser dari oranye ke brick-rose yang lebih tenang, dan tekstur watercolor-nya dibikin lebih kelihatan. Perbaikan langsung dari feedback tampilan v1 yang kebaca murahan — sekarang harusnya kebaca lebih tenang & premium sesuai niatnya.
+
 ## Batch119 — 2026-09-13
 - **New: opsi Color style ke-4 — "Sage Wash"** (`Settings → Color style`): tema baru berbasis Material 3 dengan gaya watercolor/brush-painted — panel bertekstur wash warna moss/terracotta/ochre yang lembut, tepi brush-stroke gradient, sudut asimetris (kesan hand-trimmed), tipografi serif+sans yang tenang. Accent calm (moss hijau & terracotta), beda dari 3 tema sebelumnya (Signature/Amber Reserve/Indigo Noir). Berlaku Light maupun Dark. **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch119.
 

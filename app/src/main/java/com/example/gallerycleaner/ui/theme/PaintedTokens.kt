@@ -29,50 +29,83 @@ import androidx.compose.ui.graphics.Color
  * committing — ratios noted per line below.
  */
 object Painted {
-    // ============ Dark mode — "wet canvas at dusk" ============
-    /** Screen background — warm near-black taupe (H30° S8% L11%), not blue
-     *  (Signature/Indigo) or true espresso-black (Amber) — a neutral warm
-     *  canvas the washes below sit on top of. */
-    val Bg = Color(0xFF1E1C1A)
+    // ============ Dark mode — "botanical ink at dusk" ============
+    // Batch120 REVISION: user tested Batch119's build (screenshot evidence,
+    // 0 compile error — see PROJECT_STATE.md Batch119) and flagged the
+    // result as reading "cheap/scam-app", not premium. Root cause,
+    // diagnosed from the screenshot: the ORIGINAL v1 palette paired a warm
+    // brown/taupe [Bg] with a warm orange-leaning [Terracotta] — warm-on-
+    // warm, analogous, and (per WCAG check) genuinely lower-contrast than
+    // it read on paper, so panels came across as flat muddy brown instead
+    // of "watercolor art", and the warm-orange accent on trash/warning text
+    // specifically read as caution-tape rather than calm clay. Signature/
+    // Amber Reserve/Indigo Noir all share one structural trait this
+    // v1 palette didn't: a COOL, rich dark base contrasted with WARM accent
+    // pops (navy+brass, navy+coral, indigo+dusty-rose) — that base/accent
+    // contrast is what reads as "premium", not the specific hues. v2 below
+    // applies the same principle: [Bg] shifts from brown to a deep,
+    // desaturated forest-charcoal (cool, sage-adjacent — ties to this
+    // theme's own name instead of fighting it), and [Terracotta] shifts
+    // hue away from orange toward a muted brick-rose (still "terracotta
+    // pottery", far less "alert cone"). Wash-blob alpha is also raised in
+    // `PaintedSurface.kt` so the watercolor texture actually reads at a
+    // glance instead of disappearing into the fill.
+    /** Screen background — deep, desaturated forest-charcoal (H155° S20%
+     *  L9%), COOL rather than warm-brown (v1) — ties to this theme's own
+     *  "sage" identity instead of reading as plain taupe, and gives the
+     *  warm [Moss]/[Terracotta]/[Ochre] accents something to contrast
+     *  against (same "cool base, warm pop" principle Signature/Amber/
+     *  Indigo already use). */
+    val Bg = Color(0xFF121C18)
 
     /** Card/grouped-surface fill — one step lighter than [Bg], same "next
      *  tonal step" role every other theme's `surface` token plays. */
-    val Surface = Color(0xFF2A2622)
+    val Surface = Color(0xFF192420)
 
     /** Nested/inset fill — one step lighter again. */
-    val SurfaceRaised = Color(0xFF332E28)
+    val SurfaceRaised = Color(0xFF222F29)
 
     /** Structural divider tone — deliberately low-contrast against [Bg]
      *  (~1.6:1, a hairline-adjacent role, not body text) matching how this
      *  project's other themes treat `outline` as a subtle structural line,
      *  never a text pairing. */
-    val Outline = Color(0xFF443D35)
+    val Outline = Color(0xFF3D5247)
 
-    val TextPrimary = Color(0xFFF3EFE9) // contrast vs Bg: 14.8:1 (AAA)
+    val TextPrimary = Color(0xFFF1F3EE) // contrast vs Bg: 15.6:1 (AAA)
 
     /** Secondary/muted text — same derivation technique every prior batch
      *  uses (alpha of [TextPrimary], not a new hue). 68% keeps contrast on
      *  [Bg] at ~7.5:1, comfortably past AA for small text. */
     val TextSecondary = TextPrimary.copy(alpha = 0.68f)
 
-    /** "Keep"/primary accent — muted moss-teal green, this theme's calm
-     *  counterpart to Signature's brighter [SageKeep]. */
-    val Moss = Color(0xFF8CAA97)
+    /** "Keep"/primary accent — moss-teal green, this theme's calm
+     *  counterpart to Signature's brighter [SageKeep]. Batch120: saturation
+     *  raised slightly vs. v1 so it actually pops as an accent against the
+     *  now-darker/cooler [Bg], rather than nearly blending into it. */
+    val Moss = Color(0xFF72B694)
 
-    /** "Delete"/secondary accent — soft muted clay terracotta, calm
-     *  counterpart to the louder reds/oxbloods the other 3 themes use. */
-    val Terracotta = Color(0xFFC98868)
+    /** "Delete"/secondary accent — muted brick-rose terracotta, calm
+     *  counterpart to the louder reds/oxbloods the other 3 themes use.
+     *  Batch120: hue shifted away from v1's orange-leaning clay (which
+     *  read as caution/warning-orange on real-device screenshots, see
+     *  class doc) toward red/pink (H10° vs. v1's ~H20°) at lower
+     *  saturation — reads as dusty pottery-clay rather than alert-orange,
+     *  while keeping the "terracotta" identity. Text-on-accent contrast
+     *  re-verified ≥4.5:1 after the hue shift (lightness tuned to 58% to
+     *  clear AA — 52% only cleared 4.1:1, see Batch120 Python check). */
+    val Terracotta = Color(0xFFBF7769)
 
     /** Third wash pigment — soft ochre, decorative only (never a semantic
      *  Keep/Delete color), used purely to give the brush-stroke/wash
      *  texture in `PaintedSurface.kt` three pigments to blend instead of
      *  just two. */
-    val Ochre = Color(0xFFD2B36B)
+    val Ochre = Color(0xFFC1A667)
 
     /** Dark text-on-accent — reuses [Bg] itself (same "theme's own dark
      *  tone doubles as on-accent text" choice Cupertino's `TextOnAccent`
-     *  already makes with `IndigoTextPrimary`). Contrast on [Moss] ≈6.7:1,
-     *  on [Terracotta] ≈5.8:1 — both past AA for normal-size button text. */
+     *  already makes with `IndigoTextPrimary`). Contrast on [Moss] ≈7.3:1,
+     *  on [Terracotta] ≈5.0:1 — both past AA for normal-size button text
+     *  (re-verified Batch120 after the hue/lightness revision above). */
     val TextOnAccent = Bg
 
     /** Single soft ambient shadow, warm-brown-black rather than pure black
@@ -109,12 +142,14 @@ object Painted {
     /** [Moss] darkened (hue-preserving) for contrast against white
      *  on-accent text in light mode — same "darker accent + white text"
      *  inversion every other theme's light `ColorScheme` already uses.
-     *  Contrast for white text on this: ≈6.1:1. */
-    val MossOnLight = Color(0xFF3F6B54)
+     *  Contrast for white text on this: ≈5.1:1 (re-tuned Batch120 to match
+     *  [Moss]'s revised hue/saturation above). */
+    val MossOnLight = Color(0xFF3E795C)
 
-    /** [Terracotta] darkened, same technique. Contrast for white text on
-     *  this: ≈5.8:1. */
-    val TerracottaOnLight = Color(0xFF96543A)
+    /** [Terracotta] darkened, same technique, same revised brick-rose hue
+     *  as the dark-mode value above. Contrast for white text on this:
+     *  ≈7.5:1 (re-tuned Batch120). */
+    val TerracottaOnLight = Color(0xFF814337)
 
     val TextOnAccentOnLight = Color(0xFFFFFFFF)
 
