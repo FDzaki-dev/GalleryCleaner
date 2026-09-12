@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch116 — 2026-09-12
+- **Hotfix: CI gagal pasca Batch115** (1 file): `TrashScreen.kt` — `compileReleaseKotlin` gagal (`run236`), `Unresolved reference: SnapshotStateList` di deklarasi `listSaver<SnapshotStateList<Long>, Long>`. Root cause: class `SnapshotStateList` ada di `androidx.compose.runtime.snapshots`, bukan `androidx.compose.runtime` (beda dari fungsi `mutableStateListOf`/`toMutableStateList` yang memang di `androidx.compose.runtime` dan resolve normal). Fix: tambah `import androidx.compose.runtime.snapshots.SnapshotStateList`. 0 logic berubah — nunggu build ulang buat konfirmasi hijau.
+
 ## Batch115 — 2026-09-12
 - **UI STATE ROTASI-SURVIVAL SWEEP, Stage 6 (custom-`Saver` kelas)** (1 file): `TrashScreen.kt`'s `selected` (`SnapshotStateList<Long>`, multi-select di layar Trash) sebelumnya `remember{}` polos — rotasi bikin seleksi hilang diam-diam. Sekarang `rememberSaveable` dengan `listSaver` custom (elemen `Long` primitif, langsung didukung `Bundle`). Kandidat pertama dari 4 item "custom-Saver" yang sengaja ditunda sejak Stage 5 (Batch104) — dipilih duluan karena risiko teknis paling rendah. 3 sisa (`organizeTarget`/`zoomedItem` yang bawa `MediaItem`, `updateState` sealed class) menunggu instruksi lanjut. Belum tervalidasi compiler/CI/device asli — user diminta cek rotasi layar Trash dengan item ter-select.
 
