@@ -13,7 +13,7 @@
 - Publish otomatis tiap push ke `main` lewat `.github/workflows/build.yml` (`softprops/action-gh-release@v2`, tag `v1.0.<run_number>`) — bukan cuma Actions Artifact, `permissions.contents: write`.
 
 ## Versi Saat Ini
-v96 (belum berubah dari Batch99 — Batch100 dokumentasi doang, 0 kode/build) — Batch100 (pangkas ulang rule permanen `PROJECT_STATE.md`, lihat Riwayat Batch bawah)
+v96 (belum berubah dari Batch99 — Batch100/101 dokumentasi doang, 0 kode/build) — Batch101 (pangkas narasi README.md & ROADMAP.md, lihat Riwayat Batch bawah)
 
 ## Belum Dikerjakan (Prioritas Berikutnya)
 - **UI STATE ROTASI-SURVIVAL SWEEP (mulai Batch97, ditemukan investigasi mandiri, BUKAN dari `AUDIT_GAP.md`)** — guard project "UI State dan input wajib bertahan dari rotasi (`rememberSaveable`/ViewModel)" belum konsisten diterapkan di seluruh app; `MainActivity.kt`'s `isUnlocked` (App Lock, sebelum Batch97) adalah satu-satunya tempat yang sudah benar. Grep project-wide (`remember { mutableStateOf`) nemu banyak site lain — dikerjakan bertahap per batch (1 file/batch, pola sama kayak P1 #6/P2 #11/P2 #12/Filmstrip dimming), BUKAN 1 batch raksasa (beberapa butuh custom `Saver`, di luar cap 1-file-aman). Status:
@@ -79,6 +79,13 @@ v96 (belum berubah dari Batch99 — Batch100 dokumentasi doang, 0 kode/build) �
 - **Aturan (asal: Batch46)**: nama folder/repo Termux WAJIB PERSIS `GalleryCleaner` (PascalCase, tanpa hyphen) di tiap `-iname`/fallback path skrip. Precedence: nama repo GitHub existing > gaya penamaan umum project.
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch101 — Pangkas narasi bertele-tele di README.md & ROADMAP.md (2 file, dokumentasi doang)
+User koreksi Batch100: "seluruh lini dokumentasi except project_state.md — seluruhnya masih kegemukan oleh narasi gak penting banget/bertele-tele" — scope diperluas dari "rule permanen doang" ke seluruh narasi bertele-tele di semua docs.
+
+Ditinjau ulang keenam file lain: `README.md` & `ROADMAP.md` dipangkas (narasi wordy → to-the-point, isi/fakta 0 hilang) — `ROADMAP.md` 10.121→~5,5k char (bagian "audit koreksi"/histori investigasi & implementation deep-dive di Fase A/B dibuang, tinggal status+file rujukan; detail lengkap tetap ada di sini), `README.md` 4.220→~3,7k char (kalimat penghubung wordy dipadatkan, semua step/command dipertahankan verbatim). `RELEASE_SIGNING.md` sudah ringkas faktual (15 baris), 0 diubah.
+
+**Sengaja TIDAK disentuh (hard lock, bukan kelalaian)**: `CHANGELOG.md` — SOP P0 eksplisit "append-only", plus rule project sendiri sejak Batch57 "entry lama TIDAK ditulis ulang (fakta historis)"; `AUDIT_GAP.md` — header filenya sendiri eksplisit "VERBATIM ... tidak diedit" (sumber audit asli user, integritas tracker bergantung ke ini); `ARCHIVE_HISTORY.md` — header filenya sendiri eksplisit "dipindah verbatim, 0 kata diubah". Ketiganya arsip/histori by design, bukan "rule permanen" atau "narasi hidup" — motong isinya = pelanggaran Anti-Breaking (data historis hilang), bukan pemangkasan narasi.
 
 ### Batch100 — Pangkas ulang rule permanen di PROJECT_STATE.md (1 file, dokumentasi doang)
 User: "arsipkan total seluruh stale documentation, pangkas total narasi panjang lebar pada isi rule permanen yang ada dalam document project (hanya benar-benar menyisakan instruksi/arahan saja), lalu terapkan adaptasi 100% pada document latest modified only!!" — audit seluruh 7 file docs (`ARCHIVE_HISTORY.md`/`PROJECT_STATE.md`/`README.md`/`ROADMAP.md`/`RELEASE_SIGNING.md`/`CHANGELOG.md`/`AUDIT_GAP.md`): 0 stale documentation ditemukan (semua sudah konsisten versi terkini, `ARCHIVE_HISTORY.md`/`CHANGELOG.md` memang arsip by design, bukan stale) — jadi bagian "arsipkan stale docs" nihil kerja. "Latest modified" ditentukan via cross-check nomor batch tertinggi antar file (`CHANGELOG.md` top-entry `v96_Batch99` vs `PROJECT_STATE.md` top-entry Batch99, keduanya sinkron) — `PROJECT_STATE.md` satu-satunya file dengan section "rule permanen" (IDENTITAS PROJECT, ATURAN PERMANEN SESI, Insiden Operasional Batch46); `README.md`/`RELEASE_SIGNING.md` sudah berupa docs faktual ringkas (bukan rule-narrative bergaya Riwayat Batch), tidak disentuh.

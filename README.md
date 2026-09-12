@@ -7,10 +7,8 @@ group, and lets you sort by date, size, or name.
 ## 🔗 Download the latest APK
 
 **[github.com/FDzaki-dev/GalleryCleaner/releases/latest](https://github.com/FDzaki-dev/GalleryCleaner/releases/latest)**
- — signed, installable APK,
-rebuilt and published automatically every time changes are pushed to
-`main`. No Android Studio needed, just download and tap to install (enable
-"install from unknown sources" if prompted).
+ — signed APK, auto-rebuilt on every push to `main`. Download and
+install (enable "install from unknown sources" if prompted).
 
 ## ✨ What's implemented
 
@@ -35,9 +33,8 @@ See `CHANGELOG.md` for the full, newest-first history of every change, and
 
 ## 🛠 Building it yourself
 
-This project includes `.github/workflows/build.yml`, which builds the APK
-in the cloud automatically on every push — GitHub's servers do the
-compiling, you never need Android Studio or a computer.
+Builds via `.github/workflows/build.yml` on every push — no local
+compiling needed.
 
 **Android phone (Termux, recommended):**
 1. Install **Termux** from F-Droid or Play Store.
@@ -65,26 +62,20 @@ compiling, you never need Android Studio or a computer.
    ```
    When prompted for a password, paste the token from step 4 (not your
    GitHub password).
-6. On github.com, open your repo → **Actions** tab — "Build APK" runs
-   automatically (~3-6 minutes). When it finishes, check the repo's
-   sidebar → **Releases** for the signed `.apk`, ready to download and
-   install directly (see the shortcut at the top of this README).
+6. On github.com → your repo → **Actions** tab — "Build APK" runs
+   (~3-6 min). When done, **Releases** has the signed `.apk`.
 
-**iPhone:** use the **Working Copy** app instead of Termux — it can unzip,
-commit, and push to GitHub directly from its own file browser, with the
-same steps 3–4 above for creating the repo/token.
+**iPhone:** use **Working Copy** instead of Termux — unzip, commit, push
+to GitHub from its file browser, same steps 3–4 above.
 
 **On a computer, with Android Studio:**
-1. Install **Android Studio** (free): https://developer.android.com/studio
-2. Open Android Studio → **Open** → select this `GalleryCleaner` folder.
-3. Let it sync (auto-downloads Gradle and dependencies the first time —
-   needs internet access once).
-4. Click **Run ▶** with a device/emulator connected, or
-   `Build → Build Bundle(s) / APK(s) → Build APK(s)` to just get the
-   `.apk` (shows up under `app/build/outputs/apk/debug/`).
+1. Install **Android Studio**: https://developer.android.com/studio
+2. **Open** → select this `GalleryCleaner` folder.
+3. Let it sync (downloads Gradle/dependencies once, needs internet).
+4. **Run ▶** with a device/emulator, or `Build → Build Bundle(s) /
+   APK(s) → Build APK(s)` → `.apk` under `app/build/outputs/apk/debug/`.
 
-Every time you push a change, GitHub automatically rebuilds and republishes
-the APK for you.
+Every push to GitHub auto-rebuilds and republishes the APK.
 
 ## 💡 Ideas for next steps
 
