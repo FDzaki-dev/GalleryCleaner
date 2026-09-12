@@ -10,14 +10,15 @@
     <!-- Older Android versions -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
+    <!-- Batch106: WRITE_EXTERNAL_STORAGE (maxSdkVersion=28) removed — dead
+         since minSdk 31 (Batch105) already exceeds its ceiling, so it could
+         never actually apply to any installable device. -->
     <!-- Only used if the user opts into the cleaning-reminder notification
          in Settings; requested at runtime on API 33+, never assumed. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Swipe-decision haptic feedback (Settings toggle, default on). A
          *normal* permission — granted automatically at install, no runtime
-         prompt, same as READ/WRITE_EXTERNAL_STORAGE above. -->
+         prompt, same as READ_EXTERNAL_STORAGE above. -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Batch39 (Audit Gap P0 #4): App Lock's BiometricPrompt. Normal
          permission, granted automatically at install — no runtime prompt. -->

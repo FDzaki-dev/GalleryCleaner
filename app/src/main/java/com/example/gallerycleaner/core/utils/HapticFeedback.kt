@@ -1,7 +1,6 @@
 package com.example.gallerycleaner
 
 import android.content.Context
-import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -14,16 +13,17 @@ import android.os.VibratorManager
  * standard system widgets — which is exactly why it went in silently and
  * produced nothing. VibrationEffect goes straight to the vibration motor
  * and only depends on the VIBRATE permission (normal, auto-granted).
+ *
+ * Batch106: minSdk is now 31 = Build.VERSION_CODES.S (Batch105), so the
+ * legacy pre-S VibratorManager fallback and the pre-O VibrationEffect
+ * fallback below were structurally unreachable — removed as part of the
+ * dead-code cleanup that minSdk 31 enabled. `Build` import dropped too
+ * (no longer referenced anywhere in this file).
  */
 
 private fun vibrator(context: Context): Vibrator? = try {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-        manager?.defaultVibrator
-    } else {
-        @Suppress("DEPRECATION")
-        context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-    }
+    val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+    manager?.defaultVibrator
 } catch (e: Exception) {
     null
 }
@@ -34,12 +34,7 @@ private fun vibrate(context: Context, pattern: LongArray) {
     try {
         val v = vibrator(context) ?: return
         if (!v.hasVibrator()) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            v.vibrate(VibrationEffect.createWaveform(pattern, -1))
-        } else {
-            @Suppress("DEPRECATION")
-            v.vibrate(pattern, -1)
-        }
+        v.vibrate(VibrationEffect.createWaveform(pattern, -1))
     } catch (e: Exception) {
         // Never worth crashing or interrupting a swipe over this.
     }
