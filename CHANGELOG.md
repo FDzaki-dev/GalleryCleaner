@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch107 — 2026-09-12
+- **Dead-code cleanup pasca `minSdk` 31, Stage 2** (1 file): `GalleryCleanerApp.kt`'s `newImageLoader()` punya percabangan `Build.VERSION.SDK_INT >= 28` buat milih decoder GIF — sejak `minSdk` dinaikkan ke 31 (Batch105), kondisi ini selalu true, jadi else-branch (`GifDecoder.Factory()`) gak pernah kepakai lagi. Dihapus, `ImageDecoderDecoder.Factory()` jadi unconditional; import `android.os.Build` + `coil.decode.GifDecoder` ikut dihapus (udah gak dipakai). Lanjutan Stage 1 (`HapticFeedback.kt`+`AndroidManifest.xml`) — 9 file sisa kandidat menyusul bertahap. 0 perubahan behavior (kondisi yang dihapus memang selalu true).
+- *(Catatan versi: label `v` SENGAJA tidak dicantumkan — entri Batch100-106 gak pernah tercatat di sini (gap baru, didokumentasikan di `PROJECT_STATE.md`), jadi estimasi sequential lama (`v96_Batch99` +1 per batch) udah gak valid buat batch ini, bakal cuma nebak. Nomor versionCode/versionName ASLI tetap otomatis dari `GITHUB_RUN_NUMBER` saat push — lihat GitHub Release terbaru buat angka pasti.)*
+
 ## v96_Batch99 — 2026-09-10
 - **UI STATE ROTASI-SURVIVAL SWEEP, Stage 3** (1 file): `SwipeScreen.kt`'s `showFullscreen`/`showInfo`/`showSortMenu` (fullscreen viewer toggle, info dialog toggle, sort dropdown toggle) pakai `remember{}` polos — rotasi bikin ketiganya nutup sendiri diam-diam. Kelas risiko lebih ringan dari Stage 1/2 (0 ketikan yang bisa hilang, cuma overlay/menu ke-reset). Sekarang `rememberSaveable`, ketiganya. Lanjutan langsung tracker "UI STATE ROTASI-SURVIVAL SWEEP" di `PROJECT_STATE.md` — sisa kandidat aman (`HomeScreenSections.kt`/`TrashScreen.kt`) menyusul batch berikutnya. 0 perubahan happy-path.
 - *(Catatan versi: `v96` estimasi berurutan dari `v95_Batch98` — run number GitHub Actions aktual buat push ini belum terkonfirmasi, koreksi kalau beda pas CI jalan.)*
