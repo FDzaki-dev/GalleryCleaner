@@ -39,6 +39,7 @@ import com.example.gallerycleaner.ui.theme.DustyRoseDelete
 import com.example.gallerycleaner.ui.theme.IndigoBg
 import com.example.gallerycleaner.ui.theme.Neumorph
 import com.example.gallerycleaner.ui.theme.OxbloodDelete
+import com.example.gallerycleaner.ui.theme.Painted
 import com.example.gallerycleaner.ui.theme.PeriwinkleKeep
 import com.example.gallerycleaner.ui.theme.SageKeep
 import com.example.gallerycleaner.ui.theme.CoralDelete
@@ -791,17 +792,29 @@ private val THEME_STYLES = listOf(
         previewBg = IndigoBg,
         swatchKeep = PeriwinkleKeep,
         swatchDelete = DustyRoseDelete
+    ),
+    // Batch119: 4th color style — Material 3 foundation, calm moss/
+    // terracotta accents, painted/watercolor material language. See
+    // MaterialStyle.PAINTED + PaintedTokens.kt for the full palette.
+    ThemeStyle(
+        appTheme = AppTheme.SAGE_WASH,
+        labelRes = R.string.settings_theme_sage_wash_label,
+        descriptionRes = R.string.settings_theme_sage_wash_desc,
+        previewBg = Painted.Bg,
+        swatchKeep = Painted.Moss,
+        swatchDelete = Painted.Terracotta
     )
 )
 
 @Composable
 private fun ThemeStyleCard(style: ThemeStyle, selected: Boolean, onClick: () -> Unit) {
     // Theme-agnostic by design: this card is used to pick between Signature
-    // (Midnight-Blue Glassmorphism), Amber Reserve, and Indigo Noir, so it
-    // stays plain M3 (colorScheme-driven) rather than any one theme's own
-    // components — using GlassCard here would look wrong once Amber/Indigo
-    // is selected. Manual clip+background+border Row, same technique kept
-    // since before Batch10's short-lived Tactile/Glass migration.
+    // (Midnight-Blue Glassmorphism), Amber Reserve, Indigo Noir, and — as
+    // of Batch119 — Sage Wash, so it stays plain M3 (colorScheme-driven)
+    // rather than any one theme's own components — using GlassCard here
+    // would look wrong once any non-Signature style is selected. Manual
+    // clip+background+border Row, same technique kept since before
+    // Batch10's short-lived Tactile/Glass migration.
     Row(
         modifier = Modifier
             .fillMaxWidth()

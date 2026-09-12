@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch119 — 2026-09-13
+- **New: opsi Color style ke-4 — "Sage Wash"** (`Settings → Color style`): tema baru berbasis Material 3 dengan gaya watercolor/brush-painted — panel bertekstur wash warna moss/terracotta/ochre yang lembut, tepi brush-stroke gradient, sudut asimetris (kesan hand-trimmed), tipografi serif+sans yang tenang. Accent calm (moss hijau & terracotta), beda dari 3 tema sebelumnya (Signature/Amber Reserve/Indigo Noir). Berlaku Light maupun Dark. **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch119.
+
 ## Batch118 — 2026-09-12
 - **Hotfix: seleksi hilang saat rotasi hp di mode pilih-file Trash (regresi tak-terlihat sejak Batch115/116, kebuka Batch117)** (1 file): `TrashScreen.kt` — efek pembersih seleksi (`selected.retainAll(...)`, jalan tiap daftar trash berubah) sebelumnya jalan juga di composition PERTAMA pasca rotasi hp, padahal saat itu daftar trash-nya sendiri masih kosong sementara (nunggu reload) — langsung ngosongin seleksi yang baru aja berhasil di-restore. Sekarang firing pertama itu di-skip, seleksi beneran survive rotasi end-to-end. Kasus normal (trash beneran jadi kosong abis permanent-delete) tetap bersih seperti biasa.
 

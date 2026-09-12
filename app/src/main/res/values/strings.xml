@@ -47,6 +47,8 @@
     <string name="settings_theme_amber_reserve_desc">Deep navy neumorphism — soft dual-shadow panels, no border, no glass.</string>
     <string name="settings_theme_indigo_noir_label">Indigo Noir</string>
     <string name="settings_theme_indigo_noir_desc">Deep indigo, platinum &amp; dusty rose accents.</string>
+    <string name="settings_theme_sage_wash_label">Sage Wash</string>
+    <string name="settings_theme_sage_wash_desc">Material 3 base with a hand-painted watercolor wash — calm moss &amp; terracotta accents.</string>
     <string name="settings_theme_selected_cd">Selected</string>
 
     <string name="settings_section_trash">Trash</string>

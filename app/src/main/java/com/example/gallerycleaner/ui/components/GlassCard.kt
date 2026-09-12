@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.gallerycleaner.ui.theme.LocalMaterialStyle
 import com.example.gallerycleaner.ui.theme.MaterialStyle
+import com.example.gallerycleaner.ui.theme.PaintedShape
 
 /**
  * Drop-in floating-panel container — the shared `Card` equivalent for
@@ -106,6 +107,29 @@ fun GlassCard(
         return
     }
 
+    // Batch119 (Sage Wash): same early-return shape as NEUMORPH/CUPERTINO
+    // above — PaintedSurface needs a shape-clipped multi-layer draw (wash
+    // blobs + brush-stroke gradient, see its doc comment), which can't be
+    // expressed as a linear Modifier chain either. Uses PaintedShape.Card
+    // (this theme's own asymmetric corner shape, see PaintedShape.kt) —
+    // the [shape] param above is deliberately NOT forwarded here, same as
+    // NEUMORPH/CUPERTINO not forwarding it to their own shape defaults,
+    // since every material owns its own signature silhouette.
+    if (style == MaterialStyle.PAINTED) {
+        PaintedSurface(
+            modifier = modifier,
+            shape = PaintedShape.Card,
+            contentPadding = contentPadding,
+            onClick = onClick,
+            enabled = enabled
+        ) {
+            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+                content()
+            }
+        }
+        return
+    }
+
     Box(
         modifier = modifier
             .let {
@@ -114,6 +138,7 @@ fun GlassCard(
                     MaterialStyle.SKEUO_LITE -> it.skeuoPanel()
                     MaterialStyle.NEUMORPH -> it // unreachable — handled by the early return above
                     MaterialStyle.CUPERTINO -> it // unreachable — handled by the early return above
+                    MaterialStyle.PAINTED -> it // unreachable — handled by the early return above
                 }
             }
             .let { if (onClick != null) it.clickable(enabled = enabled, onClick = onClick) else it }

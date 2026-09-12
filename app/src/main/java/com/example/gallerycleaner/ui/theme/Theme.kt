@@ -152,10 +152,52 @@ private val IndigoNoirLight = lightColorScheme(
     onError = androidx.compose.ui.graphics.Color(0xFFFFFFFF)
 )
 
+// Batch119 — 4th color style, full new introduction (not a restyle of an
+// existing theme like Amber's Batch36/Indigo's Batch74/77). Reads
+// exclusively from `Painted` (PaintedTokens.kt) — a standalone calm
+// moss/terracotta/ochre palette, 0 hue borrowed from Signature/Amber/
+// Indigo, same "murni" standard those two prior full redesigns held
+// themselves to. Delete/error uses this theme's own Terracotta (not a
+// reused Oxblood/Coral/DustyRose), consistent with how each of the other
+// 3 themes already carries its own distinct Keep/Delete pair rather than
+// sharing one semantic color across themes.
+private val SageWashDark = darkColorScheme(
+    primary = Painted.Moss,
+    onPrimary = Painted.TextOnAccent,
+    secondary = Painted.Terracotta,
+    onSecondary = Painted.TextOnAccent,
+    background = Painted.Bg,
+    onBackground = Painted.TextPrimary,
+    surface = Painted.Surface,
+    onSurface = Painted.TextPrimary,
+    surfaceVariant = Painted.SurfaceRaised,
+    onSurfaceVariant = Painted.TextSecondary,
+    outline = Painted.Outline,
+    error = Painted.Terracotta,
+    onError = Painted.TextOnAccent
+)
+
+private val SageWashLight = lightColorScheme(
+    primary = Painted.MossOnLight,
+    onPrimary = Painted.TextOnAccentOnLight,
+    secondary = Painted.TerracottaOnLight,
+    onSecondary = Painted.TextOnAccentOnLight,
+    background = Painted.BgOnLight,
+    onBackground = Painted.TextPrimaryOnLight,
+    surface = Painted.SurfaceOnLight,
+    onSurface = Painted.TextPrimaryOnLight,
+    surfaceVariant = Painted.SurfaceRaisedOnLight,
+    onSurfaceVariant = Painted.TextSecondaryOnLight,
+    outline = Painted.OutlineOnLight,
+    error = Painted.TerracottaOnLight,
+    onError = Painted.TextOnAccentOnLight
+)
+
 private fun colorSchemeFor(appTheme: AppTheme, darkTheme: Boolean): ColorScheme = when (appTheme) {
     AppTheme.SIGNATURE -> if (darkTheme) SignatureDark else SignatureLight
     AppTheme.AMBER_RESERVE -> if (darkTheme) AmberReserveDark else AmberReserveLight
     AppTheme.INDIGO_NOIR -> if (darkTheme) IndigoNoirDark else IndigoNoirLight
+    AppTheme.SAGE_WASH -> if (darkTheme) SageWashDark else SageWashLight
 }
 
 /** [appTheme] → [Typography]. Batch80: Amber Reserve now reads its own
@@ -165,9 +207,14 @@ private fun colorSchemeFor(appTheme: AppTheme, darkTheme: Boolean): ColorScheme 
  *  Reserve wasn't yet "murni" per Batch36's no-hybrid-baseline standard
  *  (already enforced at the color layer via [NeumorphTokens.kt] and the
  *  surface layer via [NeumorphSurface.kt]). Signature/Indigo Noir keep
- *  [GalleryTypography] exactly as before — 0 regression for either. */
+ *  [GalleryTypography] exactly as before — 0 regression for either.
+ *  Batch119: new [AppTheme.SAGE_WASH] reads its own [PaintedTypography]
+ *  (serif display/title + sans body, see that file's doc comment) — same
+ *  "murni, own typography" standard as Amber Reserve's Batch80 fix,
+ *  applied from this theme's very first batch instead of retrofitted. */
 private fun typographyFor(appTheme: AppTheme) = when (appTheme) {
     AppTheme.AMBER_RESERVE -> NeumorphTypography
+    AppTheme.SAGE_WASH -> PaintedTypography
     else -> GalleryTypography
 }
 

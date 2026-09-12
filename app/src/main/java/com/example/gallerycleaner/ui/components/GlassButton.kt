@@ -23,6 +23,8 @@ import com.example.gallerycleaner.ui.theme.MaterialStyle
 import com.example.gallerycleaner.ui.theme.MidnightGlass
 import com.example.gallerycleaner.ui.theme.Neumorph
 import com.example.gallerycleaner.ui.theme.NeumorphShape
+import com.example.gallerycleaner.ui.theme.Painted
+import com.example.gallerycleaner.ui.theme.PaintedShape
 import com.example.gallerycleaner.ui.theme.SkeuoLite
 
 /**
@@ -53,6 +55,12 @@ import com.example.gallerycleaner.ui.theme.SkeuoLite
  *   [Cupertino.PRESSED_ALPHA] — no fill-color swap and no shadow removal,
  *   genuinely the third mechanism, via `CupertinoSurface`'s `pressed`
  *   param.
+ * - **Painted** (Batch119, Sage Wash): press = a Material-3-style
+ *   state-layer scrim ([Painted.PressedScrim]) drawn over the fill, and
+ *   the watercolor wash blobs are skipped while pressed (so the scrim
+ *   isn't fighting the same translucent blobs) — the 4th genuinely
+ *   distinct mechanism, via `PaintedSurface`'s `pressed`/`showWash`
+ *   params. See that file's doc comment for the full 4-way comparison.
  */
 @Composable
 fun GlassButton(
@@ -174,6 +182,35 @@ fun GlassButton(
                         color = Cupertino.TextOnAccent,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.4.sp
+                    )
+                }
+            }
+        }
+        MaterialStyle.PAINTED -> {
+            // Batch119: CTA fill reuses this theme's own Keep-associated
+            // accent (Painted.Moss) — same "theme's own accent becomes the
+            // CTA fill" choice Amber Reserve's ClassicBrass and Cupertino's
+            // AccentFill (PeriwinkleKeep) already make. showWash = false:
+            // a solid accent CTA doesn't want the multi-blob card texture
+            // competing with its own label; showBrushStroke stays true so
+            // the CTA still carries this theme's signature painted edge.
+            PaintedSurface(
+                modifier = modifier.height(52.dp),
+                shape = PaintedShape.Button,
+                pressed = isPressed,
+                fillColor = Painted.Moss,
+                showWash = false,
+                contentPadding = 0.dp,
+                onClick = onClick,
+                interactionSource = interactionSource // indication=null handled inside PaintedSurface
+            ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = text,
+                        color = Painted.TextOnAccent,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
                         letterSpacing = 0.4.sp
                     )
                 }

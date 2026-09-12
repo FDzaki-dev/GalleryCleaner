@@ -17,8 +17,11 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 /** A curated color style, independent of light/dark — ThemeMode decides
  *  brightness, AppTheme decides *character*. Kept as a separate axis
  *  instead of folding into ThemeMode so the two can be combined freely
- *  (e.g. Amber Reserve + Light) without a combinatorial enum explosion. */
-enum class AppTheme { SIGNATURE, AMBER_RESERVE, INDIGO_NOIR }
+ *  (e.g. Amber Reserve + Light) without a combinatorial enum explosion.
+ *  Batch119: SAGE_WASH added — 4th color style, Material 3 foundation
+ *  with a calm moss/terracotta palette and a painted/watercolor material
+ *  language (see MaterialStyle.PAINTED, PaintedTokens.kt). */
+enum class AppTheme { SIGNATURE, AMBER_RESERVE, INDIGO_NOIR, SAGE_WASH }
 
 private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
 private val APP_THEME_KEY = stringPreferencesKey("app_theme")

@@ -19,11 +19,13 @@ import com.example.gallerycleaner.ui.components.CupertinoSurface
 import com.example.gallerycleaner.ui.components.GlassButton
 import com.example.gallerycleaner.ui.components.GlassCard
 import com.example.gallerycleaner.ui.components.NeumorphSurface
+import com.example.gallerycleaner.ui.components.PaintedSurface
 import com.example.gallerycleaner.ui.components.glassPanel
 import com.example.gallerycleaner.ui.components.skeuoPanel
 import com.example.gallerycleaner.ui.theme.LocalMaterialStyle
 import com.example.gallerycleaner.ui.theme.MaterialStyle
 import com.example.gallerycleaner.ui.theme.NeumorphShape
+import com.example.gallerycleaner.ui.theme.PaintedShape
 
 @Composable
 internal fun InfoBar(item: MediaItem, position: Int, total: Int) {
@@ -90,6 +92,27 @@ private fun InfoChip(text: String) {
         }
         return
     }
+    // Batch119: PAINTED follows the identical early-return shape as
+    // NEUMORPH/CUPERTINO above. showWash = false at this chip's small
+    // size (same reasoning as its smaller shadow/no-offset vs. GlassCard
+    // defaults) — a multi-blob wash wouldn't read at this scale, so only
+    // the brush-stroke edge (this theme's other signature) shows.
+    if (style == MaterialStyle.PAINTED) {
+        PaintedSurface(
+            shape = PaintedShape.Chip,
+            shadowElevation = 3.dp,
+            showWash = false,
+            contentPadding = 0.dp
+        ) {
+            Text(
+                text,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+            )
+        }
+        return
+    }
     Box(
         modifier = when (style) {
             MaterialStyle.GLASS -> Modifier.glassPanel(
@@ -104,6 +127,7 @@ private fun InfoChip(text: String) {
             )
             MaterialStyle.NEUMORPH -> Modifier // unreachable — handled by the early return above
             MaterialStyle.CUPERTINO -> Modifier // unreachable — handled by the early return above
+            MaterialStyle.PAINTED -> Modifier // unreachable — handled by the early return above
         }
     ) {
         Text(

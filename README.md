@@ -21,7 +21,7 @@ install (enable "install from unknown sources" if prompted).
 - Smart detection: near-duplicate photos & blurry photos (on-device, no
   upload), optional backup-before-delete
 - App lock: biometric prompt (fingerprint/face) with automatic fallback to
-  your device's PIN/pattern/password, 3 full theme styles, built-in crash
+  your device's PIN/pattern/password, 4 full theme styles, built-in crash
   logger
 - Progress per group is saved (Jetpack DataStore) so reopening a group
   picks up where you left off

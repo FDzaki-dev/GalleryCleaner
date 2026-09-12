@@ -72,7 +72,21 @@ enum class MaterialStyle {
      *  `CupertinoSurface.kt`. Stage 1 (tokens + surface, Batch74) shipped
      *  unwired; this entry + its wiring is stage 2 (Batch77), used
      *  exclusively by Indigo Noir. */
-    CUPERTINO
+    CUPERTINO,
+
+    /** "Painted" — a plain Material 3 single-elevation shadow (the "based
+     *  on Material 3" axis of the batch brief) carrying a textured,
+     *  hand-painted fill: layered watercolor-wash gradient blobs + a
+     *  3-hue brush-stroke gradient edge, on this theme's own standalone
+     *  calm moss/ochre/terracotta palette (`PaintedTokens.kt`, 0 hue
+     *  borrowed from any other theme — same "murni" standard as
+     *  [NEUMORPH]/[CUPERTINO]). Press feedback is a genuine 4th mechanism:
+     *  a Material-3-style state-layer scrim drawn over the fill, distinct
+     *  from every other style's press technique — see
+     *  `PaintedSurface.kt`'s doc comment for the full comparison table.
+     *  New for Batch119, used exclusively by
+     *  [com.example.gallerycleaner.AppTheme.SAGE_WASH]. */
+    PAINTED
 }
 
 /** [AppTheme] → [MaterialStyle]. Signature keeps the original glass
@@ -83,11 +97,13 @@ enum class MaterialStyle {
  *  restyle, was [MaterialStyle.GLASS] since Batch27 — same "full
  *  material-language swap, not a recolor" standard as Amber Reserve's
  *  Batch36 move, per explicit user request ("restyling total theme
- *  Indigo Noir -> 'Cupertino Style' murni 100%!!"). */
+ *  Indigo Noir -> 'Cupertino Style' murni 100%!!"). Batch119: new
+ *  [AppTheme.SAGE_WASH] maps to the new [MaterialStyle.PAINTED]. */
 fun materialStyleFor(appTheme: AppTheme): MaterialStyle = when (appTheme) {
     AppTheme.SIGNATURE -> MaterialStyle.GLASS
     AppTheme.AMBER_RESERVE -> MaterialStyle.NEUMORPH
     AppTheme.INDIGO_NOIR -> MaterialStyle.CUPERTINO
+    AppTheme.SAGE_WASH -> MaterialStyle.PAINTED
 }
 
 /** Defaults to GLASS so any Composable that reads this without a provider
