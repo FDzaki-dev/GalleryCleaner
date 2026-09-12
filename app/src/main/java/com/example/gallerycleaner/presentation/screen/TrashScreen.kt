@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,7 +40,10 @@ fun TrashScreen(
     onDeletePermanently: (List<Long>) -> Unit
 ) {
     val selected = remember { mutableStateListOf<Long>() }
-    var showEmptyTrashConfirm by remember { mutableStateOf(false) }
+    // Batch104: rememberSaveable, same reasoning as Batch97/98/99/103 — rotation survival sweep.
+    // `selected` (SnapshotStateList<Long>) sengaja TIDAK diubah di sini — butuh custom `listSaver`,
+    // di luar scope stage ini (lihat tracker "Belum Dikerjakan").
+    var showEmptyTrashConfirm by rememberSaveable { mutableStateOf(false) }
 
     // Selection resets cleanly whenever the trash contents change (e.g. after
     // a permanent delete completes and items disappear from the list).

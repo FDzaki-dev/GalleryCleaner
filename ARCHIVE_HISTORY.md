@@ -1,4 +1,4 @@
-# ARCHIVE_HISTORY — Riwayat Batch Lama (Batch1–103)
+# ARCHIVE_HISTORY — Riwayat Batch Lama (Batch1–104)
 
 > Diarsipkan dari `PROJECT_STATE.md` sesi ini (dipindah verbatim, 0 kata diubah) — permintaan user: "arsipkan total isi project_state.md except current progress and rule!!". `PROJECT_STATE.md` sekarang cuma nyimpen rule permanen (IDENTITAS PROJECT / ATURAN PERMANEN SESI / Protected Assets / Insiden Operasional) + status-progress aktif (Rilis Terbaru / Versi Saat Ini / Belum Dikerjakan). Seluruh Riwayat Batch (Batch58-101, 43 entry) dipindah ke sini, ditaruh di atas arsip Batch1-57 yang sudah ada duluan — notice archival lama tetap dipertahankan verbatim di bawah pembatas berikut.
 >
@@ -9,6 +9,15 @@
 ---
 
 ## Riwayat Batch (terbaru di atas)
+
+### Batch104 — UI STATE ROTASI-SURVIVAL SWEEP Stage 5 (TERAKHIR): TrashScreen showEmptyTrashConfirm (1 file)
+User: "next" — tidak ada ZIP baru, lanjut tracker "Belum Dikerjakan": satu-satunya sisa kandidat aman adalah `TrashScreen.kt`'s `showEmptyTrashConfirm`.
+
+`TrashScreen.kt` — `showEmptyTrashConfirm` (Boolean, kontrol dialog konfirmasi kosongkan trash) diganti `remember`→`rememberSaveable`, pola identik Batch97/98/99/103. Import baru: `androidx.compose.runtime.saveable.rememberSaveable`. `selected` (`SnapshotStateList<Long>`, baris sebelahnya) SENGAJA TIDAK disentuh — butuh custom `listSaver`, sudah di-flag tracker sebagai kelas masalah terpisah (bukan drop-in). Verifikasi: brace/paren balanced (53/53, 136/136).
+
+**Seluruh kandidat AMAN dalam UI STATE ROTASI-SURVIVAL SWEEP (Stage 1-5, Batch97-99+103-104) TUNTAS.** Sisa item di tracker (`SwipeScreen.kt`'s `organizeTarget`/`zoomedItem` di `SwipeScreenGrid.kt`/`TrashScreen.kt`'s `selected`/`SettingsScreen.kt`'s `updateState`) semua butuh custom `Saver` — nunggu instruksi eksplisit user buat lanjut ke kelas masalah berikutnya (bukan otomatis lanjut, karena masing-masing butuh keputusan desain `Saver` sendiri-sendiri, beda dari drop-in `remember`→`rememberSaveable`).
+
+---
 
 ### Batch103 — UI STATE ROTASI-SURVIVAL SWEEP Stage 4: HomeScreenSections showGoalDialog/sliderBytes (1 file)
 User: "kerjakan next task" — tidak ada ZIP baru, lanjut dari tracker "Belum Dikerjakan" di `PROJECT_STATE.md`: sisa kandidat aman berikutnya dalam urutan eksplisit tracker adalah `HomeScreenSections.kt`'s `showGoalDialog`+`sliderBytes` (didaftar duluan dari `TrashScreen.kt`'s `showEmptyTrashConfirm`).
