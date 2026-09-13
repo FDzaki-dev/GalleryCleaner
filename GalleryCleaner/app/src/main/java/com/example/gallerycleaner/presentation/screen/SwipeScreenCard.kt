@@ -36,6 +36,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.MediaItem as Media3MediaItem
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
@@ -279,6 +280,39 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
  *    toggle — the same override every mainstream video player does, and
  *    only possible without losing playback state now that the manifest
  *    change stops the Activity from recreating on that rotation.
+ *
+ * [Batch123, user re-report with the Batch122 error text now visible]
+ * The Batch122 proguard-rules.pro guess (R8 stripping something Media3
+ * needs) is now DISPROVEN, not just unconfirmed — if that were the cause,
+ * MediaCodecVideoRenderer couldn't have been constructed at all. Instead
+ * the user's screenshot shows a specific, well-formed failure:
+ * "ERROR_CODE_DECODER_INIT_FAILED ... format=[3840, 2160, 59.9986 ...
+ * video/avc ...], format_supported=NO_EXCEEDS_CAPABILITIES" — the file is
+ * 4K@60fps H.264. That combination is a real device-hardware ceiling on
+ * many phones (most AVC decoders top out around 4K@30; 4K@60 is commonly
+ * HEVC/VP9-only in hardware) — MediaCodecUtil found an avc decoder, tried
+ * it, and that decoder's own capability check rejected this exact
+ * resolution/frame-rate. ExoPlayer.Builder(context) alone (this file's
+ * previous code, Batch121) uses MediaCodecSelector.DEFAULT with decoder
+ * fallback OFF — the moment the first-choice decoder rejects the format,
+ * playback fails outright with no attempt at any other matching decoder,
+ * even if one exists that could have handled it (e.g. a device's
+ * secondary/software avc decoder). Root cause + fix confirmed against a
+ * public report with the identical "format_supported=NO_EXCEEDS_CAPABILITIES"
+ * signature (androidx/media#1311) resolved the same way: build the player
+ * with DefaultRenderersFactory(context).setEnableDecoderFallback(true)
+ * instead of the no-arg ExoPlayer.Builder(context), so a capability
+ * rejection tries the next matching video/avc decoder instead of failing
+ * immediately. Honest limit, stated up front: if this device genuinely
+ * has no decoder — hardware or software — capable of 4K@60 avc, fallback
+ * has nothing left to try and playback will still fail; that would be a
+ * hardware ceiling no app-level code can route around. To make that case
+ * distinguishable from an actually-fixable bug without another
+ * screenshot round-trip, onPlayerError below now also shows a plain-
+ * language hint specifically when errorCode is DECODER_INIT_FAILED and
+ * the message contains EXCEEDS_CAPABILITIES — the raw diagnostic line
+ * from Batch122 (errorCodeName + message) is kept as-is underneath it,
+ * nothing removed.
  */
 @Composable
 private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
@@ -287,8 +321,17 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
     // errorDetail is independent of `uri` on purpose — it's UI-only text
     // derived from playbackError, no need to reset/rebuild it per item.
     var errorDetail by remember { mutableStateOf("") }
+    // Batch123: plain-language line shown only for the specific
+    // "decoder exists but rejects this resolution/frame-rate" failure —
+    // errorDetail above is untouched/still raw for triage, this is additive.
+    var errorHint by remember { mutableStateOf("") }
+    // Batch123: decoder fallback ON (see doc comment above) — lets ExoPlayer
+    // try the next matching video/avc decoder if the first one rejects the
+    // format as exceeding its capabilities, instead of failing immediately.
     val exoPlayer = remember(uri) {
-        ExoPlayer.Builder(context).build().apply {
+        val renderersFactory = DefaultRenderersFactory(context)
+            .setEnableDecoderFallback(true)
+        ExoPlayer.Builder(context, renderersFactory).build().apply {
             setMediaItem(Media3MediaItem.fromUri(uri))
             playWhenReady = true
             prepare()
@@ -310,6 +353,21 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
                 // if this still fails after the Batch122 proguard-rules.pro
                 // mitigation.
                 errorDetail = "${error.errorCodeName}: ${error.message ?: "no further detail"}"
+                // Batch123: this specific errorCode+message pairing means a
+                // matching decoder exists but every one tried rejects this
+                // exact resolution/frame-rate as beyond what it can init —
+                // a device-hardware ceiling (e.g. 4K@60), not a generic
+                // "corrupt file"/"unsupported container" failure. Told apart
+                // from other DECODER_INIT_FAILED causes by checking for the
+                // EXCEEDS_CAPABILITIES substring too, not errorCode alone.
+                errorHint = if (
+                    error.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED &&
+                    error.message?.contains("EXCEEDS_CAPABILITIES") == true
+                ) {
+                    "This device's hardware can't decode this video's resolution/frame-rate combination."
+                } else {
+                    ""
+                }
             }
         }
         exoPlayer.addListener(listener)
@@ -370,6 +428,16 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 4.dp)
                 )
+                // Batch123: additive, not a replacement — errorDetail above
+                // still shows the raw errorCodeName+message untouched.
+                if (errorHint.isNotEmpty()) {
+                    Text(
+                        errorHint,
+                        color = Color.White.copy(alpha = 0.85f),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
             }
         }
     }
