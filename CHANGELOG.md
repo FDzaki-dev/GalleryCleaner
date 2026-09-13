@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch128 — 2026-09-13
+- **Hotfix: build gagal (CI run247) gara-gara 3 icon baru di kontrol video custom Batch127** (1 file, `app/build.gradle.kts`): 3 tombol kontrol video (play/pause, mundur, maju) pakai icon yang ternyata butuh library icon tambahan yang sempat dicabut waktu optimasi ukuran app (Batch114) — library itu dipasang kembali supaya build lolos lagi. Efek samping: ukuran app kemungkinan naik sedikit lagi dari yang sudah dioptimasi kemarin (belum ada angka pasti tanpa build APK asli). Fitur video player lain (Batch121-127) tidak berubah. **Belum tervalidasi build asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch128.
+
 ## Batch127 — 2026-09-13
 - **Feature: video player custom sendiri, ganti kontrol bawaan** (1 file, permintaan user): tombol play/pause, mundur/maju 10 detik, seek bar drag, label posisi/durasi, indikator loading, dan kontrol yang otomatis sembunyi/muncul sekarang dibangun sendiri di app ini — bukan lagi kontrol generik bawaan library video. Tombol close dan perilaku tap-untuk-tutup foto tetap sama seperti sebelumnya. **Video stuttering TETAP belum digarap** (scope terpisah, butuh info lebih lanjut dari device asli). **Belum tervalidasi device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch127.
 

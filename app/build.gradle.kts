@@ -132,16 +132,32 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    // Batch114 (Opsi (b) Stage 2, FINAL): material-icons-extended DICABUT lagi —
+    // Batch114 (Opsi (b) Stage 2): material-icons-extended sempat DICABUT —
     // beda dari percobaan Batch109 (Opsi A, gagal karena masih ada 7 titik pakai
     // Icons.Filled.{Shuffle,Folder,GridView,Sort,Undo,ViewCarousel,ZoomIn} yang
-    // genuinely extended-only, CI run231). Kali ini ke-7 titik itu SUDAH dipindah
-    // ke vector drawable lokal (app/src/main/res/drawable/ic_*.xml, foundation-nya
-    // ditambah Batch112) sebelum baris ini dicabut — HomeScreen.kt/
-    // HomeScreenFolderRow.kt/SwipeScreen.kt/SwipeScreenGrid.kt di-update ATOMIK
-    // bareng commit yang sama (5 file total, precedent STABILITY WINS Batch77).
-    // proguard-rules.pro rule #5 (Batch113 hotfix) SENGAJA dibiarkan (sekarang
-    // cuma cover sisa material-icons-core kecil di package yang sama, harmless).
+    // genuinely extended-only, CI run231). Ke-7 titik itu dipindah ke vector
+    // drawable lokal (app/src/main/res/drawable/ic_*.xml, foundation Batch112)
+    // sebelum baris ini dicabut — HomeScreen.kt/HomeScreenFolderRow.kt/
+    // SwipeScreen.kt/SwipeScreenGrid.kt di-update ATOMIK bareng commit yang sama
+    // (5 file total, precedent STABILITY WINS Batch77).
+    // [Batch128 KOREKSI, bukan lagi final] Dependency DIKEMBALIKAN LAGI — user
+    // upload log CI gagal (run247, compileReleaseKotlin): Batch127 (custom video
+    // controller) pakai Icons.Filled.{Pause,Replay10,Forward10}, ketiganya
+    // genuinely -extended-only (confirmed dari log: Unresolved reference persis
+    // 3 nama ini, 11 icon -core lain di file yang sama — Close/PlayArrow — 0
+    // error). Pola mitigasi sama persis Batch109→110 (revert 1 baris, tercepat
+    // & teraman). proguard-rules.pro rule#5 (Batch113) SUDAH cover ini (blanket
+    // keep utk SELURUH package androidx.compose.material.icons.filled, 0
+    // perubahan proguard diperlukan). App-size gap yang ditutup Batch108-114
+    // REOPEN untuk 3 icon baru ini (dependency ~2000+ icon balik lagi, rule#5
+    // sendiri yang bikin R8 gak bisa shrink package filled). Migrasi 3 icon ini
+    // ke vector drawable lokal (pola sama Batch112/114) adalah opsi lanjutan
+    // buat nutup app-size lagi — BELUM dieksekusi batch ini: Replay10/Forward10
+    // icon compound (arc panah + digit "10" dibakar ke pathData), beda kelas
+    // risiko dari 7 icon shape-murni yang sudah dimigrasi Batch112 (fidelity
+    // reproduksi dari memori jauh lebih tidak pasti) — nunggu instruksi eksplisit
+    // user kalau mau lanjut migrasi ketiganya.
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("io.coil-kt:coil-gif:2.6.0")
     // Batch40 (Audit Gap P0 #1): video frame thumbnails. Registered once in
