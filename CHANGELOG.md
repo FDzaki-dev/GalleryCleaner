@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch122 — 2026-09-13
+- **Hotfix: video masih gagal diputar ("Can't play this video") + kontrol pemutar tidak kejangkau/kepotong, dan hp tidak bisa dirotasi ke landscape saat nonton video** (3 file, laporan bug user pasca-Batch121): `app/proguard-rules.pro` — tambah keep-rule Media3/ExoPlayer (dugaan penyebab paling mungkin: R8 minify menghapus/mengubah sesuatu yang dibutuhkan pemutar video di APK rilis — ada persis kasus publik yang sama di tracker resmi ExoPlayer). Pesan error sekarang juga menampilkan detail asli (bukan cuma teks generik) supaya lebih mudah dilacak kalau masih gagal. `AndroidManifest.xml` — hp sekarang tidak lagi restart total tiap dirotasi (dulu sengaja begitu), supaya pemutar video bisa ikut berotasi ke landscape tanpa kehilangan progress; efek sampingnya, layar Blurry/Similar/Duplicate/Search yang dulu suka balik ke Home kalau hp dirotasi (Batch117) sekarang ikut kebantu juga. `SwipeScreenCard.kt` — video sekarang otomatis boleh diputar ke landscape begitu dibuka, terlepas dari pengaturan rotasi otomatis hp. **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch122.
+
 ## Batch121 — 2026-09-13
 - **Fix: video sekarang bisa benar-benar diputar saat dibuka fullscreen** (`app/build.gradle.kts`, `SwipeScreenCard.kt`): sebelumnya, membuka sebuah video (dari mode swipe maupun grid) cuma menampilkan satu frame diam tanpa kontrol apa pun — sekarang muncul pemutar video sungguhan (Media3 ExoPlayer) dengan play/pause dan seek bar, dan dibaca dari file secara streaming jadi aman dipakai untuk video berukuran besar. Tombol close (✕) ditambahkan khusus untuk video karena tap-untuk-tutup lama akan bentrok dengan kontrol pemutar. Preview foto/GIF tidak berubah. **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch121.
 

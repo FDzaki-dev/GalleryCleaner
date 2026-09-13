@@ -48,7 +48,30 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.GalleryCleaner.Splash">
+            android:theme="@style/Theme.GalleryCleaner.Splash"
+            android:configChanges="orientation|screenSize|screenLayout">
+            <!-- Batch122 (user bug report — video player has no working
+                 auto-rotation, controls unreachable): before this batch,
+                 MainActivity intentionally declared 0 configChanges
+                 (Batch117 note, "default OS behavior sengaja dipakai") —
+                 any orientation change destroyed+recreated the whole
+                 Activity, which the Batch97-118 rememberSaveable sweep
+                 exists specifically to survive. That's incompatible with a
+                 video player that needs to rotate to landscape and keep
+                 playing: forcing SCREEN_ORIENTATION_SENSOR while a video is
+                 open (SwipeScreenCard.kt) would otherwise still tear the
+                 Activity down the instant the OS honors that request. This
+                 line is the only OS-level way to stop that — Compose now
+                 just recomposes in place on rotation instead of the
+                 Activity dying, app-wide, not just for video. Non-breaking:
+                 every existing rememberSaveable from the rotation-survival
+                 sweep still works exactly as before (harmless-redundant for
+                 orientation now, still the real safety net for actual
+                 process death/low-memory kills) — nothing that worked
+                 before stops working, and the still-open gap Batch117 flagged
+                 (Blurry/Similar/Duplicate scans + Search results resetting to
+                 Home on rotation) is fixed as a side effect, since the
+                 Activity composition itself no longer restarts. -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

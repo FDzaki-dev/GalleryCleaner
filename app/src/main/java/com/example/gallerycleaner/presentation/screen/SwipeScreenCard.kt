@@ -1,5 +1,7 @@
 package com.example.gallerycleaner
 
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import android.net.Uri
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
@@ -162,9 +164,24 @@ internal fun SwipeCard(
 internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        // Batch122 (user bug report — video controls "distorsi/kliping",
+        // unreachable): decorFitsSystemWindows defaulted to true, which on
+        // this device's gesture-nav layout let the dialog's own window
+        // report a height that put PlayerView's bottom control row (seek
+        // bar, time, fullscreen toggle) in the same physical strip as the
+        // OS gesture-nav area — visible but not reliably tappable, and
+        // visually cramped. false + the windowInsetsPadding below on the
+        // content Box is the standard edge-to-edge pairing: window draws
+        // full-bleed, content explicitly pads itself away from system bars
+        // instead of guessing/inheriting a pre-shrunk window size.
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
-        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .windowInsetsPadding(WindowInsets.systemBars)
+        ) {
             if (item.mediaType == MediaType.VIDEO) {
                 // Batch121 (user bug report): videos have been queryable via
                 // MediaStore.Video.Media and shown with a play-badge thumbnail
@@ -244,11 +261,32 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
  * fullscreen Dialog is showing, so leaving it (close button, back
  * press, or the caller flipping showFullscreen off) always tears the
  * player down instead of leaking it.
+ *
+ * [Batch122, user bug report] Two fixes on top of Batch121:
+ * 1. onPlayerError used to just flip a Boolean and show one hardcoded
+ *    string, discarding the actual PlaybackException — impossible to tell
+ *    "corrupt file" from "unsupported codec" from "stripped by R8" from
+ *    that alone. Now shows error.errorCodeName + message, and hides the
+ *    (non-functional, confusingly overlapping) PlayerView controller
+ *    underneath instead of leaving it visible over the error text.
+ * 2. Rotating the device did nothing because MainActivity requests no
+ *    particular orientation and (before this batch) tore itself down on
+ *    every rotation anyway (see AndroidManifest.xml Batch122 comment) —
+ *    fatal combination for a video player. This composable now requests
+ *    SCREEN_ORIENTATION_SENSOR for as long as it's on screen (restored to
+ *    UNSPECIFIED on dispose), so turning the phone actually rotates the
+ *    video to landscape, independent of the system's own auto-rotate
+ *    toggle — the same override every mainstream video player does, and
+ *    only possible without losing playback state now that the manifest
+ *    change stops the Activity from recreating on that rotation.
  */
 @Composable
 private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var playbackError by remember(uri) { mutableStateOf(false) }
+    // errorDetail is independent of `uri` on purpose — it's UI-only text
+    // derived from playbackError, no need to reset/rebuild it per item.
+    var errorDetail by remember { mutableStateOf("") }
     val exoPlayer = remember(uri) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(Media3MediaItem.fromUri(uri))
@@ -265,6 +303,13 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
             // controls and no feedback, its own kind of dead end.
             override fun onPlayerError(error: PlaybackException) {
                 playbackError = true
+                // errorCodeName is a stable string like
+                // "ERROR_CODE_IO_FILE_NOT_FOUND"/"ERROR_CODE_DECODER_INIT_FAILED"
+                // — the detail that was completely discarded before this
+                // batch, and the difference between a guess and a diagnosis
+                // if this still fails after the Batch122 proguard-rules.pro
+                // mitigation.
+                errorDetail = "${error.errorCodeName}: ${error.message ?: "no further detail"}"
             }
         }
         exoPlayer.addListener(listener)
@@ -273,24 +318,59 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
             exoPlayer.release()
         }
     }
+    // Batch122: allow this screen specifically to rotate to landscape for
+    // as long as a video is open, regardless of the system's own
+    // auto-rotate toggle (same override every mainstream video player
+    // does) — restored to the app's normal unspecified/no-lock behavior
+    // the moment this composable leaves composition. Requires
+    // AndroidManifest.xml's MainActivity configChanges (Batch122) to not
+    // destroy the Activity — and the player along with it — the instant
+    // the OS honors this and actually rotates the display.
+    val activity = context as? Activity
+    DisposableEffect(Unit) {
+        val previousOrientation = activity?.requestedOrientation
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+        onDispose {
+            activity?.requestedOrientation =
+                previousOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
     Box(modifier = modifier) {
-        AndroidView(
-            modifier = Modifier.matchParentSize(),
-            factory = { ctx -> PlayerView(ctx).apply { useController = true } },
-            // update (not just factory) assigns the player — factory only
-            // ever runs once per PlayerView instance, so if `uri` (and thus
-            // this remembered exoPlayer) ever changed without the whole
-            // Dialog/composable being torn down and recreated, the view
-            // would otherwise keep pointing at a released player.
-            update = { view -> view.player = exoPlayer }
-        )
-        if (playbackError) {
-            Text(
-                "Can't play this video",
-                color = Color.White,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.align(Alignment.Center)
+        if (!playbackError) {
+            AndroidView(
+                modifier = Modifier.matchParentSize(),
+                factory = { ctx -> PlayerView(ctx).apply { useController = true } },
+                // update (not just factory) assigns the player — factory only
+                // ever runs once per PlayerView instance, so if `uri` (and thus
+                // this remembered exoPlayer) ever changed without the whole
+                // Dialog/composable being torn down and recreated, the view
+                // would otherwise keep pointing at a released player.
+                update = { view -> view.player = exoPlayer }
             )
+        } else {
+            // Batch122: the controller (rewind/play/ff, scrubber) used to
+            // stay visible and overlapping the error text underneath it —
+            // useController=true doesn't know or care about playback
+            // errors, so it kept rendering controls for a player that
+            // can't do anything with them. Swapping the whole AndroidView
+            // out for the error text once playbackError is true removes
+            // that dead-end, visually-cluttered control surface entirely.
+            Column(
+                modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Can't play this video",
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    errorDetail,
+                    color = Color.White.copy(alpha = 0.7f),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
         }
     }
 }

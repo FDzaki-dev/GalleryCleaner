@@ -96,3 +96,30 @@
 # an unverified assumption (Anti-Breaking / Regression-Check guard).
 -keep class androidx.compose.material.icons.filled.** { *; }
 -dontwarn androidx.compose.material.icons.**
+
+# 6) [Batch122] Media3 ExoPlayer (media3-exoplayer/media3-ui, Batch121) —
+# user-reported "Can't play this video" on EVERY video, on the signed
+# release APK from GitHub Releases (isMinifyEnabled/isShrinkResources on
+# since Batch111). Batch121's own build.gradle.kts comment assumed "0 new
+# proguard-rules.pro entry needed — Media3 ships its own consumer rules",
+# same class of unverified assumption that already broke once in this exact
+# project (material-icons-extended, rule #5 above, Batch111->113). This one
+# has independent public precedent too: ExoPlayer's own issue tracker
+# (google/ExoPlayer#8709) documents mp4/m4a playback throwing a source/
+# extractor error in release-with-minify builds while working fine in
+# debug, traced to R8 needing explicit keep rules the bundled consumer
+# rules didn't fully cover for that release. Can't reproduce/confirm the
+# exact failure in this sandbox (0 Android SDK/emulator/device) — this is
+# the same "belum tervalidasi compiler/device asli" position as every other
+# batch here, not a confirmed fix, just the standard, low-risk mitigation
+# for this documented failure class. Scoped to the packages this app's
+# playback path actually touches (local content:// files via
+# DefaultExtractorsFactory + platform MediaCodec renderers) — no DASH/HLS/
+# RTMP/Cast/session/datasource-okhttp extensions are dependencies of this
+# project, so a blanket `androidx.media3.**` keep isn't needed.
+-keep class androidx.media3.exoplayer.** { *; }
+-keep class androidx.media3.extractor.** { *; }
+-keep class androidx.media3.decoder.** { *; }
+-keep class androidx.media3.common.** { *; }
+-keep class androidx.media3.datasource.** { *; }
+-dontwarn androidx.media3.**
