@@ -101,6 +101,16 @@ fun SwipeScreen(
 
     var viewMode by remember(group.key) { mutableStateOf(SwipeViewMode.Swipe) }
     val gridSelected = remember(group.key) { mutableStateListOf<Long>() }
+    // Batch126: grid-mode's zoom target, moved up from GridSelectContent's
+    // own internal state — FullscreenViewer is no longer a Dialog, so it
+    // needs to be called from here (top level, sibling to Scaffold below)
+    // instead of from inside GridSelectContent (nested in Scaffold's
+    // content slot) to actually cover the full screen. Same reset-per-group
+    // behavior as before: GridSelectContent's old unkeyed `remember{}` got
+    // a fresh instance whenever it re-entered composition for a new group
+    // (viewMode itself resets to Swipe on group.key change) — remember(group.key)
+    // here reproduces that directly.
+    var zoomedGridItem by remember(group.key) { mutableStateOf<MediaItem?>(null) }
 
     LaunchedEffect(group.key) {
         index = progressStore.progressFlow(group.key).first().coerceIn(0, sortedItems.size)
@@ -353,7 +363,8 @@ fun SwipeScreen(
                     pendingOrganizedIds = pendingOrganizedIds,
                     onOrganizeSelected = {
                         organizeTarget = sortedItems.filter { it.id in gridSelected }
-                    }
+                    },
+                    onZoomRequest = { zoomedGridItem = it }
                 )
             } else {
                 Filmstrip(
@@ -440,6 +451,13 @@ fun SwipeScreen(
 
     if (showFullscreen && currentItem != null) {
         FullscreenViewer(item = currentItem, onDismiss = { showFullscreen = false })
+    }
+    // Batch126: grid-mode's zoom viewer, now called from here instead of
+    // from inside GridSelectContent — see that composable's Batch126
+    // comment for why (Dialog removal means FullscreenViewer must be a
+    // top-level sibling of Scaffold to cover the full screen).
+    zoomedGridItem?.let { item ->
+        FullscreenViewer(item = item, onDismiss = { zoomedGridItem = null })
     }
     if (showInfo && currentItem != null) {
         FileInfoDialog(item = currentItem, onDismiss = { showInfo = false })

@@ -42,7 +42,18 @@ internal fun GridSelectContent(
     onDeleteSelected: () -> Unit,
     onCompressSelected: () -> Unit,
     pendingOrganizedIds: Set<Long> = emptySet(),
-    onOrganizeSelected: (() -> Unit)? = null
+    onOrganizeSelected: (() -> Unit)? = null,
+    // Batch126: was internal `zoomedItem` state + a direct FullscreenViewer
+    // call at the bottom of this composable. FullscreenViewer dropped its
+    // Dialog wrapper this batch (see SwipeScreenCard.kt's Batch126 comment
+    // — Dialog's separate Window had broken insets + rotation), which means
+    // it now needs to be a top-level sibling of SwipeScreen's own Scaffold
+    // to actually cover the full screen — GridSelectContent itself is
+    // composed INSIDE that Scaffold's content slot, too deep for a plain
+    // (non-Dialog) fillMaxSize() box here to reach past it. Handing the tap
+    // up as a callback lets SwipeScreen.kt own the single top-level
+    // FullscreenViewer call for both view modes.
+    onZoomRequest: (MediaItem) -> Unit
 ) {
     // Items already handled (via this grid or a prior swipe decision) drop
     // out of view immediately — visible, immediate confirmation that a
@@ -51,7 +62,6 @@ internal fun GridSelectContent(
         items.filterNot { it.id in pendingDeleteIds || it.id in pendingOrganizedIds }
     }
     val allSelected = visibleItems.isNotEmpty() && selected.size == visibleItems.size
-    var zoomedItem by remember { mutableStateOf<MediaItem?>(null) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -122,7 +132,7 @@ internal fun GridSelectContent(
                             .size(20.dp)
                             .clip(CircleShape)
                             .background(Color.Black.copy(alpha = 0.45f))
-                            .clickable { zoomedItem = item }
+                            .clickable { onZoomRequest(item) }
                             .padding(2.dp)
                     )
                     if (isSelected) {
@@ -164,10 +174,6 @@ internal fun GridSelectContent(
                 }
             }
         }
-    }
-
-    zoomedItem?.let { item ->
-        FullscreenViewer(item = item, onDismiss = { zoomedItem = null })
     }
 }
 

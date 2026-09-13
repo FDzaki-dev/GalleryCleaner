@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch126 — 2026-09-13
+- **Fix: fullscreen photo/video viewer — bottom controls clipped by gesture-nav bar, and screen wouldn't rotate to landscape** (3 file, laporan bug user pasca-Batch125, 2 fix sebelumnya belum cukup): akar masalahnya ternyata cara viewer ini dibangun — sekarang dibangun ulang pakai pendekatan yang lebih sederhana dan lebih robust (bukan lagi jendela terpisah dari layar utama), yang seharusnya menutup baik masalah kliping maupun rotasi sekaligus. Fitur close/dismiss (tombol X di video, tap di mana saja di foto) tetap berfungsi sama seperti sebelumnya. **Video stuttering yang dilaporkan bareng ini SENGAJA belum digarap** (user minta rotate+kliping duluan). **Belum tervalidasi device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch126.
+
 ## Batch123 — 2026-09-13
 - **Fix: video 4K masih gagal diputar setelah Batch122, error asli sekarang kebaca** (1 file, `SwipeScreenCard.kt`): screenshot terbaru menampilkan detail error yang sebelumnya tersembunyi — video ini 4K resolusi tinggi (3840×2160) di 60 frame per detik, dan decoder video hp menolak kombinasi resolusi/frame-rate setinggi itu (bukan file rusak, bukan bug proguard dugaan Batch122). Pemutar video sekarang otomatis mencoba decoder lain di hp kalau decoder pertama menolak, bukan langsung menyerah — perbaikan resmi untuk pola gagal ini. Kalau hp memang sama sekali tidak punya decoder yang sanggup 4K60, video ini tetap tidak akan bisa diputar (keterbatasan hardware asli, bukan bug) — tapi sekarang muncul 1 baris keterangan tambahan yang bilang itu jelas, bukan cuma kode error mentah. **Belum tervalidasi device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch123.
 

@@ -1,6 +1,8 @@
 package com.example.gallerycleaner
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import androidx.compose.animation.core.Spring
@@ -31,8 +33,8 @@ import java.util.Date
 import java.util.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.MediaItem as Media3MediaItem
@@ -161,81 +163,116 @@ internal fun SwipeCard(
             )
     }
 }
+// [Batch125, superseded by Batch126 below — kept, not deleted, per project
+// convention] Diagnosed `LocalContext.current` inside a Compose `Dialog` as
+// a `ContextThemeWrapper`, not the Activity, and added findActivity() to
+// unwrap it. That diagnosis for THAT symptom was correct, but Batch126
+// removes the Dialog entirely (see FullscreenViewer below) — so as of this
+// batch there is no ContextThemeWrapper here to unwrap in the first place.
+// findActivity() is kept anyway: harmless, still correct (an Activity
+// passed straight in resolves on the first branch), and cheap insurance
+// against any future context-wrapping layer.
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
+// Batch126 (user re-report — clipping AND rotation STILL broken after TWO
+// rounds of fixes, Batch122 + Batch125, both applied from inside the
+// Dialog code path): root cause traced to a documented Compose limitation,
+// not another OEM/device quirk to chase — a Compose `Dialog` with
+// `usePlatformDefaultWidth = false` opens its own separate `Window`, and
+// public reports of the identical setup describe the exact symptom seen
+// here: `WindowInsets` read as zero inside that dialog's own content
+// regardless of `decorFitsSystemWindows`, "as if the Dialog is oblivious to
+// the navigation bar" (public Compose issue tracker, same DialogProperties
+// combo as this file used). Batch125's SideEffect+DialogWindowProvider
+// reinforcement pushed on the window property from the outside, but the
+// window property was never the missing piece — Compose's own insets
+// plumbing not reliably reaching that window's content is. Separately,
+// multiple public reports of this same DialogProperties combo also
+// describe rotation-time breakage ("the ui breaks sometimes" on orientation
+// change) — a second, independent Window on top of the Activity's own is
+// an unnecessary extra moving part for something that must rotate reliably
+// (this app's `configChanges`+SENSOR override, Batch122, lives on the
+// Activity's window, not this one).
+// Fix: remove Dialog/DialogProperties/DialogWindowProvider entirely.
+// FullscreenViewer is now a plain full-screen overlay, composed directly
+// into the SAME window as the rest of the app — one window, one set of
+// insets, one orientation, nothing Dialog-specific left to fight. Both call
+// sites (SwipeScreen.kt, SwipeScreenGrid.kt) already place this as a
+// sibling to their own Scaffold rather than nested inside its content slot
+// — SwipeScreenGrid.kt's zoom trigger is now `onZoomRequest` handed up to
+// SwipeScreen.kt for exactly this reason (see that file's Batch126 comment)
+// — so it measures against the full window size the same way the Dialog's
+// separate window used to, minus that window's own bugs. MainActivity's
+// window is NOT edge-to-edge (grep project-wide: `setDecorFitsSystemWindows`
+// appeared nowhere before this batch, and nowhere for the Activity's own
+// window now either) — same as every other screen in this app, none of
+// which have ever needed manual systemBars padding — so the OS itself
+// already keeps this content clear of the status/gesture-nav bars, exactly
+// like it does for the rest of the app. No windowInsetsPadding needed here.
 @Composable
 internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        // Batch122 (user bug report — video controls "distorsi/kliping",
-        // unreachable): decorFitsSystemWindows defaulted to true, which on
-        // this device's gesture-nav layout let the dialog's own window
-        // report a height that put PlayerView's bottom control row (seek
-        // bar, time, fullscreen toggle) in the same physical strip as the
-        // OS gesture-nav area — visible but not reliably tappable, and
-        // visually cramped. false + the windowInsetsPadding below on the
-        // content Box is the standard edge-to-edge pairing: window draws
-        // full-bleed, content explicitly pads itself away from system bars
-        // instead of guessing/inheriting a pre-shrunk window size.
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+    BackHandler(onBack = onDismiss)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .windowInsetsPadding(WindowInsets.systemBars)
-        ) {
-            if (item.mediaType == MediaType.VIDEO) {
-                // Batch121 (user bug report): videos have been queryable via
-                // MediaStore.Video.Media and shown with a play-badge thumbnail
-                // since Batch40 (Audit Gap P0 #1), but tapping one to inspect
-                // it landed here — which, before this batch, routed every
-                // MediaType through the same AsyncImage call below. Coil's
-                // VideoFrameDecoder (also Batch40) can decode ONE still frame
-                // from a video URI for a thumbnail; it has no concept of
-                // playback at all (no player, no controls). That gap is what
-                // read as "can't play/inspect it at all". VideoPlayerSurface
-                // replaces this path for video items only — the AsyncImage
-                // branch for photos/GIFs below is untouched.
-                VideoPlayerSurface(uri = item.uri, modifier = Modifier.fillMaxSize())
-                // No whole-screen clickable-to-dismiss here, unlike the photo
-                // branch below — PlayerView's own tap gesture toggles its
-                // playback controls, and a dismiss-on-tap layered on top of
-                // that would swallow every tap meant for the player instead.
-                // An explicit close button is the safe alternative; same
-                // icon/circle-badge visual language already used for the
-                // grid's zoom-in affordance (SwipeScreenGrid.kt).
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = "Close",
-                    tint = Color.White,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(16.dp)
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.45f))
-                        .clickable { onDismiss() }
-                        .padding(4.dp)
+        if (item.mediaType == MediaType.VIDEO) {
+            // Batch121 (user bug report): videos have been queryable via
+            // MediaStore.Video.Media and shown with a play-badge thumbnail
+            // since Batch40 (Audit Gap P0 #1), but tapping one to inspect
+            // it landed here — which, before this batch, routed every
+            // MediaType through the same AsyncImage call below. Coil's
+            // VideoFrameDecoder (also Batch40) can decode ONE still frame
+            // from a video URI for a thumbnail; it has no concept of
+            // playback at all (no player, no controls). That gap is what
+            // read as "can't play/inspect it at all". VideoPlayerSurface
+            // replaces this path for video items only — the AsyncImage
+            // branch for photos/GIFs below is untouched.
+            VideoPlayerSurface(uri = item.uri, modifier = Modifier.fillMaxSize())
+            // No whole-screen clickable-to-dismiss here, unlike the photo
+            // branch below — PlayerView's own tap gesture toggles its
+            // playback controls, and a dismiss-on-tap layered on top of
+            // that would swallow every tap meant for the player instead.
+            // An explicit close button is the safe alternative; same
+            // icon/circle-badge visual language already used for the
+            // grid's zoom-in affordance (SwipeScreenGrid.kt).
+            Icon(
+                Icons.Filled.Close,
+                contentDescription = "Close",
+                tint = Color.White,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .clickable { onDismiss() }
+                    .padding(4.dp)
+            )
+        } else {
+            Box(modifier = Modifier.fillMaxSize().clickable { onDismiss() }) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(item.uri)
+                        // Explicit cap instead of leaving size to be inferred from
+                        // layout constraints — Coil normally reads the constraints
+                        // of the composable it's measured in, but that inference
+                        // can fall through to the source's original resolution in
+                        // edge cases (e.g. certain Dialog/window-size combos).
+                        // 2400px covers every phone display with headroom; nothing
+                        // is gained decoding a 12,000px sensor photo past that,
+                        // it's just wasted heap.
+                        .size(2400)
+                        .build(),
+                    contentDescription = item.displayName,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
                 )
-            } else {
-                Box(modifier = Modifier.fillMaxSize().clickable { onDismiss() }) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(item.uri)
-                            // Explicit cap instead of leaving size to be inferred from
-                            // layout constraints — Coil normally reads the constraints
-                            // of the composable it's measured in, but that inference
-                            // can fall through to the source's original resolution in
-                            // edge cases (e.g. certain Dialog/window-size combos).
-                            // 2400px covers every phone display with headroom; nothing
-                            // is gained decoding a 12,000px sensor photo past that,
-                            // it's just wasted heap.
-                            .size(2400)
-                            .build(),
-                        contentDescription = item.displayName,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
             }
         }
     }
@@ -259,9 +296,10 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
  *
  * The player is created with remember(uri) and released from
  * DisposableEffect's onDispose — this composable only exists while the
- * fullscreen Dialog is showing, so leaving it (close button, back
- * press, or the caller flipping showFullscreen off) always tears the
- * player down instead of leaking it.
+ * fullscreen viewer is showing (a plain overlay since Batch126, was a
+ * Dialog before that), so leaving it (close button, back press, or the
+ * caller flipping showFullscreen off) always tears the player down
+ * instead of leaking it.
  *
  * [Batch122, user bug report] Two fixes on top of Batch121:
  * 1. onPlayerError used to just flip a Boolean and show one hardcoded
@@ -384,7 +422,12 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
     // AndroidManifest.xml's MainActivity configChanges (Batch122) to not
     // destroy the Activity — and the player along with it — the instant
     // the OS honors this and actually rotates the display.
-    val activity = context as? Activity
+    // Batch125 found `context as? Activity` always null here (Dialog's
+    // ContextThemeWrapper), fixed with findActivity(). Batch126 removed
+    // that Dialog entirely (see FullscreenViewer's Batch126 comment) — this
+    // is a direct Activity context now, no wrapper left to unwrap — but
+    // findActivity() stays, harmless and still correct either way.
+    val activity = context.findActivity()
     DisposableEffect(Unit) {
         val previousOrientation = activity?.requestedOrientation
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
@@ -401,7 +444,7 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
                 // update (not just factory) assigns the player — factory only
                 // ever runs once per PlayerView instance, so if `uri` (and thus
                 // this remembered exoPlayer) ever changed without the whole
-                // Dialog/composable being torn down and recreated, the view
+                // viewer/composable being torn down and recreated, the view
                 // would otherwise keep pointing at a released player.
                 update = { view -> view.player = exoPlayer }
             )
@@ -413,6 +456,23 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
             // can't do anything with them. Swapping the whole AndroidView
             // out for the error text once playbackError is true removes
             // that dead-end, visually-cluttered control surface entirely.
+            // Batch126: this branch has no element covering the full area
+            // (just a centered Column) — while FullscreenViewer was a
+            // Dialog, that didn't matter, its own separate Window caught
+            // every tap regardless. Now that it's a plain overlay in the
+            // same window (see FullscreenViewer's Batch126 comment), a tap
+            // landing outside the Column's bounds could fall through to
+            // the SwipeCard/grid underneath. No-op clickable, indication
+            // off (it's an invisible full-size layer, a ripple here would
+            // just look like a stray flash) — swallows it instead.
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {}
+            )
             Column(
                 modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
