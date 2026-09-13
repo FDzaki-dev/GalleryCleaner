@@ -17,11 +17,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
@@ -43,6 +48,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -235,10 +241,12 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
             // branch for photos/GIFs below is untouched.
             VideoPlayerSurface(uri = item.uri, modifier = Modifier.fillMaxSize())
             // No whole-screen clickable-to-dismiss here, unlike the photo
-            // branch below — PlayerView's own tap gesture toggles its
-            // playback controls, and a dismiss-on-tap layered on top of
-            // that would swallow every tap meant for the player instead.
-            // An explicit close button is the safe alternative; same
+            // branch below — VideoPlayerSurface's own AndroidView already
+            // has a tap-to-toggle-controls clickable (Batch127, replacing
+            // PlayerView's bundled controller and the tap gesture that used
+            // to come with it), and a dismiss-on-tap layered on top of that
+            // here would swallow every tap meant for toggling controls
+            // instead. An explicit close button is the safe alternative; same
             // icon/circle-badge visual language already used for the
             // grid's zoom-in affordance (SwipeScreenGrid.kt).
             Icon(
@@ -363,6 +371,29 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
     // "decoder exists but rejects this resolution/frame-rate" failure —
     // errorDetail above is untouched/still raw for triage, this is additive.
     var errorHint by remember { mutableStateOf("") }
+    // Batch127 (user request — custom controls instead of media3-ui's
+    // bundled PlayerView controller, which only exposes what its own XML
+    // layout/attrs allow to tweak): PlayerView below now has
+    // useController = false, and everything under this comment drives a
+    // fully custom Compose control bar instead. isPlaying/isBuffering/
+    // durationMs all mirror ExoPlayer's own Player.Listener callbacks
+    // (single source of truth, pushed — not polled). positionMs is the one
+    // value ExoPlayer doesn't push change events for on its own, so it's
+    // polled on a fixed tick below, only while this composable is part of
+    // the composition.
+    var isPlaying by remember(uri) { mutableStateOf(true) }
+    // True until the first onPlaybackStateChanged callback — matches
+    // reality (prepare()+playWhenReady=true, called just below, always
+    // buffers at least briefly before the first frame).
+    var isBuffering by remember(uri) { mutableStateOf(true) }
+    var durationMs by remember(uri) { mutableLongStateOf(0L) }
+    var positionMs by remember(uri) { mutableLongStateOf(0L) }
+    // True while the user has a finger on the seek bar's thumb — the
+    // polling loop below skips writing positionMs while this is true, so
+    // the drag gesture and the poll tick don't fight over the same value
+    // and make the thumb stutter/jump under the finger.
+    var isSeeking by remember(uri) { mutableStateOf(false) }
+    var controlsVisible by remember(uri) { mutableStateOf(true) }
     // Batch123: decoder fallback ON (see doc comment above) — lets ExoPlayer
     // try the next matching video/avc decoder if the first one rejects the
     // format as exceeding its capabilities, instead of failing immediately.
@@ -377,6 +408,19 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
     }
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
+            // Batch127: pushed state for the custom control bar below —
+            // added to this SAME listener object rather than a second one,
+            // so there's still exactly one addListener/removeListener pair
+            // for this player.
+            override fun onIsPlayingChanged(playing: Boolean) {
+                isPlaying = playing
+            }
+            override fun onPlaybackStateChanged(state: Int) {
+                isBuffering = state == Player.STATE_BUFFERING
+                if (state == Player.STATE_READY) {
+                    durationMs = exoPlayer.duration.coerceAtLeast(0L)
+                }
+            }
             // Playback failures (unsupported codec, corrupt file, etc.)
             // surface through this callback, not an exception PlayerView
             // itself throws — without handling it, a failed video would
@@ -414,6 +458,26 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
             exoPlayer.release()
         }
     }
+    // Batch127: positionMs is the one piece of playback state ExoPlayer has
+    // no change-callback for — polled on a fixed tick instead. Plain
+    // LaunchedEffect(exoPlayer), same cancellation guarantee the player
+    // release itself relies on above: leaving composition cancels this
+    // coroutine automatically, no separate cleanup needed.
+    LaunchedEffect(exoPlayer) {
+        while (true) {
+            if (!isSeeking) positionMs = exoPlayer.currentPosition.coerceAtLeast(0L)
+            delay(300)
+        }
+    }
+    // Batch127: auto-hide, same convention as every mainstream video player
+    // — but never while paused/buffering/erroring, where the controls are
+    // the only way to resume/seek/close at all.
+    LaunchedEffect(controlsVisible, isPlaying, isBuffering, playbackError) {
+        if (controlsVisible && isPlaying && !isBuffering && !playbackError) {
+            delay(3000)
+            controlsVisible = false
+        }
+    }
     // Batch122: allow this screen specifically to rotate to landscape for
     // as long as a video is open, regardless of the system's own
     // auto-rotate toggle (same override every mainstream video player
@@ -439,8 +503,20 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
     Box(modifier = modifier) {
         if (!playbackError) {
             AndroidView(
-                modifier = Modifier.matchParentSize(),
-                factory = { ctx -> PlayerView(ctx).apply { useController = true } },
+                modifier = Modifier
+                    .matchParentSize()
+                    // Batch127: useController=false below means PlayerView no
+                    // longer eats this gesture for its own controller toggle
+                    // (that was the whole reason FullscreenViewer's video
+                    // branch never wrapped this in a clickable — see its
+                    // Batch127-updated comment) — safe to wire here now, and
+                    // matches the tap-to-toggle-controls convention this
+                    // custom bar is replacing PlayerView's version of.
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { controlsVisible = !controlsVisible },
+                factory = { ctx -> PlayerView(ctx).apply { useController = false } },
                 // update (not just factory) assigns the player — factory only
                 // ever runs once per PlayerView instance, so if `uri` (and thus
                 // this remembered exoPlayer) ever changed without the whole
@@ -448,14 +524,55 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
                 // would otherwise keep pointing at a released player.
                 update = { view -> view.player = exoPlayer }
             )
+            if (isBuffering) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Color.White
+                )
+            }
+            if (controlsVisible) {
+                VideoControlBar(
+                    isPlaying = isPlaying,
+                    positionMs = positionMs,
+                    durationMs = durationMs,
+                    onPlayPause = {
+                        if (exoPlayer.isPlaying) {
+                            exoPlayer.pause()
+                        } else {
+                            // Replay from the start instead of a no-op tap
+                            // on Play once the video has actually finished
+                            // — same reasoning as the rest of this file:
+                            // no dead-end controls.
+                            if (exoPlayer.playbackState == Player.STATE_ENDED) {
+                                exoPlayer.seekTo(0)
+                            }
+                            exoPlayer.play()
+                        }
+                    },
+                    onRewind = {
+                        exoPlayer.seekTo((exoPlayer.currentPosition - 10_000).coerceAtLeast(0))
+                    },
+                    onForward = {
+                        exoPlayer.seekTo(
+                            (exoPlayer.currentPosition + 10_000).coerceAtMost(exoPlayer.duration.coerceAtLeast(0))
+                        )
+                    },
+                    onSeekChange = { isSeeking = true; positionMs = it },
+                    onSeekFinished = { exoPlayer.seekTo(positionMs); isSeeking = false },
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+            }
         } else {
-            // Batch122: the controller (rewind/play/ff, scrubber) used to
-            // stay visible and overlapping the error text underneath it —
-            // useController=true doesn't know or care about playback
-            // errors, so it kept rendering controls for a player that
-            // can't do anything with them. Swapping the whole AndroidView
-            // out for the error text once playbackError is true removes
-            // that dead-end, visually-cluttered control surface entirely.
+            // Batch122 found the bundled PlayerView controller (rewind/
+            // play/ff, scrubber) staying visible and overlapping the error
+            // text underneath it, and fixed it by swapping the whole
+            // AndroidView out for the error text once playbackError is
+            // true. Batch127 replaced that bundled controller with the
+            // custom one above, gated on the same `!playbackError` branch
+            // — so that specific overlap can't recur structurally anymore
+            // — but the swap itself stays: a player that failed to decode
+            // has nothing useful behind the error text (dead/black surface
+            // at best), and hiding it removes any stray-tap surface too.
             // Batch126: this branch has no element covering the full area
             // (just a centered Column) — while FullscreenViewer was a
             // Dialog, that didn't matter, its own separate Window caught
@@ -501,6 +618,98 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
             }
         }
     }
+}
+
+/**
+ * Batch127: custom playback control bar, replacing the media3-ui bundled
+ * PlayerView controller (user request — a controller built from Compose
+ * primitives here can be extended/restyled freely, unlike the bundled one
+ * which only exposes what its XML layout/attrs allow). Deliberately plain
+ * (white on a black gradient scrim, MaterialTheme typography) rather than
+ * branched per AppTheme/MaterialStyle — the rest of FullscreenViewer (close
+ * button, error text) has never branched on theme either, so this matches
+ * existing precedent instead of introducing a new one unasked.
+ */
+@Composable
+private fun VideoControlBar(
+    isPlaying: Boolean,
+    positionMs: Long,
+    durationMs: Long,
+    onPlayPause: () -> Unit,
+    onRewind: () -> Unit,
+    onForward: () -> Unit,
+    onSeekChange: (Long) -> Unit,
+    onSeekFinished: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f))))
+            .padding(horizontal = 12.dp)
+            .padding(bottom = 8.dp, top = 24.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                formatPlaybackTime(positionMs),
+                color = Color.White,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.width(40.dp)
+            )
+            Slider(
+                value = positionMs.toFloat(),
+                // coerceAtLeast avoids a zero-width 0f..0f range (Slider
+                // requires start < end) during the brief window before
+                // onPlaybackStateChanged(STATE_READY) reports the real
+                // duration.
+                valueRange = 0f..durationMs.coerceAtLeast(1000L).toFloat(),
+                onValueChange = { onSeekChange(it.toLong()) },
+                onValueChangeFinished = onSeekFinished,
+                colors = SliderDefaults.colors(
+                    thumbColor = Color.White,
+                    activeTrackColor = Color.White,
+                    inactiveTrackColor = Color.White.copy(alpha = 0.35f)
+                ),
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                formatPlaybackTime(durationMs),
+                color = Color.White,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.width(40.dp)
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onRewind) {
+                Icon(Icons.Filled.Replay10, contentDescription = "Rewind 10 seconds", tint = Color.White)
+            }
+            IconButton(onClick = onPlayPause, modifier = Modifier.size(56.dp)) {
+                Icon(
+                    if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    tint = Color.White,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
+            IconButton(onClick = onForward) {
+                Icon(Icons.Filled.Forward10, contentDescription = "Forward 10 seconds", tint = Color.White)
+            }
+        }
+    }
+}
+
+/** Batch127: `m:ss` — matches the timestamp style already used everywhere
+ *  else time is shown to the user in this app (plain digits, no locale-
+ *  sensitive date library needed for a duration this short). */
+private fun formatPlaybackTime(ms: Long): String {
+    val totalSeconds = (ms / 1000).coerceAtLeast(0)
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
 }
 
 @Composable

@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch127 — 2026-09-13
+- **Feature: video player custom sendiri, ganti kontrol bawaan** (1 file, permintaan user): tombol play/pause, mundur/maju 10 detik, seek bar drag, label posisi/durasi, indikator loading, dan kontrol yang otomatis sembunyi/muncul sekarang dibangun sendiri di app ini — bukan lagi kontrol generik bawaan library video. Tombol close dan perilaku tap-untuk-tutup foto tetap sama seperti sebelumnya. **Video stuttering TETAP belum digarap** (scope terpisah, butuh info lebih lanjut dari device asli). **Belum tervalidasi device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch127.
+
 ## Batch126 — 2026-09-13
 - **Fix: fullscreen photo/video viewer — bottom controls clipped by gesture-nav bar, and screen wouldn't rotate to landscape** (3 file, laporan bug user pasca-Batch125, 2 fix sebelumnya belum cukup): akar masalahnya ternyata cara viewer ini dibangun — sekarang dibangun ulang pakai pendekatan yang lebih sederhana dan lebih robust (bukan lagi jendela terpisah dari layar utama), yang seharusnya menutup baik masalah kliping maupun rotasi sekaligus. Fitur close/dismiss (tombol X di video, tap di mana saja di foto) tetap berfungsi sama seperti sebelumnya. **Video stuttering yang dilaporkan bareng ini SENGAJA belum digarap** (user minta rotate+kliping duluan). **Belum tervalidasi device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch126.
 
