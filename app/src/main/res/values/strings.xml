@@ -67,6 +67,10 @@
     <string name="settings_random_mode_title">Random clean mode</string>
     <string name="settings_random_mode_subtitle">Shuffle a folder\'s photos into random order each time you open it, instead of date order.</string>
 
+    <string name="settings_section_cleaning_options">Cleaning Options</string>
+    <string name="settings_video_sound_title">Sound for videos</string>
+    <string name="settings_video_sound_subtitle">Play video sound while reviewing, instead of muted by default.</string>
+
     <string name="settings_section_feedback">Feedback</string>
     <string name="settings_swipe_haptics_title">Swipe haptics</string>
     <string name="settings_swipe_haptics_subtitle">A short vibration when you keep or delete a photo.</string>

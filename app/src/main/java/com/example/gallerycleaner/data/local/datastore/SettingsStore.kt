@@ -35,6 +35,7 @@ private val CLEANUP_GOAL_BYTES_KEY = longPreferencesKey("cleanup_goal_bytes")
 private val BACKUP_BEFORE_DELETE_ENABLED_KEY = booleanPreferencesKey("backup_before_delete_enabled")
 private val GROUP_MODE_KEY = stringPreferencesKey("group_mode")
 private val SORT_OPTION_KEY = stringPreferencesKey("sort_option")
+private val VIDEO_SOUND_ENABLED_KEY = booleanPreferencesKey("video_sound_enabled")
 
 /** Default cleanup goal (ROADMAP Fase A item 3): 2 GB. Arbitrary but
  *  reasonable starting target — big enough to feel worth working toward,
@@ -211,5 +212,29 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setSortOption(option: SortOption) {
         context.settingsDataStore.edit { prefs -> prefs[SORT_OPTION_KEY] = option.name }
+    }
+
+    /** [Batch129] Whether videos play with sound during swipe/grid review.
+     *  First item off the "Cleaning Options" backlog (ROADMAP — gap found
+     *  against reference app in the same category, which groups this exact
+     *  toggle plus ~8 siblings under one Settings section; the rest are
+     *  intentionally NOT bundled into this same change, see ROADMAP for the
+     *  full list and per-item risk notes). Defaults to false: unlike
+     *  hapticFeedbackEnabledFlow (a subtle per-gesture touch people expect
+     *  on by default), audio autoplay is not subtle — a gallery review
+     *  session is exactly the kind of moment (public transport, quiet room,
+     *  phone on silent for a reason) where unexpected sound is unwelcome.
+     *  Same off-by-default reasoning already applied to
+     *  cleaningReminderEnabledFlow/backupBeforeDeleteEnabledFlow above.
+     *  Consumed directly inside VideoPlayerSurface (SwipeScreenCard.kt) —
+     *  see that file's own comment for why it constructs this store locally
+     *  instead of threading a parameter through SwipeScreen.kt/
+     *  SwipeScreenGrid.kt. */
+    val videoSoundEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[VIDEO_SOUND_ENABLED_KEY] ?: false
+    }
+
+    suspend fun setVideoSoundEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[VIDEO_SOUND_ENABLED_KEY] = enabled }
     }
 }

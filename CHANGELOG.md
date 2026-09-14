@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch129 — 2026-09-14
+- **Setting baru: "Sound for Videos"** (Settings > Cleaning Options) — video sekarang default TANPA suara saat direview, bisa dinyalain sendiri dari Settings kalau mau. Ini bagian pertama dari serangkaian fitur yang lagi disusul dari app kompetitor ("Sponge") — 6 fitur lain (History/statistik bulanan, opsi swipe direction, dll) masih dalam antrian, dikerjakan bertahap. Detail lengkap rencana: `ROADMAP.md`.
+- Perbaikan kecil: judul/nama file sekarang muncul di pojok kiri atas saat lihat video fullscreen (sebelumnya cuma ada tombol tutup, gak ada info video apa yang lagi diputar).
+
 ## Batch128 — 2026-09-13
 - **Hotfix: build gagal (CI run247) gara-gara 3 icon baru di kontrol video custom Batch127** (1 file, `app/build.gradle.kts`): 3 tombol kontrol video (play/pause, mundur, maju) pakai icon yang ternyata butuh library icon tambahan yang sempat dicabut waktu optimasi ukuran app (Batch114) — library itu dipasang kembali supaya build lolos lagi. Efek samping: ukuran app kemungkinan naik sedikit lagi dari yang sudah dioptimasi kemarin (belum ada angka pasti tanpa build APK asli). Fitur video player lain (Batch121-127) tidak berubah. **Belum tervalidasi build asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch128.
 

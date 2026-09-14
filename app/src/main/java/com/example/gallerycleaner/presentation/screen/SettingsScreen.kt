@@ -67,6 +67,7 @@ fun SettingsScreen(
     val reminderEnabled by settingsStore.cleaningReminderEnabledFlow.collectAsState(initial = false)
     val hapticsEnabled by settingsStore.hapticFeedbackEnabledFlow.collectAsState(initial = true)
     val randomModeEnabled by settingsStore.randomModeEnabledFlow.collectAsState(initial = false)
+    val videoSoundEnabled by settingsStore.videoSoundEnabledFlow.collectAsState(initial = false)
     val appLockEnabled by settingsStore.appLockEnabledFlow.collectAsState(initial = false)
     val backupBeforeDeleteEnabled by settingsStore.backupBeforeDeleteEnabledFlow.collectAsState(initial = false)
     val isDeviceSecure = remember {
@@ -504,6 +505,31 @@ fun SettingsScreen(
                     Switch(
                         checked = randomModeEnabled,
                         onCheckedChange = { scope.launch { settingsStore.setRandomModeEnabled(it) } }
+                    )
+                }
+            }
+
+            item { Spacer(Modifier.height(24.dp)) }
+            item { SettingsSectionLabel(stringResource(R.string.settings_section_cleaning_options)) }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_video_sound_title), style = MaterialTheme.typography.bodyLarge)
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            stringResource(R.string.settings_video_sound_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = videoSoundEnabled,
+                        onCheckedChange = { scope.launch { settingsStore.setVideoSoundEnabled(it) } }
                     )
                 }
             }

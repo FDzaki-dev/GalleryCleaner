@@ -4,7 +4,7 @@
 APK signed terbaru: **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
 ## Status Ringkas (terbaru)
-✅ Fase A (gap fungsional inti) selesai 4/4 — Batch20. ✅ Fase B (AI on-device) selesai 3/3 — Batch25. ⏳ Fase C (reliability/visual) & Fase D (jangkauan pasar) belum dimulai — lihat `PROJECT_STATE.md` → "Belum Dikerjakan" untuk detail terkini.
+✅ Fase A (gap fungsional inti) selesai 4/4 — Batch20. ✅ Fase B (AI on-device) selesai 3/3 — Batch25. ⏳ Fase C (reliability/visual) & Fase D (jangkauan pasar) belum dimulai. 🆕 Fase E (gap fungsional lanjutan, ditemukan Batch129 re-cek Sponge) 1/7 — `Sound for Videos` selesai, 6 item sisa BELUM digarap. Lihat `PROJECT_STATE.md` → "Belum Dikerjakan" untuk detail terkini.
 
 Tolok ukur: **Sponge - Gallery Cleaner** (`com.prismtree.sponge`,
 ~780rb download, ~510 install/hari, rating 5.0). Cek ulang sebelum
@@ -23,6 +23,36 @@ rilis besar — fitur kompetitor bisa berubah.
 - Monetisasi: Premium **one-time purchase**, bukan subscription
 - Multi-bahasa: Inggris + Spanish + Portuguese (BR), terus bertambah
 - Android 11+, rating konten Everyone
+
+### 1b. Re-cek Batch129 (2026-09-14, screen recording user langsung — bukan asumsi/memori lama)
+Section 1 di atas TIDAK salah, tapi TIDAK LENGKAP — fitur baru berikut
+kepakai fisik di screen recording (72 detik), 0 ada di Section 1 lama:
+- **Home dashboard**: greeting + streak ("You are a cleaning star!"),
+  bintang rating "Share your experience", lifetime counter ("reviewed 302
+  items, saved 870 MB"), progress "2% done", CTA "Start cleaning", resume
+  card "In progress: <bulan> · Just now · View all"
+- **History screen (nav item terpisah, BUKAN sub-Settings)**: tabel
+  per-bulan, 3 angka + label MB per baris (mis. "November 2025: 73 / 56 /
+  575", "Mei 2025: 154 / 123 / 62 MB") — semantik pasti 3 angka itu
+  (reviewed/kept/deleted vs reviewed/deleted/MB) BELUM bisa dipastikan
+  cuma dari rekaman, perlu klarifikasi kalau mau ditiru persis
+- **Settings > My Account**: Sign In/Sign Up ("sign in or create an
+  account") — indikasi ada akun/cloud-sync, sebelumnya 0 tercatat
+- **Settings > Notifications**: TERNYATA 2 toggle terpisah — "In progress
+  reminder" + "Monthly reminder" (Section 1 lama cuma nyebut 1 gabungan)
+- **Settings > Cleaning Options** (section baru, 9 item, 0 satupun ada di
+  project ini — dicek langsung ke source Batch129, lihat Section 2b):
+  Manage move-to albums, Personalize your cleaning screen, Swipe direction
+  for delete (Left/Right), Enable Sound for Videos, Animate on buttons,
+  Default sort (mis. "Date: Oldest to Latest" — field+ARAH, bukan cuma
+  field), Random count (angka custom, bukan cuma on/off), Enable share
+  text, Manage albums (include/exclude album dari sesi cleaning)
+- **Settings > Reset app** (reset data + stats — 0 ada di project ini)
+- **Swipe screen > "Customize view" (ikon expand di top bar)**: bottom
+  sheet 4 toggle — Top media strip (thumbnail strip di atas), File info,
+  Proceed button on top, Organize mode (tampilkan folder tujaun pindah)
+- Video/GIF card di swipe screen nampilin overlay ukuran file + index
+  ("15 MB · GIF · 1/53") langsung di kartu, bukan cuma pas di-tap
 
 ## 2. Posisi kita sekarang
 **Setara atau lebih unggul:**
@@ -56,6 +86,36 @@ rilis besar — fitur kompetitor bisa berubah.
   ring)
 - ❌ Monetisasi: belum ada model premium sama sekali di project ini
 
+### 2b. Gap baru dari re-cek Batch129 (lihat Section 1b untuk fakta lengkap)
+- ✅ **Sound for Videos** (Batch129, SELESAI) — `SettingsStore.videoSoundEnabledFlow`
+  + `SettingsScreen.kt` section "Cleaning Options" (section baru) +
+  `VideoPlayerSurface` (`SwipeScreenCard.kt`) baca setting itu buat
+  `exoPlayer.volume`. Default OFF (beda dari Sponge yang defaultnya ON di
+  rekaman) — alasan: konsisten sama pola off-by-default project ini utk
+  toggle yang mengubah perilaku "mengganggu" (lihat doc comment di
+  `SettingsStore.kt`), BUKAN niru Sponge 1:1 buta.
+- ❌ 8 sisa item "Cleaning Options" Sponge (Manage move-to albums,
+  Personalize cleaning screen, Swipe direction, Animate on buttons,
+  Default sort+arah, Random count, Enable share text, Manage albums) —
+  BELUM digarap, per-item beda kompleksitas (beberapa cuma toggle+wiring
+  ringan mirip Batch129, beberapa — swipe direction, manage albums —
+  nyentuh logic inti `SwipeScreenCard.kt`/`SwipeScreen.kt` lebih dalam,
+  resiko regresi lebih tinggi, HARUS batch terpisah per STABILITY WINS)
+- ❌ History screen (nav item terpisah, statistik bulanan) — 0 ada sama
+  sekali di project ini (cuma ada Trash). Butuh data-layer baru (belum
+  ada yang nyatet reviewed/kept/deleted per bulan hari ini,
+  `StatsStore` yang ada cuma lifetime total, bukan per-bulan) — lebih
+  besar dari sekadar 1 UI screen, JANGAN diremehin jadi "quick add"
+- ❌ Home dashboard model Sponge (streak/rating-prompt/resume-card) —
+  `HomeScreen.kt` project ini sekarang perannya folder/album browser,
+  BUKAN dashboard statistik — beda arsitektur, bukan sekadar tambah widget
+- ❌ "Customize view" bottom sheet di swipe screen (4 toggle layout)
+- ❌ Settings > My Account (sign in/up) — indikasi fitur akun/cloud, scope
+  jauh lebih besar dari toggle biasa (butuh auth+backend), TIDAK
+  direkomendasikan dikejar tanpa keputusan produk eksplisit dari user
+- ❌ Notifications displit jadi 2 toggle (in-progress + monthly) — saat
+  ini cuma 1 (`cleaningReminderEnabledFlow`)
+
 ## 3. Roadmap (goals, bukan jadwal tanggal — tiap fase = beberapa batch)
 
 ### Fase A — Tutup gap fungsional inti (SELESAI 4/4, Batch20)
@@ -86,6 +146,28 @@ Detail implementasi tiap item: `PROJECT_STATE.md`.
    sandbox ini).
 10. Pastikan Batch10-14 hijau di CI sebelum numpuk fitur baru di atas
     fondasi yang belum tervalidasi build-nya.
+
+### Fase E — Gap fungsional lanjutan (ditemukan Batch129, re-cek Sponge)
+Diselipkan SEBELUM Fase D karena ini "gap fungsional" (semangat sama
+Fase A/B), bukan "jangkauan pasar" — urutan/prioritas per-item TETAP
+keputusan user per-batch (bukan diasumsikan sistem), lihat catatan resiko
+masing-masing di Section 2b.
+14. ✅ Sound for Videos (Batch129) — `SettingsStore.videoSoundEnabledFlow`
+15. ❌ Sisa 8 item "Cleaning Options": Manage move-to albums, Personalize
+    cleaning screen, Swipe direction (Left/Right), Animate on buttons,
+    Default sort+arah, Random count, Enable share text, Manage albums —
+    tiap item kemungkinan batch terpisah, kompleksitas beda-beda (lihat
+    Section 2b)
+16. ❌ History screen — perlu data-layer baru (stats per-bulan, bukan cuma
+    lifetime), BUKAN quick-add
+17. ❌ Home dashboard model Sponge (streak/resume-card) — `HomeScreen.kt`
+    project ini peran beda (folder browser), butuh keputusan arsitektur
+    dulu: dashboard baru terpisah, atau `HomeScreen.kt` di-repurpose?
+18. ❌ "Customize view" bottom sheet (layar swipe)
+19. ❌ Notifications: split jadi 2 toggle (in-progress + monthly)
+20. ❌ Settings > My Account (sign in/up) — SENGAJA ditaruh prioritas
+    PALING RENDAH: butuh auth+backend, scope beda kelas dari 19 item lain
+    di Fase E, jangan dikerjakan tanpa keputusan produk eksplisit user
 
 ### Fase D — Jangkauan pasar (menyamai skala 780rb download Sponge)
 11. **Multi-bahasa**: minimal Spanish + Portuguese (BR).

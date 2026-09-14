@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -249,19 +250,44 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
             // instead. An explicit close button is the safe alternative; same
             // icon/circle-badge visual language already used for the
             // grid's zoom-in affordance (SwipeScreenGrid.kt).
-            Icon(
-                Icons.Filled.Close,
-                contentDescription = "Close",
-                tint = Color.White,
+            // [Batch129] user device-test feedback on Batch127's video
+            // viewer — close button existed but nothing next to it ever
+            // showed WHAT is playing, unlike FileInfoDialog (name/date/size)
+            // already available for photos from this same Box's sibling
+            // affordances elsewhere in the app. Genuinely missing, not a
+            // styling call: added inline, same top-start row as Close so it
+            // shares that button's existing tap target/scrim treatment
+            // rather than introducing a second visual language.
+            Row(
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(16.dp)
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.45f))
-                    .clickable { onDismiss() }
-                    .padding(4.dp)
-            )
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = "Close",
+                    tint = Color.White,
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.45f))
+                        .clickable { onDismiss() }
+                        .padding(4.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    item.displayName,
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .background(Color.Black.copy(alpha = 0.45f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
         } else {
             Box(modifier = Modifier.fillMaxSize().clickable { onDismiss() }) {
                 AsyncImage(
@@ -363,6 +389,16 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
 @Composable
 private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    // [Batch129] Constructed locally rather than threaded down as a
+    // parameter from SwipeScreen.kt/SwipeScreenGrid.kt (both current
+    // FullscreenViewer call sites) — this is the ONLY place in this file a
+    // setting is read, and SettingsStore's DataStore-backed flows are cheap/
+    // safe to collect straight from a Composable (no ViewModel scoping
+    // needed for a single boolean read). Threading a parameter through 2
+    // extra files for 1 boolean would widen this batch's blast radius for
+    // no real benefit — see SettingsStore.kt's videoSoundEnabledFlow doc.
+    val settingsStore = remember { SettingsStore(context) }
+    val videoSoundEnabled by settingsStore.videoSoundEnabledFlow.collectAsState(initial = false)
     var playbackError by remember(uri) { mutableStateOf(false) }
     // errorDetail is independent of `uri` on purpose — it's UI-only text
     // derived from playbackError, no need to reset/rebuild it per item.
@@ -402,9 +438,16 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
             .setEnableDecoderFallback(true)
         ExoPlayer.Builder(context, renderersFactory).build().apply {
             setMediaItem(Media3MediaItem.fromUri(uri))
+            volume = if (videoSoundEnabled) 1f else 0f
             playWhenReady = true
             prepare()
         }
+    }
+    // Separate from the remember(uri) block above on purpose: that block
+    // only re-runs when `uri` changes, so it alone would miss the setting
+    // being flipped in Settings while a video is already open/prepared.
+    LaunchedEffect(exoPlayer, videoSoundEnabled) {
+        exoPlayer.volume = if (videoSoundEnabled) 1f else 0f
     }
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
