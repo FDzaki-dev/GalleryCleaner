@@ -18,6 +18,30 @@ jobs:
         with:
           fetch-depth: 0
 
+      # [Batch130] Was previously computed ONLY inside "Build signed release
+      # APK" below — meaning ANY failure before that step (Set up JDK, Set
+      # up Android SDK, Install Android SDK components, Decode keystore)
+      # left env.LOG_FILE unset. "Upload build failure log" further down
+      # unconditionally passes `path: ${{ env.LOG_FILE }}`, and
+      # actions/upload-artifact@v4 treats an EMPTY path input as fatal
+      # ("Input required and not supplied: path") rather than the merely-
+      # missing-file case if-no-files-found already handles gracefully —
+      # so an early failure crashed the upload step too, on top of the
+      # original failure, with the actual error left buried in raw runner
+      # logs instead of surfaced the same way a Gradle failure already is.
+      # Root cause found via logs_94523079153.zip (2026-09-14): Set up
+      # Android SDK died first that run — see the packages: '' fix on that
+      # step below — which is exactly this blind spot in practice, not a
+      # hypothetical. Moved here, right after Checkout (earliest point
+      # `git rev-parse` has a repo to read), so LOG_FILE is a valid, unique,
+      # already-dynamic path (branch/run/attempt/sha — unchanged naming, see
+      # doc below) for the ENTIRE rest of the job, however early it fails.
+      - name: Compute failure-log path
+        run: |
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          echo "LOG_FILE=log-fail_${GITHUB_REF_NAME}_run${GITHUB_RUN_NUMBER}-attempt${GITHUB_RUN_ATTEMPT}_${SHORT_SHA}.log" \
+            >> "$GITHUB_ENV"
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -27,6 +51,22 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # [Batch130] 2026-09-14: Google removed the legacy 'tools' package
+          # from the SDK repository (external, same-day change — confirmed
+          # against multiple other unrelated projects hitting the identical
+          # break the same day, nothing in our own code/config caused this).
+          # This action's own default `packages` input is
+          # 'tools platform-tools' when left unset, so it tried to fetch the
+          # now-gone 'tools' package and the whole step crashed
+          # (sdkmanager exit 1, "Warning: Failed to find package 'tools'")
+          # before Gradle ever ran — the actual failure in
+          # logs_94523079153.zip. Empty string skips this action's own
+          # package install entirely; safe here because the very next step
+          # ("Install Android SDK components") already explicitly installs
+          # platform-tools plus the exact platform/build-tools this build
+          # needs — nothing was ever depending on THIS step's own default.
+          packages: ''
 
       - name: Install Android SDK components
         run: |
@@ -79,10 +119,8 @@ jobs:
             exit 1
           }
 
-          SHORT_SHA="$(git rev-parse --short HEAD)"
-          LOG_FILE="log-fail_${GITHUB_REF_NAME}_run${GITHUB_RUN_NUMBER}-attempt${GITHUB_RUN_ATTEMPT}_${SHORT_SHA}.log"
-          echo "LOG_FILE=$LOG_FILE" >> "$GITHUB_ENV"
-
+          # LOG_FILE itself is set by "Compute failure-log path" right
+          # after Checkout (Batch130) — this step only writes into it.
           set +e
           gradle --no-daemon --stacktrace assembleRelease 2>&1 | tee "$LOG_FILE"
           BUILD_STATUS=${PIPESTATUS[0]}
