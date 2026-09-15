@@ -21,6 +21,10 @@ import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
+import androidx.compose.material.icons.filled.ScreenLockRotation
+import androidx.compose.material.icons.filled.ScreenRotation
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -451,11 +455,26 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
             prepare()
         }
     }
+    // [Batch133] In-player mute button (VideoControlBar) — null means "no
+    // manual override yet, keep following the Settings default", exactly
+    // the behavior that existed before this batch. A non-null value means
+    // the user tapped mute/unmute on THIS video's control bar, which wins
+    // over the Settings value until a different uri opens (remember(uri)
+    // below resets it back to null, i.e. back to following Settings, per
+    // video — a quick in-context override rather than a permanent change,
+    // same as the mute button in any basic video player). This is purely
+    // additive on top of Batch132's fix above — that fix is about what
+    // collectAsState(initial=...) resolves to on first read, this is a
+    // separate layer that only ever reacts to the resolved value, never
+    // re-reads DataStore itself.
+    var manualMuteOverride by remember(uri) { mutableStateOf<Boolean?>(null) }
+    val isMuted = manualMuteOverride ?: !videoSoundEnabled
     // Separate from the remember(uri) block above on purpose: that block
     // only re-runs when `uri` changes, so it alone would miss the setting
-    // being flipped in Settings while a video is already open/prepared.
-    LaunchedEffect(exoPlayer, videoSoundEnabled) {
-        exoPlayer.volume = if (videoSoundEnabled) 1f else 0f
+    // being flipped in Settings while a video is already open/prepared, or
+    // the new mute button being tapped.
+    LaunchedEffect(exoPlayer, isMuted) {
+        exoPlayer.volume = if (isMuted) 0f else 1f
     }
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
@@ -543,12 +562,39 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
     // is a direct Activity context now, no wrapper left to unwrap — but
     // findActivity() stays, harmless and still correct either way.
     val activity = context.findActivity()
+    // [Batch133] Split in two: this half now only captures+restores the
+    // orientation that existed before the video viewer ever touched it.
+    // remember{} (no key) runs during composition, before any effect body
+    // — same timing the old `val previousOrientation = activity?.
+    // requestedOrientation` line had inside DisposableEffect(Unit), so this
+    // still captures the true pre-viewer value exactly once, not once per
+    // video switched to within an already-open viewer.
+    val previousOrientation = remember { activity?.requestedOrientation }
     DisposableEffect(Unit) {
-        val previousOrientation = activity?.requestedOrientation
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
         onDispose {
             activity?.requestedOrientation =
                 previousOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+    // [Batch133] New rotation-mode button in VideoControlBar. Batch122's
+    // SENSOR-while-open default (free rotation by physically turning the
+    // phone, independent of the system's own auto-rotate toggle) is exactly
+    // what still runs when this is false — the branch below is unchanged
+    // from before. Tapping the new icon forces SENSOR_LANDSCAPE instead:
+    // landscape without physically turning the phone, the same override
+    // every basic video player's fullscreen/rotate button does (still
+    // sensor-driven within the landscape pair, so normal vs
+    // reverse-landscape still follows however the phone happens to be
+    // held). remember(uri), matching every other per-item state in this
+    // composable, resets this back to auto/SENSOR whenever a different
+    // video opens rather than carrying a manual landscape lock over
+    // between videos.
+    var manualLandscape by remember(uri) { mutableStateOf(false) }
+    LaunchedEffect(manualLandscape) {
+        activity?.requestedOrientation = if (manualLandscape) {
+            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_SENSOR
         }
     }
     Box(modifier = modifier) {
@@ -586,6 +632,10 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
                     isPlaying = isPlaying,
                     positionMs = positionMs,
                     durationMs = durationMs,
+                    isMuted = isMuted,
+                    onToggleMute = { manualMuteOverride = !isMuted },
+                    isLandscapeMode = manualLandscape,
+                    onToggleRotation = { manualLandscape = !manualLandscape },
                     onPlayPause = {
                         if (exoPlayer.isPlaying) {
                             exoPlayer.pause()
@@ -686,6 +736,13 @@ private fun VideoControlBar(
     isPlaying: Boolean,
     positionMs: Long,
     durationMs: Long,
+    // [Batch133] Mute + rotation-mode buttons — see VideoPlayerSurface's
+    // Batch133 comments for how isMuted/isLandscapeMode are derived and
+    // what onToggleMute/onToggleRotation do to that state.
+    isMuted: Boolean,
+    onToggleMute: () -> Unit,
+    isLandscapeMode: Boolean,
+    onToggleRotation: () -> Unit,
     onPlayPause: () -> Unit,
     onRewind: () -> Unit,
     onForward: () -> Unit,
@@ -730,24 +787,49 @@ private fun VideoControlBar(
                 modifier = Modifier.width(40.dp)
             )
         }
+        // [Batch133] SpaceBetween instead of the old Center — mute (start)
+        // and rotation-mode (end) are new, transport controls stay in a
+        // nested Row so they keep grouping/centering as a unit between the
+        // two. Three-zone layout (mute — transport — rotate) requested by
+        // user as "like basic apps" — NOT cross-checked against Sponge's
+        // own video player specifically (ROADMAP.md's Sponge notes cover
+        // Settings/Cleaning-Options/Home-dashboard gaps, not its video
+        // player's control-bar layout), so this is a generic basic-video-
+        // player convention, not a Sponge-matching claim.
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onRewind) {
-                Icon(Icons.Filled.Replay10, contentDescription = "Rewind 10 seconds", tint = Color.White)
-            }
-            IconButton(onClick = onPlayPause, modifier = Modifier.size(56.dp)) {
+            IconButton(onClick = onToggleMute) {
                 Icon(
-                    if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                    tint = Color.White,
-                    modifier = Modifier.size(36.dp)
+                    if (isMuted) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp,
+                    contentDescription = if (isMuted) "Unmute" else "Mute",
+                    tint = Color.White
                 )
             }
-            IconButton(onClick = onForward) {
-                Icon(Icons.Filled.Forward10, contentDescription = "Forward 10 seconds", tint = Color.White)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onRewind) {
+                    Icon(Icons.Filled.Replay10, contentDescription = "Rewind 10 seconds", tint = Color.White)
+                }
+                IconButton(onClick = onPlayPause, modifier = Modifier.size(56.dp)) {
+                    Icon(
+                        if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        tint = Color.White,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+                IconButton(onClick = onForward) {
+                    Icon(Icons.Filled.Forward10, contentDescription = "Forward 10 seconds", tint = Color.White)
+                }
+            }
+            IconButton(onClick = onToggleRotation) {
+                Icon(
+                    if (isLandscapeMode) Icons.Filled.ScreenLockRotation else Icons.Filled.ScreenRotation,
+                    contentDescription = if (isLandscapeMode) "Switch to auto-rotate" else "Rotate to landscape",
+                    tint = Color.White
+                )
             }
         }
     }

@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch133 — 2026-09-15
+- **Feature: tombol mute dan rotasi langsung di pemutar video** (1 file, `SwipeScreenCard.kt`) — sekarang ada ikon speaker di kontrol video (kiri bawah) untuk mute/unmute cepat tanpa buka Settings dulu, dan ikon rotasi (kanan bawah) untuk memutar video ke landscape tanpa perlu benar-benar memiringkan hp — sama seperti pemutar video pada umumnya. Setting "Sound for Videos" di Settings tetap jadi default-nya; tombol mute ini cuma override sementara untuk video yang sedang dibuka (video berikutnya kembali ke default Settings). **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch133.
+
 ## Batch132 — 2026-09-15
 - **Perbaikan: video sekarang kembali otomatis ada suara.** Setting "Sound for videos" (Batch129) sempat salah default — bikin semua video jadi bisu duluan sampai kamu buka Settings dan nyalain sendiri. Sekarang dibalik ke perilaku normal: video otomatis ada suara, dan setting-nya tetap ada kalau kamu justru mau me-mute.
 
