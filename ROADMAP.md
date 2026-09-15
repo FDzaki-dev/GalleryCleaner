@@ -87,13 +87,17 @@ kepakai fisik di screen recording (72 detik), 0 ada di Section 1 lama:
 - ❌ Monetisasi: belum ada model premium sama sekali di project ini
 
 ### 2b. Gap baru dari re-cek Batch129 (lihat Section 1b untuk fakta lengkap)
-- ✅ **Sound for Videos** (Batch129, SELESAI) — `SettingsStore.videoSoundEnabledFlow`
-  + `SettingsScreen.kt` section "Cleaning Options" (section baru) +
-  `VideoPlayerSurface` (`SwipeScreenCard.kt`) baca setting itu buat
-  `exoPlayer.volume`. Default OFF (beda dari Sponge yang defaultnya ON di
-  rekaman) — alasan: konsisten sama pola off-by-default project ini utk
-  toggle yang mengubah perilaku "mengganggu" (lihat doc comment di
-  `SettingsStore.kt`), BUKAN niru Sponge 1:1 buta.
+- ✅ **Sound for Videos** (Batch129, SELESAI; default DIKOREKSI Batch132) —
+  `SettingsStore.videoSoundEnabledFlow` + `SettingsScreen.kt` section
+  "Cleaning Options" (section baru) + `VideoPlayerSurface`
+  (`SwipeScreenCard.kt`) baca setting itu buat `exoPlayer.volume`.
+  **Default sekarang ON** (Batch129 awalnya OFF — REGRESI: sebelum toggle
+  ini ada, video SELALU ada suara, ExoPlayer default `volume=1f` kalau 0
+  di-set eksplisit. Default OFF Batch129 diam-diam bikin semua video jadi
+  bisu — user report "regresi pada output Audio", Batch132 fix. Detail
+  lengkap: `PROJECT_STATE.md` entry Batch132 + doc comment
+  `SettingsStore.kt`). Sekarang ON, SAMA kayak Sponge di rekaman — bukan
+  lagi beda sengaja.
 - ✅ **Enable share text** (Batch131, SELESAI) — `SettingsStore.shareTextEnabledFlow`
   + toggle di section "Cleaning Options" yang sama + `SwipeScreen.kt`
   share intent nambahin `EXTRA_TEXT` (nama file) kalau enabled. Default

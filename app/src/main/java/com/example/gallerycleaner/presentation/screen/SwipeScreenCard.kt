@@ -398,7 +398,15 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
     // extra files for 1 boolean would widen this batch's blast radius for
     // no real benefit — see SettingsStore.kt's videoSoundEnabledFlow doc.
     val settingsStore = remember { SettingsStore(context) }
-    val videoSoundEnabled by settingsStore.videoSoundEnabledFlow.collectAsState(initial = false)
+    // [Batch132] initial=true, not false — this is the actual regression
+    // fix. ExoPlayer.Builder().build().apply{} below reads
+    // videoSoundEnabled on the VERY FIRST composition, before the real
+    // DataStore value has had a chance to arrive; `initial=false` meant
+    // brand-new/cold-started playback briefly (and on a slow disk, not
+    // so briefly) built the player MUTED even for users whose real,
+    // saved preference is sound-on. See SettingsStore.kt's
+    // videoSoundEnabledFlow doc for the full regression writeup.
+    val videoSoundEnabled by settingsStore.videoSoundEnabledFlow.collectAsState(initial = true)
     var playbackError by remember(uri) { mutableStateOf(false) }
     // errorDetail is independent of `uri` on purpose — it's UI-only text
     // derived from playbackError, no need to reset/rebuild it per item.

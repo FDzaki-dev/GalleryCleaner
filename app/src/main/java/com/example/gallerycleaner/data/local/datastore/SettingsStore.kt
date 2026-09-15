@@ -215,24 +215,32 @@ class SettingsStore(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[SORT_OPTION_KEY] = option.name }
     }
 
-    /** [Batch129] Whether videos play with sound during swipe/grid review.
-     *  First item off the "Cleaning Options" backlog (ROADMAP — gap found
-     *  against reference app in the same category, which groups this exact
-     *  toggle plus ~8 siblings under one Settings section; the rest are
-     *  intentionally NOT bundled into this same change, see ROADMAP for the
-     *  full list and per-item risk notes). Defaults to false: unlike
-     *  hapticFeedbackEnabledFlow (a subtle per-gesture touch people expect
-     *  on by default), audio autoplay is not subtle — a gallery review
-     *  session is exactly the kind of moment (public transport, quiet room,
-     *  phone on silent for a reason) where unexpected sound is unwelcome.
-     *  Same off-by-default reasoning already applied to
-     *  cleaningReminderEnabledFlow/backupBeforeDeleteEnabledFlow above.
-     *  Consumed directly inside VideoPlayerSurface (SwipeScreenCard.kt) —
-     *  see that file's own comment for why it constructs this store locally
-     *  instead of threading a parameter through SwipeScreen.kt/
-     *  SwipeScreenGrid.kt. */
+    /** [Batch129, default corrected Batch132] Whether videos play with
+     *  sound during swipe/grid review. First item off the "Cleaning
+     *  Options" backlog (ROADMAP — gap found against reference app in the
+     *  same category, which groups this exact toggle plus ~8 siblings
+     *  under one Settings section; the rest are intentionally NOT bundled
+     *  into this same change, see ROADMAP for the full list and per-item
+     *  risk notes).
+     *
+     *  [Batch132] Defaults to **true** — Batch129 originally defaulted
+     *  this to false on "unexpected sound is unwelcome" reasoning, but
+     *  that reasoning only holds for a setting that's ADDING a new
+     *  capability. This one isn't: before Batch129, VideoPlayerSurface set
+     *  no `volume` at all, so ExoPlayer's own default (1f, full volume)
+     *  applied and every video played with sound, same as opening it in
+     *  any other player. Defaulting the new toggle to false silently
+     *  muted every video that used to have sound — a genuine regression
+     *  (user-reported, "regresi pada output Audio"), not a neutral opt-in
+     *  choice, because the toggle's mere EXISTENCE changed prior working
+     *  behavior for everyone who never touched Settings. True restores
+     *  the pre-Batch129 behavior exactly; the toggle still exists for
+     *  anyone who wants to mute. Consumed directly inside
+     *  VideoPlayerSurface (SwipeScreenCard.kt) — see that file's own
+     *  comment for why it constructs this store locally instead of
+     *  threading a parameter through SwipeScreen.kt/SwipeScreenGrid.kt. */
     val videoSoundEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
-        prefs[VIDEO_SOUND_ENABLED_KEY] ?: false
+        prefs[VIDEO_SOUND_ENABLED_KEY] ?: true
     }
 
     suspend fun setVideoSoundEnabled(enabled: Boolean) {

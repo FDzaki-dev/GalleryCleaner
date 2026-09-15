@@ -69,7 +69,7 @@
 
     <string name="settings_section_cleaning_options">Cleaning Options</string>
     <string name="settings_video_sound_title">Sound for videos</string>
-    <string name="settings_video_sound_subtitle">Play video sound while reviewing, instead of muted by default.</string>
+    <string name="settings_video_sound_subtitle">Turn off to review videos muted instead of with sound.</string>
     <string name="settings_share_text_title">Include name when sharing</string>
     <string name="settings_share_text_subtitle">Attach the file\'s name as text alongside the photo or video when you share it.</string>
 

@@ -67,7 +67,11 @@ fun SettingsScreen(
     val reminderEnabled by settingsStore.cleaningReminderEnabledFlow.collectAsState(initial = false)
     val hapticsEnabled by settingsStore.hapticFeedbackEnabledFlow.collectAsState(initial = true)
     val randomModeEnabled by settingsStore.randomModeEnabledFlow.collectAsState(initial = false)
-    val videoSoundEnabled by settingsStore.videoSoundEnabledFlow.collectAsState(initial = false)
+    // [Batch132] initial=true, not false — matches the corrected default
+    // in SettingsStore.kt (see its doc comment). Using false here would
+    // flash an unchecked switch for one frame even for users who have
+    // sound ON (the real, post-fix default).
+    val videoSoundEnabled by settingsStore.videoSoundEnabledFlow.collectAsState(initial = true)
     val shareTextEnabled by settingsStore.shareTextEnabledFlow.collectAsState(initial = false)
     val appLockEnabled by settingsStore.appLockEnabledFlow.collectAsState(initial = false)
     val backupBeforeDeleteEnabled by settingsStore.backupBeforeDeleteEnabledFlow.collectAsState(initial = false)

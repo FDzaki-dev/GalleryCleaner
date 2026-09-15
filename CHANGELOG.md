@@ -3,6 +3,9 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch132 — 2026-09-15
+- **Perbaikan: video sekarang kembali otomatis ada suara.** Setting "Sound for videos" (Batch129) sempat salah default — bikin semua video jadi bisu duluan sampai kamu buka Settings dan nyalain sendiri. Sekarang dibalik ke perilaku normal: video otomatis ada suara, dan setting-nya tetap ada kalau kamu justru mau me-mute.
+
 ## Batch131 — 2026-09-15
 - **Setting baru: "Include name when sharing"** (Settings > Cleaning Options) — kalau dinyalain, nama file ikut ke-attach sebagai teks saat kamu share foto/video dari layar swipe. Default OFF. Item ke-2 dari daftar fitur yang lagi disusul dari app kompetitor ("Sponge") — lihat `ROADMAP.md` untuk sisa daftarnya.
 - CI run sebelumnya (Batch128/129/130) dikonfirmasi hijau ✅ — build APK jalan normal lagi.
