@@ -36,6 +36,7 @@ private val BACKUP_BEFORE_DELETE_ENABLED_KEY = booleanPreferencesKey("backup_bef
 private val GROUP_MODE_KEY = stringPreferencesKey("group_mode")
 private val SORT_OPTION_KEY = stringPreferencesKey("sort_option")
 private val VIDEO_SOUND_ENABLED_KEY = booleanPreferencesKey("video_sound_enabled")
+private val SHARE_TEXT_ENABLED_KEY = booleanPreferencesKey("share_text_enabled")
 
 /** Default cleanup goal (ROADMAP Fase A item 3): 2 GB. Arbitrary but
  *  reasonable starting target — big enough to feel worth working toward,
@@ -236,5 +237,23 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setVideoSoundEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[VIDEO_SOUND_ENABLED_KEY] = enabled }
+    }
+
+    /** [Batch131] Whether the share sheet (SwipeScreen.kt's toolbar Share
+     *  action) attaches a text extra alongside the media file — 2nd item
+     *  off the Fase E "Cleaning Options" backlog (ROADMAP.md #15), same
+     *  shape/risk class as Batch129's videoSoundEnabledFlow above (self-
+     *  contained toggle, 1 consumer file, no core swipe-logic changes).
+     *  Defaults to false: the "text" is the file's own display name
+     *  (SwipeScreen.kt decides the exact string, not this store) — for a
+     *  renamed/personal file that can leak more than the recipient needs,
+     *  so opt-in rather than opt-out, same off-by-default reasoning as
+     *  videoSoundEnabledFlow/cleaningReminderEnabledFlow. */
+    val shareTextEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[SHARE_TEXT_ENABLED_KEY] ?: false
+    }
+
+    suspend fun setShareTextEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[SHARE_TEXT_ENABLED_KEY] = enabled }
     }
 }

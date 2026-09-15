@@ -68,6 +68,7 @@ fun SettingsScreen(
     val hapticsEnabled by settingsStore.hapticFeedbackEnabledFlow.collectAsState(initial = true)
     val randomModeEnabled by settingsStore.randomModeEnabledFlow.collectAsState(initial = false)
     val videoSoundEnabled by settingsStore.videoSoundEnabledFlow.collectAsState(initial = false)
+    val shareTextEnabled by settingsStore.shareTextEnabledFlow.collectAsState(initial = false)
     val appLockEnabled by settingsStore.appLockEnabledFlow.collectAsState(initial = false)
     val backupBeforeDeleteEnabled by settingsStore.backupBeforeDeleteEnabledFlow.collectAsState(initial = false)
     val isDeviceSecure = remember {
@@ -530,6 +531,28 @@ fun SettingsScreen(
                     Switch(
                         checked = videoSoundEnabled,
                         onCheckedChange = { scope.launch { settingsStore.setVideoSoundEnabled(it) } }
+                    )
+                }
+            }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_share_text_title), style = MaterialTheme.typography.bodyLarge)
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            stringResource(R.string.settings_share_text_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = shareTextEnabled,
+                        onCheckedChange = { scope.launch { settingsStore.setShareTextEnabled(it) } }
                     )
                 }
             }

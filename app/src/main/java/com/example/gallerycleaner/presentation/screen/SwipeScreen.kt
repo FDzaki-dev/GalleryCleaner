@@ -54,6 +54,14 @@ fun SwipeScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    // [Batch131] Same local-construction pattern as VideoPlayerSurface
+    // (SwipeScreenCard.kt, Batch129) and same reasoning: this is the only
+    // setting this screen reads, so a parameter threaded in from
+    // MainActivity would widen this change's blast radius for no benefit.
+    // See SettingsStore.kt's shareTextEnabledFlow doc for the off-by-
+    // default reasoning.
+    val settingsStore = remember { SettingsStore(context) }
+    val shareTextEnabled by settingsStore.shareTextEnabledFlow.collectAsState(initial = false)
     var index by remember(group.key) { mutableIntStateOf(0) }
     // Re-sorted view of this folder's items — ROADMAP Fase A item 4.
     // Audit finding (Batch20): Sort already reached SwipeScreen correctly
@@ -201,6 +209,9 @@ fun SwipeScreen(
                                 val sendIntent = Intent(Intent.ACTION_SEND).apply {
                                     type = context.contentResolver.getType(currentItem.uri) ?: "image/*"
                                     putExtra(Intent.EXTRA_STREAM, currentItem.uri)
+                                    if (shareTextEnabled) {
+                                        putExtra(Intent.EXTRA_TEXT, currentItem.displayName)
+                                    }
                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 }
                                 context.startActivity(Intent.createChooser(sendIntent, null))

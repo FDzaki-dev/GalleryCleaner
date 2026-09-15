@@ -4,7 +4,7 @@
 APK signed terbaru: **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
 ## Status Ringkas (terbaru)
-✅ Fase A (gap fungsional inti) selesai 4/4 — Batch20. ✅ Fase B (AI on-device) selesai 3/3 — Batch25. ⏳ Fase C (reliability/visual) & Fase D (jangkauan pasar) belum dimulai. 🆕 Fase E (gap fungsional lanjutan, ditemukan Batch129 re-cek Sponge) 1/7 — `Sound for Videos` selesai, 6 item sisa BELUM digarap. Lihat `PROJECT_STATE.md` → "Belum Dikerjakan" untuk detail terkini.
+✅ Fase A (gap fungsional inti) selesai 4/4 — Batch20. ✅ Fase B (AI on-device) selesai 3/3 — Batch25. ⏳ Fase C (reliability/visual) & Fase D (jangkauan pasar) belum dimulai. 🆕 Fase E (gap fungsional lanjutan, ditemukan Batch129 re-cek Sponge): item #14 "Cleaning Options" 2/9 sub-item selesai (Sound for Videos — Batch129, Enable share text — Batch131), item #16-20 (History/Home dashboard/Customize view/Notifications split/My Account) BELUM digarap. Lihat `PROJECT_STATE.md` → "Belum Dikerjakan" untuk detail terkini.
 
 Tolok ukur: **Sponge - Gallery Cleaner** (`com.prismtree.sponge`,
 ~780rb download, ~510 install/hari, rating 5.0). Cek ulang sebelum
@@ -94,11 +94,17 @@ kepakai fisik di screen recording (72 detik), 0 ada di Section 1 lama:
   rekaman) — alasan: konsisten sama pola off-by-default project ini utk
   toggle yang mengubah perilaku "mengganggu" (lihat doc comment di
   `SettingsStore.kt`), BUKAN niru Sponge 1:1 buta.
-- ❌ 8 sisa item "Cleaning Options" Sponge (Manage move-to albums,
+- ✅ **Enable share text** (Batch131, SELESAI) — `SettingsStore.shareTextEnabledFlow`
+  + toggle di section "Cleaning Options" yang sama + `SwipeScreen.kt`
+  share intent nambahin `EXTRA_TEXT` (nama file) kalau enabled. Default
+  OFF juga (alasan beda dari sound: nama file bisa bocorin info personal
+  kalau user rename sendiri, opt-in lebih aman) — 1 file consumer
+  (`SwipeScreen.kt`), pola identik Batch129.
+- ❌ 7 sisa item "Cleaning Options" Sponge (Manage move-to albums,
   Personalize cleaning screen, Swipe direction, Animate on buttons,
-  Default sort+arah, Random count, Enable share text, Manage albums) —
+  Default sort+arah, Random count, Manage albums) —
   BELUM digarap, per-item beda kompleksitas (beberapa cuma toggle+wiring
-  ringan mirip Batch129, beberapa — swipe direction, manage albums —
+  ringan mirip Batch129/131, beberapa — swipe direction, manage albums —
   nyentuh logic inti `SwipeScreenCard.kt`/`SwipeScreen.kt` lebih dalam,
   resiko regresi lebih tinggi, HARUS batch terpisah per STABILITY WINS)
 - ❌ History screen (nav item terpisah, statistik bulanan) — 0 ada sama
@@ -152,12 +158,22 @@ Diselipkan SEBELUM Fase D karena ini "gap fungsional" (semangat sama
 Fase A/B), bukan "jangkauan pasar" — urutan/prioritas per-item TETAP
 keputusan user per-batch (bukan diasumsikan sistem), lihat catatan resiko
 masing-masing di Section 2b.
-14. ✅ Sound for Videos (Batch129) — `SettingsStore.videoSoundEnabledFlow`
-15. ❌ Sisa 8 item "Cleaning Options": Manage move-to albums, Personalize
-    cleaning screen, Swipe direction (Left/Right), Animate on buttons,
-    Default sort+arah, Random count, Enable share text, Manage albums —
-    tiap item kemungkinan batch terpisah, kompleksitas beda-beda (lihat
-    Section 2b)
+14. "Cleaning Options" (9 sub-item, per-item checklist — tiap item batch
+    terpisah, kompleksitas beda-beda, lihat Section 2b):
+    - ✅ Sound for Videos (Batch129) — `SettingsStore.videoSoundEnabledFlow`
+    - ✅ Enable share text (Batch131) — `SettingsStore.shareTextEnabledFlow`,
+      dipakai `SwipeScreen.kt` share intent (`EXTRA_TEXT` = nama file)
+    - ❌ Manage move-to albums
+    - ❌ Personalize cleaning screen
+    - ❌ Swipe direction for delete (Left/Right)
+    - ❌ Animate on buttons
+    - ❌ Default sort + arah (field-nya sudah ada via `sortOptionFlow`,
+      ARAH asc/desc belum — `MediaRepository.sortItems` sekarang selalu
+      `sortedByDescending`, hardcoded)
+    - ❌ Random count (0 ada konsep "count" sama sekali hari ini, random
+      mode sekarang cuma shuffle flag on/off, bukan cuma nambah angka ke
+      yang udah ada)
+    - ❌ Manage albums (include/exclude dari sesi cleaning)
 16. ❌ History screen — perlu data-layer baru (stats per-bulan, bukan cuma
     lifetime), BUKAN quick-add
 17. ❌ Home dashboard model Sponge (streak/resume-card) — `HomeScreen.kt`

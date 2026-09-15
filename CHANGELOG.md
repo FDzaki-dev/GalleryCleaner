@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch131 — 2026-09-15
+- **Setting baru: "Include name when sharing"** (Settings > Cleaning Options) — kalau dinyalain, nama file ikut ke-attach sebagai teks saat kamu share foto/video dari layar swipe. Default OFF. Item ke-2 dari daftar fitur yang lagi disusul dari app kompetitor ("Sponge") — lihat `ROADMAP.md` untuk sisa daftarnya.
+- CI run sebelumnya (Batch128/129/130) dikonfirmasi hijau ✅ — build APK jalan normal lagi.
+
 ## Batch130 — 2026-09-14
 - **Perbaikan sistem build (CI)** — build sempat gagal lagi, tapi kali ini gara-gara infrastruktur Google (bukan kode aplikasi): Google menghapus 1 komponen lama dari Android SDK tanggal 14 Sept 2026, yang bikin proses build mati sebelum sempat mulai compile kode sama sekali. Sudah diperbaiki. Sekalian dibenerin juga: kalau build gagal, file log-nya sekarang selalu berhasil ke-upload dengan nama yang unik per-percobaan (sebelumnya, kalau gagalnya di tahap paling awal, proses upload log-nya sendiri malah ikut error).
 
