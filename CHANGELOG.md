@@ -3,6 +3,11 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch134 — 2026-09-16
+- **Fitur baru: geser layar buat atur brightness & volume, ala YouTube/ReVanced.** Saat nonton video, geser jari naik-turun di SETENGAH KIRI layar buat atur terang layar, dan di SETENGAH KANAN buat atur volume — muncul indikator persen sementara pas lagi digeser. Kalau video lagi di-mute, geser volume otomatis nyalain suaranya lagi.
+- **Perbaikan: navigasi pemutar video sekarang bener-bener fade out semua saat idle.** Sebelumnya cuma tombol play/pause/mute/rotasi yang otomatis hilang saat video dibiarkan main 3 detik — tombol Close & nama file di pojok atas selalu nempel terus. Sekarang keduanya sama-sama fade out bareng biar area nonton lebih luas, dan fade-nya sekarang transisi halus (bukan langsung hilang/muncul instan). Tap video buat munculin lagi.
+- **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch134.
+
 ## Batch133 — 2026-09-15
 - **Feature: tombol mute dan rotasi langsung di pemutar video** (1 file, `SwipeScreenCard.kt`) — sekarang ada ikon speaker di kontrol video (kiri bawah) untuk mute/unmute cepat tanpa buka Settings dulu, dan ikon rotasi (kanan bawah) untuk memutar video ke landscape tanpa perlu benar-benar memiringkan hp — sama seperti pemutar video pada umumnya. Setting "Sound for Videos" di Settings tetap jadi default-nya; tombol mute ini cuma override sementara untuk video yang sedang dibuka (video berikutnya kembali ke default Settings). **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch133.
 

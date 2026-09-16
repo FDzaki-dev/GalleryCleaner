@@ -5,6 +5,10 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.net.Uri
+import android.view.WindowManager
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
@@ -12,6 +16,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -227,6 +232,14 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
 @Composable
 internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
     BackHandler(onBack = onDismiss)
+    // [Batch134] Hoisted up from VideoPlayerSurface (was private/internal to
+    // it, remember(uri)-keyed) so the SAME auto-hide state/timer that
+    // already existed there (Batch127, 3s idle) can also drive the Close+
+    // filename row below — one shared source of truth, not a second
+    // independent timer. remember(item.uri) matches the exact key the
+    // internal version used, same reset-per-video behavior as before.
+    // Meaningless for the photo/GIF branch below, which never reads it.
+    var controlsVisible by remember(item.uri) { mutableStateOf(true) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -244,7 +257,12 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
             // read as "can't play/inspect it at all". VideoPlayerSurface
             // replaces this path for video items only — the AsyncImage
             // branch for photos/GIFs below is untouched.
-            VideoPlayerSurface(uri = item.uri, modifier = Modifier.fillMaxSize())
+            VideoPlayerSurface(
+                uri = item.uri,
+                controlsVisible = controlsVisible,
+                onControlsVisibleChange = { controlsVisible = it },
+                modifier = Modifier.fillMaxSize()
+            )
             // No whole-screen clickable-to-dismiss here, unlike the photo
             // branch below — VideoPlayerSurface's own AndroidView already
             // has a tap-to-toggle-controls clickable (Batch127, replacing
@@ -262,35 +280,45 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
             // styling call: added inline, same top-start row as Close so it
             // shares that button's existing tap target/scrim treatment
             // rather than introducing a second visual language.
-            Row(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+            // [Batch134] Now wrapped in AnimatedVisibility on the hoisted
+            // controlsVisible above instead of always shown — user request:
+            // ALL video-player nav (this row + VideoControlBar, which
+            // already reused this same state before this batch) must fade
+            // out on idle, not just the bottom control bar.
+            AnimatedVisibility(
+                visible = controlsVisible,
+                enter = fadeIn(animationSpec = tween(200)),
+                exit = fadeOut(animationSpec = tween(300)),
+                modifier = Modifier.align(Alignment.TopStart)
             ) {
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = "Close",
-                    tint = Color.White,
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.45f))
-                        .clickable { onDismiss() }
-                        .padding(4.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    item.displayName,
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .background(Color.Black.copy(alpha = 0.45f), RoundedCornerShape(6.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                )
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = "Close",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.45f))
+                            .clickable { onDismiss() }
+                            .padding(4.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        item.displayName,
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .background(Color.Black.copy(alpha = 0.45f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
             }
         } else {
             Box(modifier = Modifier.fillMaxSize().clickable { onDismiss() }) {
@@ -391,7 +419,17 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
  * nothing removed.
  */
 @Composable
-private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
+private fun VideoPlayerSurface(
+    uri: Uri,
+    // [Batch134] Hoisted from an internal remember(uri) here up to
+    // FullscreenViewer, which also has UI (the Close/filename row) that
+    // needs to react to the same auto-hide timer — see that function's
+    // Batch134 comment. Everything below that reads/writes controlsVisible
+    // is otherwise unchanged from before this batch.
+    controlsVisible: Boolean,
+    onControlsVisibleChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
     // [Batch129] Constructed locally rather than threaded down as a
     // parameter from SwipeScreen.kt/SwipeScreenGrid.kt (both current
@@ -441,7 +479,6 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
     // the drag gesture and the poll tick don't fight over the same value
     // and make the thumb stutter/jump under the finger.
     var isSeeking by remember(uri) { mutableStateOf(false) }
-    var controlsVisible by remember(uri) { mutableStateOf(true) }
     // Batch123: decoder fallback ON (see doc comment above) — lets ExoPlayer
     // try the next matching video/avc decoder if the first one rejects the
     // format as exceeding its capabilities, instead of failing immediately.
@@ -469,12 +506,20 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
     // re-reads DataStore itself.
     var manualMuteOverride by remember(uri) { mutableStateOf<Boolean?>(null) }
     val isMuted = manualMuteOverride ?: !videoSoundEnabled
+    // [Batch134] Continuous level (0f..1f) driven by the new right-half
+    // drag gesture below — layered UNDER isMuted, not replacing it: the
+    // mute button's own on/off behavior (just above) is completely
+    // unchanged, it now just mutes whatever level this gesture last set
+    // instead of always full volume. remember(uri): resets to full volume
+    // per video, matching exactly what the old hardcoded `1f` meant here
+    // before this batch (every video always opened at full volume).
+    var manualVolume by remember(uri) { mutableFloatStateOf(1f) }
     // Separate from the remember(uri) block above on purpose: that block
     // only re-runs when `uri` changes, so it alone would miss the setting
     // being flipped in Settings while a video is already open/prepared, or
     // the new mute button being tapped.
-    LaunchedEffect(exoPlayer, isMuted) {
-        exoPlayer.volume = if (isMuted) 0f else 1f
+    LaunchedEffect(exoPlayer, isMuted, manualVolume) {
+        exoPlayer.volume = if (isMuted) 0f else manualVolume
     }
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
@@ -545,7 +590,7 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
     LaunchedEffect(controlsVisible, isPlaying, isBuffering, playbackError) {
         if (controlsVisible && isPlaying && !isBuffering && !playbackError) {
             delay(3000)
-            controlsVisible = false
+            onControlsVisibleChange(false)
         }
     }
     // Batch122: allow this screen specifically to rotate to landscape for
@@ -570,12 +615,42 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
     // still captures the true pre-viewer value exactly once, not once per
     // video switched to within an already-open viewer.
     val previousOrientation = remember { activity?.requestedOrientation }
+    // [Batch134] Left-half vertical-drag gesture below controls this same
+    // Activity's window brightness override — a physical-display setting,
+    // not a per-video one, so it deliberately does NOT use remember(uri)
+    // like most state in this composable: it persists across switching to
+    // a different video within one fullscreen-viewer session, and only
+    // resets (in the SAME onDispose below that already restores
+    // orientation) when the viewer itself closes.
+    var brightnessLevel by remember {
+        mutableFloatStateOf(
+            activity?.window?.attributes?.screenBrightness
+                ?.takeIf { it in 0f..1f } ?: 0.5f
+        )
+    }
+    LaunchedEffect(activity, brightnessLevel) {
+        val window = activity?.window ?: return@LaunchedEffect
+        val params = window.attributes
+        params.screenBrightness = brightnessLevel
+        window.attributes = params
+    }
     DisposableEffect(Unit) {
         onDispose {
             activity?.requestedOrientation =
                 previousOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            // [Batch134] Brightness override above restored to system
+            // default (WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE,
+            // -1f) the same moment orientation is — not left stuck at the
+            // last dragged value after the viewer closes.
+            activity?.window?.let { window ->
+                val params = window.attributes
+                params.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                window.attributes = params
+            }
         }
     }
+    var showBrightnessIndicator by remember { mutableStateOf(false) }
+    var showVolumeIndicator by remember { mutableStateOf(false) }
     // [Batch133] New rotation-mode button in VideoControlBar. Batch122's
     // SENSOR-while-open default (free rotation by physically turning the
     // phone, independent of the system's own auto-rotate toggle) is exactly
@@ -612,7 +687,7 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
-                    ) { controlsVisible = !controlsVisible },
+                    ) { onControlsVisibleChange(!controlsVisible) },
                 factory = { ctx -> PlayerView(ctx).apply { useController = false } },
                 // update (not just factory) assigns the player — factory only
                 // ever runs once per PlayerView instance, so if `uri` (and thus
@@ -627,7 +702,93 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
                     color = Color.White
                 )
             }
-            if (controlsVisible) {
+            // [Batch134] YouTube/ReVanced-style gesture: vertical drag on
+            // the left half of the video surface = brightness, right half
+            // = volume. Two sibling Boxes layered ABOVE the AndroidView in
+            // this same Box (declared after it, so Compose hit-tests them
+            // first) rather than one full-width zone with internal math —
+            // a hard 50/50 split with zero extra per-event branching.
+            // Neither Box has its own clickable: detectVerticalDragGestures
+            // only calls change.consume() once the drag passes touch slop,
+            // so a plain tap (no meaningful movement) is left unconsumed
+            // and falls through to the AndroidView's own clickable above —
+            // the existing tap-to-toggle-controls behavior is untouched by
+            // this addition. Always active (not gated on controlsVisible),
+            // same as every mainstream player's gesture zones — dimmed nav
+            // shouldn't disable the gesture itself.
+            Row(modifier = Modifier.matchParentSize()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .pointerInput(uri) {
+                            detectVerticalDragGestures(
+                                onDragStart = { showBrightnessIndicator = true },
+                                onDragEnd = { showBrightnessIndicator = false },
+                                onDragCancel = { showBrightnessIndicator = false },
+                                onVerticalDrag = { change, dragAmount ->
+                                    change.consume()
+                                    // Full container height dragged = full
+                                    // 0f..1f range; negated because Compose
+                                    // Y grows downward but dragging UP
+                                    // should INCREASE brightness.
+                                    val delta = -dragAmount / size.height.toFloat()
+                                    brightnessLevel = (brightnessLevel + delta).coerceIn(0f, 1f)
+                                }
+                            )
+                        }
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .pointerInput(uri) {
+                            detectVerticalDragGestures(
+                                onDragStart = {
+                                    showVolumeIndicator = true
+                                    // Starting a volume gesture is an
+                                    // explicit signal the user wants audio
+                                    // control — same quick, session-only
+                                    // override the mute button already does
+                                    // (Batch133), not written to DataStore.
+                                    manualMuteOverride = false
+                                },
+                                onDragEnd = { showVolumeIndicator = false },
+                                onDragCancel = { showVolumeIndicator = false },
+                                onVerticalDrag = { change, dragAmount ->
+                                    change.consume()
+                                    val delta = -dragAmount / size.height.toFloat()
+                                    manualVolume = (manualVolume + delta).coerceIn(0f, 1f)
+                                }
+                            )
+                        }
+                )
+            }
+            if (showBrightnessIndicator) {
+                GestureLevelIndicator(
+                    level = brightnessLevel,
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 24.dp)
+                )
+            }
+            if (showVolumeIndicator) {
+                GestureLevelIndicator(
+                    level = if (isMuted) 0f else manualVolume,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 24.dp)
+                )
+            }
+            // [Batch134] AnimatedVisibility instead of a plain `if` — user
+            // request: nav must FADE out on idle, not just disappear/appear
+            // abruptly the way it did before this batch.
+            AnimatedVisibility(
+                visible = controlsVisible,
+                enter = fadeIn(animationSpec = tween(200)),
+                exit = fadeOut(animationSpec = tween(300)),
+                modifier = Modifier.align(Alignment.BottomCenter)
+            ) {
                 VideoControlBar(
                     isPlaying = isPlaying,
                     positionMs = positionMs,
@@ -659,8 +820,7 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
                         )
                     },
                     onSeekChange = { isSeeking = true; positionMs = it },
-                    onSeekFinished = { exoPlayer.seekTo(positionMs); isSeeking = false },
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    onSeekFinished = { exoPlayer.seekTo(positionMs); isSeeking = false }
                 )
             }
         } else {
@@ -718,6 +878,51 @@ private fun VideoPlayerSurface(uri: Uri, modifier: Modifier = Modifier) {
                 }
             }
         }
+    }
+}
+
+/**
+ * Batch134: shared visual for the brightness (left) and volume (right)
+ * gesture indicators above — a rounded pill with a proportional fill bar
+ * plus a percentage label. Deliberately icon-free: this file has a
+ * documented history (Batch110/113/128) of CI failures from guessed
+ * Material icon names, and every icon already used here (mute/rotate/
+ * playback) was individually verified before being added — a text+bar
+ * indicator needs no new icon glyph at all, so that whole risk class
+ * simply doesn't apply to this batch.
+ */
+@Composable
+private fun GestureLevelIndicator(level: Float, modifier: Modifier = Modifier) {
+    val clamped = level.coerceIn(0f, 1f)
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.Black.copy(alpha = 0.55f))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .width(6.dp)
+                .height(64.dp)
+                .clip(RoundedCornerShape(3.dp))
+                .background(Color.White.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(clamped)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(Color.White)
+            )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            "${(clamped * 100).toInt()}%",
+            color = Color.White,
+            style = MaterialTheme.typography.labelSmall
+        )
     }
 }
 
