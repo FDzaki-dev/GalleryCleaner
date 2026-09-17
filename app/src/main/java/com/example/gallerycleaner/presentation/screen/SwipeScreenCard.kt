@@ -16,6 +16,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -675,19 +676,20 @@ private fun VideoPlayerSurface(
     Box(modifier = modifier) {
         if (!playbackError) {
             AndroidView(
-                modifier = Modifier
-                    .matchParentSize()
-                    // Batch127: useController=false below means PlayerView no
-                    // longer eats this gesture for its own controller toggle
-                    // (that was the whole reason FullscreenViewer's video
-                    // branch never wrapped this in a clickable — see its
-                    // Batch127-updated comment) — safe to wire here now, and
-                    // matches the tap-to-toggle-controls convention this
-                    // custom bar is replacing PlayerView's version of.
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { onControlsVisibleChange(!controlsVisible) },
+                // [Batch135] Tap-to-toggle used to live here as a .clickable
+                // — removed because it was DEAD CODE since Batch134: the new
+                // gesture-zone Row below is declared after this AndroidView
+                // (drawn on top) and covers the exact same area, and per
+                // Compose's documented hit-testing, only the highest-z-index
+                // composable in a hit region ever receives pointer events —
+                // siblings underneath (this AndroidView included) get NONE
+                // for that touch, consumed or not. That's the root cause of
+                // the Batch134 bug report ("nav won't come back after
+                // fadeout, only exiting/re-entering the video fixes it") —
+                // tapping here silently never reached this clickable at all.
+                // Tap-to-toggle is now handled directly in the gesture-zone
+                // Boxes themselves (see their Batch135 comment below).
+                modifier = Modifier.matchParentSize(),
                 factory = { ctx -> PlayerView(ctx).apply { useController = false } },
                 // update (not just factory) assigns the player — factory only
                 // ever runs once per PlayerView instance, so if `uri` (and thus
@@ -702,25 +704,58 @@ private fun VideoPlayerSurface(
                     color = Color.White
                 )
             }
-            // [Batch134] YouTube/ReVanced-style gesture: vertical drag on
-            // the left half of the video surface = brightness, right half
-            // = volume. Two sibling Boxes layered ABOVE the AndroidView in
-            // this same Box (declared after it, so Compose hit-tests them
-            // first) rather than one full-width zone with internal math —
-            // a hard 50/50 split with zero extra per-event branching.
-            // Neither Box has its own clickable: detectVerticalDragGestures
-            // only calls change.consume() once the drag passes touch slop,
-            // so a plain tap (no meaningful movement) is left unconsumed
-            // and falls through to the AndroidView's own clickable above —
-            // the existing tap-to-toggle-controls behavior is untouched by
-            // this addition. Always active (not gated on controlsVisible),
-            // same as every mainstream player's gesture zones — dimmed nav
-            // shouldn't disable the gesture itself.
+            // [Batch135 hotfix] `currentControlsVisible` — Batch134's gesture
+            // zones below read `controlsVisible` inside detectTapGestures'
+            // onTap, but that pointerInput coroutine is keyed on `uri`, not
+            // on `controlsVisible` itself, so it's long-lived across every
+            // show/hide toggle and every 3s auto-hide — reading the raw
+            // parameter there would close over whatever value was current
+            // the moment the coroutine launched and never see it change
+            // again (classic Compose stale-closure gotcha). rememberUpdatedState
+            // gives a stable holder that always reads the latest value even
+            // from inside that same never-restarted coroutine.
+            val currentControlsVisible by rememberUpdatedState(controlsVisible)
+            // [Batch134, hit-testing bug fixed Batch135] YouTube/ReVanced-
+            // style gesture: vertical drag on the left half of the video
+            // surface = brightness, right half = volume. Two sibling Boxes
+            // layered ABOVE the AndroidView in this same Box (declared
+            // after it, so Compose hit-tests them first) rather than one
+            // full-width zone with internal math — a hard 50/50 split with
+            // zero extra per-event branching.
+            // [Batch135] Batch134's comment here claimed a plain tap would
+            // fall through unconsumed to the AndroidView's clickable below
+            // — WRONG, confirmed against Compose's own docs (Event
+            // dispatching and hit-testing, developer.android.com/develop/
+            // ui/compose/touch-input/pointer-input/understand-gestures):
+            // "when there are multiple eligible composables on the same
+            // level of the tree, only the composable with the highest
+            // z-index is hit... Composables that are not in the chain
+            // never receive pointer events, even when the pointer is
+            // inside of their bounds." Once these zones exist on top, the
+            // AndroidView below gets NOTHING for that touch, tap or drag,
+            // consumed or not — that's why nav stopped coming back after
+            // fadeout (the old clickable, now removed above, was silently
+            // unreachable dead code). Fix: tap-to-toggle now lives directly
+            // on these same zones via a SECOND, separate .pointerInput —
+            // exactly the pattern the same official doc recommends for
+            // combining a tap detector and a drag detector on one
+            // composable ("use separate pointerInput modifier instances
+            // instead" — a single detectTapGestures call blocks forever
+            // and a second detector chained after it in the SAME
+            // pointerInput block would never run).
+            // Always active (not gated on controlsVisible), same as every
+            // mainstream player's gesture zones — dimmed nav shouldn't
+            // disable the gesture itself.
             Row(modifier = Modifier.matchParentSize()) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
+                        .pointerInput(uri) {
+                            detectTapGestures(
+                                onTap = { onControlsVisibleChange(!currentControlsVisible) }
+                            )
+                        }
                         .pointerInput(uri) {
                             detectVerticalDragGestures(
                                 onDragStart = { showBrightnessIndicator = true },
@@ -742,6 +777,11 @@ private fun VideoPlayerSurface(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
+                        .pointerInput(uri) {
+                            detectTapGestures(
+                                onTap = { onControlsVisibleChange(!currentControlsVisible) }
+                            )
+                        }
                         .pointerInput(uri) {
                             detectVerticalDragGestures(
                                 onDragStart = {
@@ -766,6 +806,10 @@ private fun VideoPlayerSurface(
             }
             if (showBrightnessIndicator) {
                 GestureLevelIndicator(
+                    // [Batch135] user report: with no label, brightness vs
+                    // volume was ambiguous while dragging — bar+percent
+                    // alone didn't say which one was being adjusted.
+                    label = "Brightness",
                     level = brightnessLevel,
                     modifier = Modifier
                         .align(Alignment.CenterStart)
@@ -774,6 +818,7 @@ private fun VideoPlayerSurface(
             }
             if (showVolumeIndicator) {
                 GestureLevelIndicator(
+                    label = "Volume",
                     level = if (isMuted) 0f else manualVolume,
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
@@ -890,9 +935,12 @@ private fun VideoPlayerSurface(
  * playback) was individually verified before being added — a text+bar
  * indicator needs no new icon glyph at all, so that whole risk class
  * simply doesn't apply to this batch.
+ * [Batch135] `label` added — user report: bar+percent alone didn't say
+ * which control (brightness vs volume) was being dragged. Plain text,
+ * same reasoning as the rest of this indicator: 0 new icon risk.
  */
 @Composable
-private fun GestureLevelIndicator(level: Float, modifier: Modifier = Modifier) {
+private fun GestureLevelIndicator(label: String, level: Float, modifier: Modifier = Modifier) {
     val clamped = level.coerceIn(0f, 1f)
     Column(
         modifier = modifier
@@ -901,6 +949,12 @@ private fun GestureLevelIndicator(level: Float, modifier: Modifier = Modifier) {
             .padding(horizontal = 14.dp, vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Text(
+            label,
+            color = Color.White,
+            style = MaterialTheme.typography.labelSmall
+        )
+        Spacer(modifier = Modifier.height(6.dp))
         Box(
             modifier = Modifier
                 .width(6.dp)

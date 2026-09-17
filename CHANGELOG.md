@@ -3,6 +3,11 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch135 — 2026-09-16
+- **Perbaikan: navigasi pemutar video sekarang balik muncul normal setelah fade out.** Kemarin (Batch134) ada bug — begitu nav (tombol Close, play/pause, dll) fade out otomatis, tap video buat munculin lagi malah gak ngefek sama sekali, satu-satunya cara ya tutup-buka lagi videonya. Sudah dibenerin, tap sekarang selalu berhasil munculin nav lagi.
+- **Perbaikan: geser brightness/volume sekarang ada labelnya.** Sebelumnya cuma muncul angka persen doang pas geser, jadi bingung ini lagi atur terang layar atau volume. Sekarang ada tulisan "Brightness"/"Volume" di atas indikatornya.
+- **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch135.
+
 ## Batch134 — 2026-09-16
 - **Fitur baru: geser layar buat atur brightness & volume, ala YouTube/ReVanced.** Saat nonton video, geser jari naik-turun di SETENGAH KIRI layar buat atur terang layar, dan di SETENGAH KANAN buat atur volume — muncul indikator persen sementara pas lagi digeser. Kalau video lagi di-mute, geser volume otomatis nyalain suaranya lagi.
 - **Perbaikan: navigasi pemutar video sekarang bener-bener fade out semua saat idle.** Sebelumnya cuma tombol play/pause/mute/rotasi yang otomatis hilang saat video dibiarkan main 3 detik — tombol Close & nama file di pojok atas selalu nempel terus. Sekarang keduanya sama-sama fade out bareng biar area nonton lebih luas, dan fade-nya sekarang transisi halus (bukan langsung hilang/muncul instan). Tap video buat munculin lagi.
