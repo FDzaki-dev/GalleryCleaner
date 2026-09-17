@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch136 — 2026-09-17
+- **Perbaikan: geser volume (kanan) sekarang beneran ubah volume media hp, bukan cuma kosmetik.** Sebelumnya geser kanan cuma ubah volume internal pemutar video doang — kelihatan naik-turun di indikator, tapi gak ngefek ke volume asli hp (beda dari geser brightness kiri yang emang udah ubah kecerahan layar asli). Sekarang keduanya sama-sama ubah setting device yang sesungguhnya.
+- **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch136.
+
 ## Batch135 — 2026-09-16
 - **Perbaikan: navigasi pemutar video sekarang balik muncul normal setelah fade out.** Kemarin (Batch134) ada bug — begitu nav (tombol Close, play/pause, dll) fade out otomatis, tap video buat munculin lagi malah gak ngefek sama sekali, satu-satunya cara ya tutup-buka lagi videonya. Sudah dibenerin, tap sekarang selalu berhasil munculin nav lagi.
 - **Perbaikan: geser brightness/volume sekarang ada labelnya.** Sebelumnya cuma muncul angka persen doang pas geser, jadi bingung ini lagi atur terang layar atau volume. Sekarang ada tulisan "Brightness"/"Volume" di atas indikatornya.

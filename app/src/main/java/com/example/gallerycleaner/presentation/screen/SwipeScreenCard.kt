@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
+import android.media.AudioManager
 import android.net.Uri
 import android.view.WindowManager
 import androidx.compose.animation.AnimatedVisibility
@@ -62,6 +63,7 @@ import coil.request.ImageRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 private const val SWIPE_THRESHOLD_PX = 380f
 private const val MAX_ROTATION_DEG = 12f
@@ -507,20 +509,37 @@ private fun VideoPlayerSurface(
     // re-reads DataStore itself.
     var manualMuteOverride by remember(uri) { mutableStateOf<Boolean?>(null) }
     val isMuted = manualMuteOverride ?: !videoSoundEnabled
-    // [Batch134] Continuous level (0f..1f) driven by the new right-half
-    // drag gesture below — layered UNDER isMuted, not replacing it: the
-    // mute button's own on/off behavior (just above) is completely
-    // unchanged, it now just mutes whatever level this gesture last set
-    // instead of always full volume. remember(uri): resets to full volume
-    // per video, matching exactly what the old hardcoded `1f` meant here
-    // before this batch (every video always opened at full volume).
-    var manualVolume by remember(uri) { mutableFloatStateOf(1f) }
-    // Separate from the remember(uri) block above on purpose: that block
-    // only re-runs when `uri` changes, so it alone would miss the setting
-    // being flipped in Settings while a video is already open/prepared, or
-    // the new mute button being tapped.
-    LaunchedEffect(exoPlayer, isMuted, manualVolume) {
-        exoPlayer.volume = if (isMuted) 0f else manualVolume
+    // [Batch136] user report: the right-half drag gesture (Batch134) was
+    // "cosmetic" — it only fed exoPlayer.volume, an in-app gain on this
+    // one player instance, and never touched the device's actual master
+    // (STREAM_MUSIC) volume, so it had zero effect outside this player
+    // and didn't persist like a real volume control should.
+    // Fix: mirror brightnessLevel further down this same composable — a
+    // real, physical/device setting, not a per-video one — instead of a
+    // fake per-video gain.
+    // Plain remember{} (no uri key) on purpose: like brightness, this must
+    // NOT reset when swiping to a new video, since that would forcibly
+    // reset the user's actual system volume on every video switch.
+    val audioManager = remember {
+        context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    }
+    val maxVolumeSteps = remember {
+        audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+    }
+    var manualVolume by remember {
+        mutableFloatStateOf(
+            audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+                .toFloat() / maxVolumeSteps
+        )
+    }
+    // exoPlayer plays at full gain (or 0 when muted) — real loudness now
+    // comes from the actual system stream, set by the gesture below, the
+    // same as any standard video player. Separate from the remember(uri)
+    // block above on purpose: that block only re-runs when `uri` changes,
+    // so it alone would miss the Settings default being flipped while a
+    // video is already open/prepared, or the mute button being tapped.
+    LaunchedEffect(exoPlayer, isMuted) {
+        exoPlayer.volume = if (isMuted) 0f else 1f
     }
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
@@ -798,7 +817,19 @@ private fun VideoPlayerSurface(
                                 onVerticalDrag = { change, dragAmount ->
                                     change.consume()
                                     val delta = -dragAmount / size.height.toFloat()
-                                    manualVolume = (manualVolume + delta).coerceIn(0f, 1f)
+                                    val newLevel = (manualVolume + delta).coerceIn(0f, 1f)
+                                    manualVolume = newLevel
+                                    // [Batch136] Actually move the device's
+                                    // master (STREAM_MUSIC) volume — flags=0
+                                    // so the OS's own volume UI doesn't pop
+                                    // up on top of this app's own
+                                    // GestureLevelIndicator below.
+                                    audioManager.setStreamVolume(
+                                        AudioManager.STREAM_MUSIC,
+                                        (newLevel * maxVolumeSteps).roundToInt()
+                                            .coerceIn(0, maxVolumeSteps),
+                                        0
+                                    )
                                 }
                             )
                         }
