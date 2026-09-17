@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch138 — 2026-09-17
+- **Setting baru: "Animate buttons"** (Settings > Cleaning Options) — kalau dinyalain (default ON), tombol-tombol di app sedikit mengecil pas ditekan, kasih feedback sentuhan yang lebih hidup. Matiin kalau lebih suka tombol tanpa animasi sama sekali. Item ke-4 dari daftar fitur "Cleaning Options" yang lagi disusul dari app kompetitor ("Sponge") — lihat `ROADMAP.md` untuk sisa daftarnya.
+- **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch138.
+
 ## Batch137 — 2026-09-17
 - **Setting baru: "Random count"** (Settings, di bawah "Random clean mode") — atur berapa banyak foto/video yang diambil tiap kali random mode mengacak sebuah folder, pakai tombol +/− (kelipatan 5, mulai 20). Sebelumnya random mode selalu ngacak SEMUA isi folder tanpa bisa dibatasi. Item ke-3 dari daftar fitur "Cleaning Options" yang lagi disusul dari app kompetitor ("Sponge") — lihat `ROADMAP.md` untuk sisa daftarnya.
 - **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch137.

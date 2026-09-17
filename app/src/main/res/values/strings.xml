@@ -74,6 +74,8 @@
     <string name="settings_video_sound_subtitle">Turn off to review videos muted instead of with sound.</string>
     <string name="settings_share_text_title">Include name when sharing</string>
     <string name="settings_share_text_subtitle">Attach the file\'s name as text alongside the photo or video when you share it.</string>
+    <string name="settings_animate_buttons_title">Animate buttons</string>
+    <string name="settings_animate_buttons_subtitle">Turn off for a snappier, no-motion press feedback on buttons.</string>
 
     <string name="settings_section_feedback">Feedback</string>
     <string name="settings_swipe_haptics_title">Swipe haptics</string>

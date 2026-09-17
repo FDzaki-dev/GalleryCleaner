@@ -4,7 +4,7 @@
 APK signed terbaru: **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
 ## Status Ringkas (terbaru)
-✅ Fase A (gap fungsional inti) selesai 4/4 — Batch20. ✅ Fase B (AI on-device) selesai 3/3 — Batch25. ⏳ Fase C (reliability/visual) & Fase D (jangkauan pasar) belum dimulai. 🆕 Fase E (gap fungsional lanjutan, ditemukan Batch129 re-cek Sponge): item #14 "Cleaning Options" 3/9 sub-item selesai (Sound for Videos — Batch129, Enable share text — Batch131, Random count — Batch137), item #16-20 (History/Home dashboard/Customize view/Notifications split/My Account) BELUM digarap. Lihat `PROJECT_STATE.md` → "Belum Dikerjakan" untuk detail terkini.
+✅ Fase A (gap fungsional inti) selesai 4/4 — Batch20. ✅ Fase B (AI on-device) selesai 3/3 — Batch25. ⏳ Fase C (reliability/visual) & Fase D (jangkauan pasar) belum dimulai. 🆕 Fase E (gap fungsional lanjutan, ditemukan Batch129 re-cek Sponge): item #14 "Cleaning Options" 4/9 sub-item selesai (Sound for Videos — Batch129, Enable share text — Batch131, Random count — Batch137, Animate on buttons — Batch138), item #16-20 (History/Home dashboard/Customize view/Notifications split/My Account) BELUM digarap. Lihat `PROJECT_STATE.md` → "Belum Dikerjakan" untuk detail terkini.
 
 Tolok ukur: **Sponge - Gallery Cleaner** (`com.prismtree.sponge`,
 ~780rb download, ~510 install/hari, rating 5.0). Cek ulang sebelum
@@ -110,13 +110,24 @@ kepakai fisik di screen recording (72 detik), 0 ada di Section 1 lama:
   rotation-restore) sekarang `.take(randomCount)`. Sebelumnya random mode
   selalu ngacak SEMUA isi grup, 0 batas jumlah — 1 file consumer
   (`MainActivity.kt`), pola serupa Batch129/131 (toggle+wiring ringan).
-- ❌ 6 sisa item "Cleaning Options" Sponge (Manage move-to albums,
-  Personalize cleaning screen, Swipe direction, Animate on buttons,
-  Default sort+arah, Manage albums) —
+- ✅ **Animate on buttons** (Batch138, SELESAI) —
+  `SettingsStore.animateButtonsEnabledFlow` + toggle di section "Cleaning
+  Options" yang sama + `GlassButton.kt` (subtle press-scale shrink,
+  1f→0.96f, layered on top of tiap `MaterialStyle`'s feedback tekan yang
+  sudah ada, bukan gantiin). Default ON (pola sama
+  `hapticFeedbackEnabledFlow`: cue halus per-tap yang orang umumnya
+  harapkan, kemungkinan besar 0 pernah ditemukan kalau default-nya OFF)
+  — 0 file consumer disentuh (`GlassButton.kt` baca setting-nya sendiri
+  secara lokal, sama pola `VideoPlayerSurface`), jadi 6 call site
+  `GlassButton` yang ada 0 kesenggol satupun.
+- ❌ 5 sisa item "Cleaning Options" Sponge (Manage move-to albums,
+  Personalize cleaning screen, Swipe direction, Default sort+arah,
+  Manage albums) —
   BELUM digarap, per-item beda kompleksitas (beberapa cuma toggle+wiring
-  ringan mirip Batch129/131/137, beberapa — swipe direction, manage albums —
-  nyentuh logic inti `SwipeScreenCard.kt`/`SwipeScreen.kt` lebih dalam,
-  resiko regresi lebih tinggi, HARUS batch terpisah per STABILITY WINS)
+  ringan mirip Batch129/131/137/138, beberapa — swipe direction, manage
+  albums — nyentuh logic inti `SwipeScreenCard.kt`/`SwipeScreen.kt` lebih
+  dalam, resiko regresi lebih tinggi, HARUS batch terpisah per STABILITY
+  WINS)
 - ❌ History screen (nav item terpisah, statistik bulanan) — 0 ada sama
   sekali di project ini (cuma ada Trash). Butuh data-layer baru (belum
   ada yang nyatet reviewed/kept/deleted per bulan hari ini,
@@ -176,13 +187,17 @@ masing-masing di Section 2b.
     - ❌ Manage move-to albums
     - ❌ Personalize cleaning screen
     - ❌ Swipe direction for delete (Left/Right)
-    - ❌ Animate on buttons
+    - ✅ Animate on buttons (Batch138) — `SettingsStore.animateButtonsEnabledFlow`,
+      dipakai `GlassButton.kt` (press-scale shrink, layered di atas
+      feedback tekan tiap `MaterialStyle` yang sudah ada)
     - ❌ Default sort + arah (field-nya sudah ada via `sortOptionFlow`,
       ARAH asc/desc belum — `MediaRepository.sortItems` sekarang selalu
       `sortedByDescending`, hardcoded)
-    - ❌ Random count (0 ada konsep "count" sama sekali hari ini, random
-      mode sekarang cuma shuffle flag on/off, bukan cuma nambah angka ke
-      yang udah ada)
+    - ✅ Random count (Batch137) — [KOREKSI ANTI-STALE Batch138: bullet
+      ini sempat ketinggalan ❌ padahal Section 2b + PROJECT_STATE.md
+      sudah nyatet SELESAI sejak Batch137, dikoreksi sekarang]
+      `SettingsStore.randomCountFlow`, dipakai `MainActivity.kt` (`.take(randomCount)`
+      di kedua titik `.shuffled()`)
     - ❌ Manage albums (include/exclude dari sesi cleaning)
 16. ❌ History screen — perlu data-layer baru (stats per-bulan, bukan cuma
     lifetime), BUKAN quick-add

@@ -38,6 +38,7 @@ private val GROUP_MODE_KEY = stringPreferencesKey("group_mode")
 private val SORT_OPTION_KEY = stringPreferencesKey("sort_option")
 private val VIDEO_SOUND_ENABLED_KEY = booleanPreferencesKey("video_sound_enabled")
 private val SHARE_TEXT_ENABLED_KEY = booleanPreferencesKey("share_text_enabled")
+private val ANIMATE_BUTTONS_ENABLED_KEY = booleanPreferencesKey("animate_buttons_enabled")
 
 /** Default cleanup goal (ROADMAP Fase A item 3): 2 GB. Arbitrary but
  *  reasonable starting target — big enough to feel worth working toward,
@@ -291,5 +292,29 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setShareTextEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[SHARE_TEXT_ENABLED_KEY] = enabled }
+    }
+
+    /** [Batch138] Whether buttons get a subtle press-scale shrink layered
+     *  on top of each MaterialStyle's own existing press feedback — 4th
+     *  item off the Fase E "Cleaning Options" backlog (ROADMAP.md #14,
+     *  "Animate on buttons"). Defaults to true, same reasoning as
+     *  hapticFeedbackEnabledFlow above: a subtle per-tap visual cue most
+     *  people expect from a modern app and would likely never think to
+     *  turn on if it defaulted off (unlike shareTextEnabledFlow's opt-in
+     *  case, there's no privacy/behavior-change reason to default this
+     *  off). Consumed directly inside GlassButton.kt, which constructs
+     *  this store locally the same way VideoPlayerSurface
+     *  (SwipeScreenCard.kt) reads videoSoundEnabledFlow — GlassButton has
+     *  6 call sites and no existing settings parameter threaded through
+     *  any of them, so a local read avoids touching a single consumer.
+     *  Turning this off does NOT touch each style's own pressed-state
+     *  feedback (glow/shadow/dim swap, see GlassButton.kt's doc comment)
+     *  — only the added scale-shrink stacked on top of it. */
+    val animateButtonsEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[ANIMATE_BUTTONS_ENABLED_KEY] ?: true
+    }
+
+    suspend fun setAnimateButtonsEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[ANIMATE_BUTTONS_ENABLED_KEY] = enabled }
     }
 }

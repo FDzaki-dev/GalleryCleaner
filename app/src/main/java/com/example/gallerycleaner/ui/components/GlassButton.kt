@@ -1,5 +1,6 @@
 package com.example.gallerycleaner.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -9,14 +10,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.gallerycleaner.SettingsStore
 import com.example.gallerycleaner.ui.theme.Cupertino
 import com.example.gallerycleaner.ui.theme.LocalMaterialStyle
 import com.example.gallerycleaner.ui.theme.MaterialStyle
@@ -61,6 +66,14 @@ import com.example.gallerycleaner.ui.theme.SkeuoLite
  *   isn't fighting the same translucent blobs) — the 4th genuinely
  *   distinct mechanism, via `PaintedSurface`'s `pressed`/`showWash`
  *   params. See that file's doc comment for the full 4-way comparison.
+ *
+ * [Batch138] "Animate on buttons" (ROADMAP Fase E, Cleaning Options item
+ * #5/9, `SettingsStore.animateButtonsEnabledFlow`): a subtle press-scale
+ * shrink (1f -> 0.96f) is layered on top of whichever style-specific
+ * feedback above is active, via a single `modifier` shadow at the top of
+ * this function — none of the 5 branches below were touched. Off = scale
+ * pinned to 1f (`Modifier.scale(1f)` is a documented no-op, so the 5
+ * branches' own feedback is byte-for-byte unaffected either way).
  */
 @Composable
 fun GlassButton(
@@ -71,6 +84,19 @@ fun GlassButton(
     val style = LocalMaterialStyle.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+
+    // [Batch138] See doc comment above. Local SettingsStore, same pattern
+    // as VideoPlayerSurface (SwipeScreenCard.kt) — 0 of this composable's
+    // 6 call sites need a new parameter threaded through.
+    val context = LocalContext.current
+    val settingsStore = remember { SettingsStore(context) }
+    val animateButtonsEnabled by settingsStore.animateButtonsEnabledFlow.collectAsState(initial = true)
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed && animateButtonsEnabled) 0.96f else 1f,
+        label = "glassButtonPressScale"
+    )
+    @Suppress("NAME_SHADOWING")
+    val modifier = modifier.scale(pressScale)
 
     when (style) {
         MaterialStyle.GLASS -> {

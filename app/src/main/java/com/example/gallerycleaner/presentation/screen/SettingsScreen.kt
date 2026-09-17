@@ -74,6 +74,7 @@ fun SettingsScreen(
     // sound ON (the real, post-fix default).
     val videoSoundEnabled by settingsStore.videoSoundEnabledFlow.collectAsState(initial = true)
     val shareTextEnabled by settingsStore.shareTextEnabledFlow.collectAsState(initial = false)
+    val animateButtonsEnabled by settingsStore.animateButtonsEnabledFlow.collectAsState(initial = true)
     val appLockEnabled by settingsStore.appLockEnabledFlow.collectAsState(initial = false)
     val backupBeforeDeleteEnabled by settingsStore.backupBeforeDeleteEnabledFlow.collectAsState(initial = false)
     val isDeviceSecure = remember {
@@ -607,6 +608,32 @@ fun SettingsScreen(
                     Switch(
                         checked = shareTextEnabled,
                         onCheckedChange = { scope.launch { settingsStore.setShareTextEnabled(it) } }
+                    )
+                }
+            }
+            item {
+                // [Batch138] Animate on buttons — 4th Fase E "Cleaning
+                // Options" item. Read/write here is identical shape to
+                // the 2 switches above; the actual animation lives in
+                // GlassButton.kt (this screen just flips the stored flag).
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_animate_buttons_title), style = MaterialTheme.typography.bodyLarge)
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            stringResource(R.string.settings_animate_buttons_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = animateButtonsEnabled,
+                        onCheckedChange = { scope.launch { settingsStore.setAnimateButtonsEnabled(it) } }
                     )
                 }
             }
