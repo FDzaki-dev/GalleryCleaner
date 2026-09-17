@@ -66,6 +66,8 @@
     <string name="settings_section_swiping">Swiping</string>
     <string name="settings_random_mode_title">Random clean mode</string>
     <string name="settings_random_mode_subtitle">Shuffle a folder\'s photos into random order each time you open it, instead of date order.</string>
+    <string name="settings_random_count_title">Random count</string>
+    <string name="settings_random_count_subtitle">Pull %1$d items from a folder each time random mode shuffles it.</string>
 
     <string name="settings_section_cleaning_options">Cleaning Options</string>
     <string name="settings_video_sound_title">Sound for videos</string>

@@ -31,6 +31,7 @@ private val HAPTIC_FEEDBACK_ENABLED_KEY = booleanPreferencesKey("haptic_feedback
 private val APP_LOCK_ENABLED_KEY = booleanPreferencesKey("app_lock_enabled")
 private val HAS_SEEN_ONBOARDING_KEY = booleanPreferencesKey("has_seen_onboarding")
 private val RANDOM_MODE_ENABLED_KEY = booleanPreferencesKey("random_mode_enabled")
+private val RANDOM_COUNT_KEY = intPreferencesKey("random_count")
 private val CLEANUP_GOAL_BYTES_KEY = longPreferencesKey("cleanup_goal_bytes")
 private val BACKUP_BEFORE_DELETE_ENABLED_KEY = booleanPreferencesKey("backup_before_delete_enabled")
 private val GROUP_MODE_KEY = stringPreferencesKey("group_mode")
@@ -43,6 +44,19 @@ private val SHARE_TEXT_ENABLED_KEY = booleanPreferencesKey("share_text_enabled")
  *  small enough that a first cleaning session can make a visible dent
  *  rather than the progress bar looking permanently near-empty. */
 const val DEFAULT_CLEANUP_GOAL_BYTES: Long = 2_000_000_000L
+
+/** ROADMAP Fase E, "Cleaning Options" item "Random count" (Sponge parity —
+ *  a custom number instead of only on/off). How many items a shuffled
+ *  random-mode session (`randomModeEnabledFlow`) draws from a group,
+ *  applied as `.take(randomCount)` on top of the existing `.shuffled()`
+ *  call sites — group sizes smaller than this are unaffected, `take()`
+ *  on a list is already safe when the count exceeds its size. Bounds
+ *  chosen for a simple +/- stepper (step 5): low enough to stay a quick
+ *  sample, high enough that it's still a meaningful cleaning session. */
+const val DEFAULT_RANDOM_COUNT: Int = 20
+const val MIN_RANDOM_COUNT: Int = 5
+const val MAX_RANDOM_COUNT: Int = 100
+const val RANDOM_COUNT_STEP: Int = 5
 
 /** Everything the user can configure about how the app behaves, kept in one
  *  place the way a Settings screen in any polished app would. */
@@ -155,6 +169,20 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setRandomModeEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[RANDOM_MODE_ENABLED_KEY] = enabled }
+    }
+
+    /** Companion setting to [randomModeEnabledFlow] — see DEFAULT_RANDOM_COUNT's
+     *  doc comment above for what this bounds and why. Only meaningful while
+     *  random mode itself is on; left persisted (not reset) while off, same
+     *  as every other preference in this store that has an "off" state. */
+    val randomCountFlow: Flow<Int> = context.settingsDataStore.data.map { prefs ->
+        prefs[RANDOM_COUNT_KEY] ?: DEFAULT_RANDOM_COUNT
+    }
+
+    suspend fun setRandomCount(count: Int) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[RANDOM_COUNT_KEY] = count.coerceIn(MIN_RANDOM_COUNT, MAX_RANDOM_COUNT)
+        }
     }
 
     /** Cleanup goal (ROADMAP Fase A item 3): a target number of bytes to

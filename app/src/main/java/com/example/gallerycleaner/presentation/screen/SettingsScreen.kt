@@ -67,6 +67,7 @@ fun SettingsScreen(
     val reminderEnabled by settingsStore.cleaningReminderEnabledFlow.collectAsState(initial = false)
     val hapticsEnabled by settingsStore.hapticFeedbackEnabledFlow.collectAsState(initial = true)
     val randomModeEnabled by settingsStore.randomModeEnabledFlow.collectAsState(initial = false)
+    val randomCount by settingsStore.randomCountFlow.collectAsState(initial = DEFAULT_RANDOM_COUNT)
     // [Batch132] initial=true, not false — matches the corrected default
     // in SettingsStore.kt (see its doc comment). Using false here would
     // flash an unchecked switch for one frame even for users who have
@@ -511,6 +512,55 @@ fun SettingsScreen(
                         checked = randomModeEnabled,
                         onCheckedChange = { scope.launch { settingsStore.setRandomModeEnabled(it) } }
                     )
+                }
+            }
+            item {
+                // [Batch137] Random count — Sponge parity (ROADMAP Fase E,
+                // "Cleaning Options"): a custom number instead of always
+                // shuffling every item in a group. Discrete +/- stepper
+                // (step 5) rather than a Slider — persists once per tap,
+                // same immediate-commit pattern as the switches on this
+                // screen, no drag-time DataStore write spam to worry about.
+                // Plain "−"/"+" glyphs, not new Icons — this project has 3x
+                // CI history of guessed-icon-name failures (Batch110/113/128),
+                // so a text glyph sidesteps that risk class entirely for a
+                // control this minor.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_random_count_title), style = MaterialTheme.typography.bodyLarge)
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            stringResource(R.string.settings_random_count_subtitle, randomCount),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                settingsStore.setRandomCount(randomCount - RANDOM_COUNT_STEP)
+                            }
+                        },
+                        enabled = randomModeEnabled && randomCount > MIN_RANDOM_COUNT
+                    ) { Text("−", style = MaterialTheme.typography.titleLarge) }
+                    Text(
+                        "$randomCount",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                settingsStore.setRandomCount(randomCount + RANDOM_COUNT_STEP)
+                            }
+                        },
+                        enabled = randomModeEnabled && randomCount < MAX_RANDOM_COUNT
+                    ) { Text("+", style = MaterialTheme.typography.titleLarge) }
                 }
             }
 

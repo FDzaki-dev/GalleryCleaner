@@ -359,6 +359,7 @@ fun AppRoot(
     )
     val hapticsEnabled by settingsStore.hapticFeedbackEnabledFlow.collectAsState(initial = true)
     val randomModeEnabled by settingsStore.randomModeEnabledFlow.collectAsState(initial = false)
+    val randomCount by settingsStore.randomCountFlow.collectAsState(initial = DEFAULT_RANDOM_COUNT)
     // Defaults to true (not false) for the brief window before DataStore's
     // real persisted value loads — this only matters for a split second,
     // but which way it's wrong matters: defaulting true means a genuinely
@@ -720,7 +721,14 @@ fun AppRoot(
         // Same reshuffle-on-(re)entry rule the original onGroupClick handler
         // below already applies when randomModeEnabled — kept identical here
         // for consistency rather than inventing a second rule for this path.
-        selectedGroup = if (randomModeEnabled) found.copy(items = found.items.shuffled()) else found
+        // [Batch137] .take(randomCount) added to match onGroupClick below —
+        // safe even if found.items is smaller than randomCount (take() just
+        // returns everything it has, 0 crash/clamp needed).
+        selectedGroup = if (randomModeEnabled) {
+            found.copy(items = found.items.shuffled().take(randomCount))
+        } else {
+            found
+        }
     }
 
     var pendingDeleteRetry by remember { mutableStateOf<List<MediaItem>?>(null) }
@@ -1221,7 +1229,10 @@ fun AppRoot(
                         // saved index is only meaningful within one shuffled
                         // session, not across re-entries).
                         selectedGroup = if (randomModeEnabled) {
-                            group.copy(items = group.items.shuffled())
+                            // [Batch137] capped to randomCount (Settings > Random
+                            // count) instead of always shuffling every item in
+                            // the group — see SettingsStore.kt's doc comment.
+                            group.copy(items = group.items.shuffled().take(randomCount))
                         } else {
                             group
                         }

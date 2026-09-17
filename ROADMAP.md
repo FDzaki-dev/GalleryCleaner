@@ -4,7 +4,7 @@
 APK signed terbaru: **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
 ## Status Ringkas (terbaru)
-✅ Fase A (gap fungsional inti) selesai 4/4 — Batch20. ✅ Fase B (AI on-device) selesai 3/3 — Batch25. ⏳ Fase C (reliability/visual) & Fase D (jangkauan pasar) belum dimulai. 🆕 Fase E (gap fungsional lanjutan, ditemukan Batch129 re-cek Sponge): item #14 "Cleaning Options" 2/9 sub-item selesai (Sound for Videos — Batch129, Enable share text — Batch131), item #16-20 (History/Home dashboard/Customize view/Notifications split/My Account) BELUM digarap. Lihat `PROJECT_STATE.md` → "Belum Dikerjakan" untuk detail terkini.
+✅ Fase A (gap fungsional inti) selesai 4/4 — Batch20. ✅ Fase B (AI on-device) selesai 3/3 — Batch25. ⏳ Fase C (reliability/visual) & Fase D (jangkauan pasar) belum dimulai. 🆕 Fase E (gap fungsional lanjutan, ditemukan Batch129 re-cek Sponge): item #14 "Cleaning Options" 3/9 sub-item selesai (Sound for Videos — Batch129, Enable share text — Batch131, Random count — Batch137), item #16-20 (History/Home dashboard/Customize view/Notifications split/My Account) BELUM digarap. Lihat `PROJECT_STATE.md` → "Belum Dikerjakan" untuk detail terkini.
 
 Tolok ukur: **Sponge - Gallery Cleaner** (`com.prismtree.sponge`,
 ~780rb download, ~510 install/hari, rating 5.0). Cek ulang sebelum
@@ -104,11 +104,17 @@ kepakai fisik di screen recording (72 detik), 0 ada di Section 1 lama:
   OFF juga (alasan beda dari sound: nama file bisa bocorin info personal
   kalau user rename sendiri, opt-in lebih aman) — 1 file consumer
   (`SwipeScreen.kt`), pola identik Batch129.
-- ❌ 7 sisa item "Cleaning Options" Sponge (Manage move-to albums,
+- ✅ **Random count** (Batch137, SELESAI) — `SettingsStore.randomCountFlow`
+  + stepper +/− di Settings (kelipatan 5, default 20, batas 5-100) +
+  `MainActivity.kt` kedua titik `.shuffled()` (entry langsung dan
+  rotation-restore) sekarang `.take(randomCount)`. Sebelumnya random mode
+  selalu ngacak SEMUA isi grup, 0 batas jumlah — 1 file consumer
+  (`MainActivity.kt`), pola serupa Batch129/131 (toggle+wiring ringan).
+- ❌ 6 sisa item "Cleaning Options" Sponge (Manage move-to albums,
   Personalize cleaning screen, Swipe direction, Animate on buttons,
-  Default sort+arah, Random count, Manage albums) —
+  Default sort+arah, Manage albums) —
   BELUM digarap, per-item beda kompleksitas (beberapa cuma toggle+wiring
-  ringan mirip Batch129/131, beberapa — swipe direction, manage albums —
+  ringan mirip Batch129/131/137, beberapa — swipe direction, manage albums —
   nyentuh logic inti `SwipeScreenCard.kt`/`SwipeScreen.kt` lebih dalam,
   resiko regresi lebih tinggi, HARUS batch terpisah per STABILITY WINS)
 - ❌ History screen (nav item terpisah, statistik bulanan) — 0 ada sama
