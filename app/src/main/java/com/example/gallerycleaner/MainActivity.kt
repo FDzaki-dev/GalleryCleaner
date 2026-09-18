@@ -570,8 +570,20 @@ fun AppRoot(
     // Distinct folders already present in the active library — offered as
     // quick-pick suggestions in the "Organize" folder dialog (SwipeScreen)
     // so a typo can't silently create a stray near-duplicate folder.
-    val existingFolders = remember(activeMedia) {
-        activeMedia.map { it.relativePath }.filter { it.isNotBlank() }.distinct().sorted()
+    // [Regression fix] Was `remember(activeMedia) { .map/.filter/.distinct/.sorted }`
+    // — the identical synchronous-on-main-thread shape flagged 2 blocks above
+    // for derivedMedia ("the actual cause of scroll stutter"): activeMedia's
+    // reference changes on every progressive-load page AND after every
+    // trash/organize action, so this was re-running an O(n log n) scan on
+    // the UI thread on every one of those, both during Home scrolling
+    // (still loading) and during the Swipe->Home transition after a batch
+    // action (transitionSpec's animation sharing the same blocked frame).
+    // Same fix, same precedent already established in this file.
+    var existingFolders by remember { mutableStateOf<List<String>>(emptyList()) }
+    LaunchedEffect(activeMedia) {
+        existingFolders = withContext(Dispatchers.Default) {
+            activeMedia.map { it.relativePath }.filter { it.isNotBlank() }.distinct().sorted()
+        }
     }
 
     var groups by remember { mutableStateOf<List<MediaGroup>>(emptyList()) }
