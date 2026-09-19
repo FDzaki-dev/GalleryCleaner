@@ -49,13 +49,13 @@ data class MediaItem(
 )
 
 enum class SortOption(val label: String) {
-    DATE("Date"),
-    SIZE("Size"),
-    NAME("Name")
+    DATE("Tanggal"),
+    SIZE("Ukuran"),
+    NAME("Nama")
 }
 
 enum class GroupMode(val label: String) {
-    MONTH("Month"),
+    MONTH("Bulan"),
     ALBUM("Album")
 }
 

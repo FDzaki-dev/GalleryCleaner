@@ -53,19 +53,19 @@ internal fun ExpiryBanner(count: Int, expiryDays: Int, onClean: () -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "$count item(s) have been in Trash over $expiryDays days",
+                    "$count item udah lebih dari $expiryDays hari nangkring di Sampah",
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "Delete them permanently to free up space",
+                    "Hapus permanen biar ruang penyimpanan lega",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Spacer(Modifier.width(12.dp))
-            DangerButton(text = "Clean up", onClick = onClean)
+            DangerButton(text = "Bersihin", onClick = onClean)
         }
     }
 }
@@ -96,15 +96,15 @@ internal fun LargestFilesCard(items: List<MediaItem>, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Biggest space hogs", fontWeight = FontWeight.SemiBold)
+                    Text("File paling boros ruang", fontWeight = FontWeight.SemiBold)
                     Text(
-                        "The 5 files using the most storage",
+                        "5 file yang paling banyak makan penyimpanan",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Text(
-                    "Review",
+                    "Cek",
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -177,7 +177,7 @@ internal fun StorageDashboard(
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             Text(
-                "Library size",
+                "Ukuran galeri",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -189,7 +189,7 @@ internal fun StorageDashboard(
             if (trashReclaimableBytes > 0) {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "${formatBytes(trashReclaimableBytes)} waiting in Trash — empty it to reclaim space",
+                    "${formatBytes(trashReclaimableBytes)} nunggu di Sampah — kosongin biar ruangnya balik",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary
                 )
@@ -208,7 +208,7 @@ internal fun StorageDashboard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Cleanup goal",
+                    "Target bersih-bersih",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -235,7 +235,7 @@ internal fun StorageDashboard(
             if (goalProgress >= 1f) {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Goal reached! Tap to set a new one.",
+                    "Target tercapai! Tap buat bikin target baru.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -245,7 +245,7 @@ internal fun StorageDashboard(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "All time: ${formatBytes(totalFreedBytes)} freed · $totalDeletedCount item(s) cleaned",
+                    "Total selama ini: ${formatBytes(totalFreedBytes)} lega · $totalDeletedCount item dibersihin",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -282,7 +282,7 @@ private fun CleanupGoalDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Set cleanup goal") },
+        title = { Text("Atur target bersih-bersih") },
         text = {
             Column {
                 Text(
@@ -309,10 +309,10 @@ private fun CleanupGoalDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(sliderBytes.toLong()) }) { Text("Set goal") }
+            TextButton(onClick = { onConfirm(sliderBytes.toLong()) }) { Text("Atur target") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text("Batal") }
         }
     )
 }
@@ -339,7 +339,7 @@ internal fun OnThisDayRow(photos: List<MediaItem>, onClick: () -> Unit) {
             yearsAgo.size == 1 -> context.resources.getQuantityString(
                 R.plurals.home_years_ago, yearsAgo.first(), yearsAgo.first()
             )
-            else -> "${yearsAgo.first()}\u2013${yearsAgo.last()} years ago"
+            else -> "${yearsAgo.first()}\u2013${yearsAgo.last()} tahun lalu"
         }
     }
     Column(Modifier.fillMaxWidth()) {
@@ -437,14 +437,14 @@ internal fun CancellableScanTriggerRow(
                 Text(title, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    if (scanning) "Scanning… ${(progress * 100).toInt()}%" else subtitle,
+                    if (scanning) "Lagi scan… ${(progress * 100).toInt()}%" else subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Spacer(Modifier.width(12.dp))
             if (scanning) {
-                TextButton(onClick = onCancel) { Text("Cancel") }
+                TextButton(onClick = onCancel) { Text("Batal") }
             } else {
                 Text("Scan", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             }
@@ -469,10 +469,10 @@ internal fun SmartCategoryRow(group: MediaGroup, onClick: () -> Unit) {
             CoverThumbnail(items = group.items)
             Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(group.key, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                Text(displayGroupName(group.key), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "${group.items.size} items · ${formatBytes(totalBytes)}",
+                    "${group.items.size} item · ${formatBytes(totalBytes)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -494,7 +494,7 @@ internal fun FilterRow(
 ) {
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(
-            "GROUP BY",
+            "KELOMPOKKAN",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -508,9 +508,9 @@ internal fun FilterRow(
         // per-row summary confirms it in practice once a Month row shows.
         Text(
             if (groupMode == GroupMode.MONTH) {
-                "One row per month, pooling photos from every folder"
+                "Satu baris per bulan, gabungin foto dari semua folder"
             } else {
-                "One row per folder, exactly as it exists on your device"
+                "Satu baris per folder, persis kayak di hp kamu"
             },
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
@@ -526,7 +526,7 @@ internal fun FilterRow(
             }
         }
         Text(
-            "SORT BY",
+            "URUTKAN",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

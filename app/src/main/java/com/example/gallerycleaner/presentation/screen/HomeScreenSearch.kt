@@ -49,7 +49,7 @@ internal fun SearchResultsContent(
     if (query.isBlank()) {
         Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                "Search for a folder or photo by name",
+                "Cari folder atau foto lewat namanya",
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -57,7 +57,7 @@ internal fun SearchResultsContent(
     }
     if (matchingFolders.isEmpty() && matchingPhotos.isEmpty()) {
         Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No results for \"$query\"", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Nggak ada hasil buat \"$query\"", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
@@ -67,7 +67,7 @@ internal fun SearchResultsContent(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         if (matchingFolders.isNotEmpty()) {
-            item { SectionLabel("FOLDERS") }
+            item { SectionLabel("FOLDER") }
             items(matchingFolders, key = { "search-folder-${it.key}" }) { group ->
                 GroupRow(
                     group = group,
@@ -80,7 +80,7 @@ internal fun SearchResultsContent(
         }
         if (matchingPhotos.isNotEmpty()) {
             item { Spacer(Modifier.height(4.dp)) }
-            item { SectionLabel("PHOTOS") }
+            item { SectionLabel("FOTO") }
             item {
                 SearchPhotoGrid(items = matchingPhotos, onClick = onPhotoClick)
             }

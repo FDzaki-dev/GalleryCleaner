@@ -209,7 +209,7 @@ fun SwipeScreen(
                 title = { Text(displayName) },
                 navigationIcon = {
                     IconButton(onClick = { finishAndExit() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Kembali")
                     }
                 },
                 actions = {
@@ -226,7 +226,7 @@ fun SwipeScreen(
                                 }
                                 context.startActivity(Intent.createChooser(sendIntent, null))
                             }) {
-                                Icon(Icons.Filled.Share, contentDescription = "Share photo")
+                                Icon(Icons.Filled.Share, contentDescription = "Bagikan foto")
                             }
                         }
                         if (currentItem != null) {
@@ -245,7 +245,7 @@ fun SwipeScreen(
                                     scope.launch { progressStore.saveProgress(group.key, index) }
                                 }
                             ) {
-                                Icon(painterResource(id = R.drawable.ic_undo), contentDescription = "Undo last swipe")
+                                Icon(painterResource(id = R.drawable.ic_undo), contentDescription = "Batalin geseran terakhir")
                             }
                         }
                     }
@@ -257,7 +257,7 @@ fun SwipeScreen(
                     var showSortMenu by rememberSaveable { mutableStateOf(false) }
                     Box {
                         IconButton(onClick = { showSortMenu = true }) {
-                            Icon(painterResource(id = R.drawable.ic_sort), contentDescription = "Sort: ${sortOption.label}")
+                            Icon(painterResource(id = R.drawable.ic_sort), contentDescription = "Urutan: ${sortOption.label}")
                         }
                         DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
                             SortOption.values().forEach { option ->
@@ -279,7 +279,7 @@ fun SwipeScreen(
                             // concept, reusing the same Icons.Filled.Check
                             // already imported for the field rows above.
                             DropdownMenuItem(
-                                text = { Text(if (sortAscending) "Reversed order" else "Default order") },
+                                text = { Text(if (sortAscending) "Urutan dibalik" else "Urutan bawaan") },
                                 leadingIcon = if (sortAscending) {
                                     { Icon(Icons.Filled.Check, contentDescription = null) }
                                 } else null,
@@ -302,7 +302,7 @@ fun SwipeScreen(
                     }) {
                         Icon(
                             if (viewMode == SwipeViewMode.Swipe) painterResource(id = R.drawable.ic_grid_view) else painterResource(id = R.drawable.ic_view_carousel),
-                            contentDescription = if (viewMode == SwipeViewMode.Swipe) "Switch to grid view" else "Switch to swipe view"
+                            contentDescription = if (viewMode == SwipeViewMode.Swipe) "Ganti ke tampilan grid" else "Ganti ke tampilan geser"
                         )
                     }
                 },
@@ -349,9 +349,9 @@ fun SwipeScreen(
             // able to suppress this notice.
             val heuristicSuggestionText = when (group.key) {
                 "Similar photos" ->
-                    "Suggested matches, not confirmed duplicates — grouped by visual similarity. Review each photo before deleting."
+                    "Ini cuma saran kecocokan, bukan duplikat yang pasti — dikelompokin berdasarkan kemiripan visual. Cek tiap foto dulu sebelum dihapus."
                 "Blurry photos" ->
-                    "Suggested as possibly blurry — an automatic estimate, not a guarantee. Intentional soft-focus shots can be flagged too. Review each photo before deleting."
+                    "Disaranin karena kemungkinan blur — cuma perkiraan otomatis, bukan jaminan. Foto soft-focus yang emang disengaja juga bisa ikut ketandain. Cek tiap foto dulu sebelum dihapus."
                 else -> null
             }
             if (heuristicSuggestionText != null) {

@@ -79,10 +79,10 @@ class CleaningReminderWorker(
             manager.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ID,
-                    "Cleaning reminders",
+                    "Pengingat bersih-bersih",
                     NotificationManager.IMPORTANCE_DEFAULT
                 ).apply {
-                    description = "Lets you know when there are screenshots or large files worth reviewing"
+                    description = "Ngasih tahu kamu kalau ada screenshot atau file gede yang layak dicek"
                 }
             )
         }
@@ -109,7 +109,7 @@ class CleaningReminderWorker(
         val builder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_gallery)
             .setContentTitle("Snaply")
-            .setContentText("You have $count item(s) worth reviewing — screenshots or large files.")
+            .setContentText("Ada $count item yang layak dicek — screenshot atau file gede.")
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
         if (pendingIntent != null) builder.setContentIntent(pendingIntent)

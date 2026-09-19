@@ -71,7 +71,7 @@ internal fun GroupRow(
     val clampedReviewed = reviewed.coerceIn(0, group.items.size)
     val fraction = if (group.items.isEmpty()) 0f else clampedReviewed / group.items.size.toFloat()
     val done = fraction >= 1f && group.items.isNotEmpty()
-    val displayName = label ?: group.key
+    val displayName = label ?: displayGroupName(group.key)
 
     // Folder-summary line — only shown when the group actually spans more
     // than one folder. In Album mode this is always exactly 1 (the row's
@@ -109,7 +109,7 @@ internal fun GroupRow(
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "${group.items.size} items",
+                    "${group.items.size} item",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -144,7 +144,7 @@ internal fun GroupRow(
                 IconButton(onClick = { showRenameDialog = true }) {
                     Icon(
                         Icons.Filled.Edit,
-                        contentDescription = "Rename folder",
+                        contentDescription = "Ganti nama folder",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
@@ -181,7 +181,7 @@ private fun folderSummaryText(folders: List<String>): String =
     if (folders.size <= 2) {
         folders.joinToString(", ")
     } else {
-        "${folders.take(2).joinToString(", ")} +${folders.size - 2} more"
+        "${folders.take(2).joinToString(", ")} +${folders.size - 2} lagi"
     }
 
 @Composable
@@ -198,12 +198,12 @@ internal fun RenameFolderDialog(
     var text by rememberSaveable { mutableStateOf(currentName) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Rename Folder") },
+        title = { Text("Ganti Nama Folder") },
         text = {
             Column {
                 Text(
-                    "This only changes the name shown in this app — it won't " +
-                        "rename the actual folder or affect your device's Gallery app.",
+                    "Ini cuma ngubah nama yang tampil di app ini — nggak ngubah " +
+                        "nama folder aslinya dan nggak ngaruh ke app Galeri di hp kamu.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -220,14 +220,14 @@ internal fun RenameFolderDialog(
             TextButton(
                 onClick = { onConfirm(text) },
                 enabled = text.isNotBlank()
-            ) { Text("Save") }
+            ) { Text("Simpan") }
         },
         dismissButton = {
             Row {
                 if (hasCustomLabel) {
                     TextButton(onClick = onResetToOriginal) { Text("Reset") }
                 }
-                TextButton(onClick = onDismiss) { Text("Cancel") }
+                TextButton(onClick = onDismiss) { Text("Batal") }
             }
         }
     )

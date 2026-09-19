@@ -110,7 +110,7 @@ object MediaRepository {
     // its own SimpleDateFormat instance instead of sharing one — no
     // synchronization needed, and no risk of threads stepping on each other.
     private val monthFormat = ThreadLocal.withInitial {
-        SimpleDateFormat("MMMM yyyy", Locale.getDefault()).apply {
+        SimpleDateFormat("MMMM yyyy", Locale.forLanguageTag("id-ID")).apply {
             timeZone = TimeZone.getDefault()
         }
     }

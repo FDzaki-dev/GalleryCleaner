@@ -89,7 +89,7 @@ object UpdateChecker {
      * with GitHub's PR-based notes again.
      */
     private fun buildShortSummary(rawBody: String): String {
-        if (rawBody.isBlank()) return "New release available."
+        if (rawBody.isBlank()) return "Ada rilis baru."
 
         val attributionSuffix = Regex("""\s+by\s+@\S+\s+in\s+\S+$""", RegexOption.IGNORE_CASE)
         val bullets = rawBody.lineSequence()
@@ -109,7 +109,7 @@ object UpdateChecker {
             .map { "• $it" }
             .toList()
 
-        if (bullets.isEmpty()) return "New release available."
+        if (bullets.isEmpty()) return "Ada rilis baru."
 
         val joined = bullets.joinToString("\n")
         return if (joined.length > SUMMARY_MAX_CHARS) {
@@ -136,16 +136,16 @@ object UpdateChecker {
 
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    return@withContext CheckResult.Error("GitHub API error: HTTP ${response.code}")
+                    return@withContext CheckResult.Error("Error API GitHub: HTTP ${response.code}")
                 }
 
                 val bodyString = response.body?.string()
-                    ?: return@withContext CheckResult.Error("Empty response body")
+                    ?: return@withContext CheckResult.Error("Responsnya kosong")
 
                 val json = JSONObject(bodyString)
                 val tagName = json.optString("tag_name", "")
                 if (tagName.isEmpty()) {
-                    return@withContext CheckResult.Error("Release has no tag_name")
+                    return@withContext CheckResult.Error("Rilisnya nggak punya tag_name")
                 }
 
                 val assets: JSONArray = json.optJSONArray("assets") ?: JSONArray()
@@ -164,7 +164,7 @@ object UpdateChecker {
                 }
 
                 if (apkUrl == null) {
-                    return@withContext CheckResult.Error("Latest release has no .apk asset attached")
+                    return@withContext CheckResult.Error("Rilis terbaru nggak ada file .apk-nya")
                 }
 
                 val rawNotes = json.optString("body", "")
@@ -194,10 +194,10 @@ object UpdateChecker {
             }
         } catch (e: IOException) {
             Log.w(TAG, "Update check failed (network)", e)
-            CheckResult.Error(e.message ?: "Network error")
+            CheckResult.Error(e.message ?: "Masalah jaringan")
         } catch (e: Exception) {
             Log.w(TAG, "Update check failed (parse)", e)
-            CheckResult.Error(e.message ?: "Unexpected error")
+            CheckResult.Error(e.message ?: "Error nggak terduga")
         }
     }
 

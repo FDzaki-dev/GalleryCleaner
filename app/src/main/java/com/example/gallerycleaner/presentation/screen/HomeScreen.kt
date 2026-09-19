@@ -124,7 +124,7 @@ fun HomeScreen(
     val matchingFolders = remember(groups, debouncedQuery, folderLabels) {
         if (debouncedQuery.isBlank()) emptyList()
         else groups.filter { group ->
-            (folderLabels[group.key] ?: group.key).contains(debouncedQuery, ignoreCase = true)
+            (folderLabels[group.key] ?: displayGroupName(group.key)).contains(debouncedQuery, ignoreCase = true)
         }
     }
     val matchingPhotos = remember(allActiveItems, debouncedQuery) {

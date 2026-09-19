@@ -72,7 +72,7 @@ internal fun GridSelectContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                if (selected.isEmpty()) "${visibleItems.size} photos" else "${selected.size} selected",
+                if (selected.isEmpty()) "${visibleItems.size} foto" else "${selected.size} dipilih",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -87,7 +87,7 @@ internal fun GridSelectContent(
                     visibleItems.map { it.id }.filterNot { it in selected }.forEach(onToggleSelect)
                 }
             }) {
-                Text(if (allSelected) "Deselect all" else "Select all")
+                Text(if (allSelected) "Batal pilih semua" else "Pilih semua")
             }
         }
 
@@ -124,7 +124,7 @@ internal fun GridSelectContent(
                     // also toggling selection underneath it.
                     Icon(
                         painterResource(id = R.drawable.ic_zoom_in),
-                        contentDescription = "View full size",
+                        contentDescription = "Lihat ukuran penuh",
                         tint = Color.White,
                         modifier = Modifier
                             .align(Alignment.TopStart)
@@ -143,7 +143,7 @@ internal fun GridSelectContent(
                         )
                         Icon(
                             Icons.Filled.Check,
-                            contentDescription = "Selected",
+                            contentDescription = "Terpilih",
                             tint = Color.White,
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
@@ -164,13 +164,13 @@ internal fun GridSelectContent(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    GlassButton(text = "Compress ${selected.size}", onClick = onCompressSelected)
+                    GlassButton(text = "Kompres ${selected.size}", onClick = onCompressSelected)
                     if (onOrganizeSelected != null) {
                         Spacer(Modifier.width(12.dp))
-                        GlassButton(text = "Organize ${selected.size}", onClick = onOrganizeSelected)
+                        GlassButton(text = "Pindahin ${selected.size}", onClick = onOrganizeSelected)
                     }
                     Spacer(Modifier.width(12.dp))
-                    DangerButton(text = "Delete ${selected.size} selected", onClick = onDeleteSelected)
+                    DangerButton(text = "Hapus ${selected.size} yang dipilih", onClick = onDeleteSelected)
                 }
             }
         }

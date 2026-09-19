@@ -79,7 +79,7 @@ Every push to GitHub auto-rebuilds and republishes the APK.
 
 ## 💡 Ideas for next steps
 
-- Multi-language support (Spanish, Portuguese-BR)
+- App language is hardcoded to casual Indonesian (Batch141) — multi-language (Spanish, Portuguese-BR) only if that lock is lifted
 - One-time-purchase premium tier
 - Play Store readiness (privacy policy, Data Safety form, screenshots)
 

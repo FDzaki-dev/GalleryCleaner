@@ -238,17 +238,17 @@ internal fun FinishedPanel(deletedCount: Int, reviewedCount: Int, onDone: () -> 
             )
         }
         Spacer(Modifier.height(20.dp))
-        Text("Mission accomplished!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
+        Text("Misi kelar!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(20.dp))
         GlassCard(contentPadding = 0.dp) {
             Row(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
-                StatColumn("Items reviewed", "$reviewedCount")
+                StatColumn("Item dicek", "$reviewedCount")
                 Spacer(Modifier.width(32.dp))
-                StatColumn("Moved to Trash", "$deletedCount")
+                StatColumn("Masuk Sampah", "$deletedCount")
             }
         }
         Spacer(Modifier.height(28.dp))
-        GlassButton(text = "Continue", onClick = onDone)
+        GlassButton(text = "Lanjut", onClick = onDone)
     }
 }
 
@@ -277,7 +277,7 @@ internal fun OrganizeFolderDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (itemCount == 1) "Move to folder" else "Move $itemCount items to folder") },
+        title = { Text(if (itemCount == 1) "Pindahin ke folder" else "Pindahin $itemCount item ke folder") },
         text = {
             Column {
                 // Audit Gap P1 #10: on API 30+ MoveHelper.supportsBatchWriteRequest()
@@ -294,7 +294,7 @@ internal fun OrganizeFolderDialog(
                 // way), so the note only shows for itemCount > 1.
                 if (itemCount > 1 && !MoveHelper.supportsBatchWriteRequest()) {
                     Text(
-                        "Your Android version may show a separate permission prompt for each photo that needs one.",
+                        "Versi Android kamu mungkin munculin izin terpisah buat tiap foto yang butuh izin.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -302,7 +302,7 @@ internal fun OrganizeFolderDialog(
                 }
                 if (suggestedFolders.isNotEmpty()) {
                     Text(
-                        "Existing folders",
+                        "Folder yang udah ada",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -334,7 +334,7 @@ internal fun OrganizeFolderDialog(
                     Spacer(Modifier.height(8.dp))
                 }
                 Text(
-                    "Or create a new one",
+                    "Atau bikin yang baru",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -359,11 +359,11 @@ internal fun OrganizeFolderDialog(
                 enabled = target != null,
                 onClick = { target?.let(onConfirm) }
             ) {
-                Text("Move")
+                Text("Pindah")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text("Batal") }
         }
     )
 }

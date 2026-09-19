@@ -90,10 +90,10 @@ class TrashExpiryWorker(
             manager.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ID,
-                    "Trash ready to empty",
+                    "Sampah siap dikosongin",
                     NotificationManager.IMPORTANCE_DEFAULT
                 ).apply {
-                    description = "Lets you know when items in Trash have passed your retention setting and are ready to permanently delete"
+                    description = "Ngasih tahu kamu kalau barang di Sampah udah lewat batas simpan dan siap dihapus permanen"
                 }
             )
         }
@@ -122,11 +122,11 @@ class TrashExpiryWorker(
             applicationContext, 0, trashIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
-        val itemWord = if (count == 1) "item" else "items"
+        val itemWord = "item"
         val builder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_delete)
-            .setContentTitle("Trash ready to empty")
-            .setContentText("$count $itemWord past your retention setting — tap to review and permanently delete.")
+            .setContentTitle("Sampah siap dikosongin")
+            .setContentText("$count $itemWord udah lewat batas simpan — tap buat cek dan hapus permanen.")
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)

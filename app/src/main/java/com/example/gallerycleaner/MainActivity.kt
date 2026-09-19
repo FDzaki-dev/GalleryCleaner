@@ -193,8 +193,8 @@ class MainActivity : FragmentActivity() {
                     val biometricManager = remember { BiometricManager.from(this@MainActivity) }
                     val promptInfo = remember {
                         BiometricPrompt.PromptInfo.Builder()
-                            .setTitle("Unlock Snaply")
-                            .setSubtitle("Confirm your screen lock to continue")
+                            .setTitle("Buka kunci Snaply")
+                            .setSubtitle("Konfirmasi kunci layar kamu buat lanjut")
                             // No setNegativeButtonText(): mutually exclusive
                             // with DEVICE_CREDENTIAL below — the system
                             // supplies its own cancel affordance instead.
@@ -770,7 +770,7 @@ fun AppRoot(
             }
         } else if (items != null) {
             scope.launch {
-                snackbarHostState.showSnackbar("Gagal menghapus file atau izin ditolak")
+                snackbarHostState.showSnackbar("Gagal hapus file atau izinnya ditolak")
             }
         }
         pendingDeleteRetry = null
@@ -798,12 +798,12 @@ fun AppRoot(
                 }
                 withContext(Dispatchers.Main) {
                     snackbarHostState.showSnackbar(
-                        if (saved > 0) "Compressed — saved ${formatBytes(saved)}" else "Nothing to compress"
+                        if (saved > 0) "Udah dikompres — hemat ${formatBytes(saved)}" else "Nggak ada yang perlu dikompres"
                     )
                 }
             }
         } else if (items != null) {
-            scope.launch { snackbarHostState.showSnackbar("Compression permission denied") }
+            scope.launch { snackbarHostState.showSnackbar("Izin kompresi ditolak") }
         }
     }
 
@@ -827,7 +827,7 @@ fun AppRoot(
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        snackbarHostState.showSnackbar("Gagal meminta izin kompresi")
+                        snackbarHostState.showSnackbar("Gagal minta izin kompresi")
                     }
                 }
             } else {
@@ -846,10 +846,10 @@ fun AppRoot(
                 withContext(Dispatchers.Main) {
                     when {
                         needsPermission -> snackbarHostState.showSnackbar(
-                            "Beberapa foto butuh izin tambahan — coba lagi satu per satu"
+                            "Beberapa foto butuh izin tambahan — coba lagi satu-satu ya"
                         )
-                        saved > 0 -> snackbarHostState.showSnackbar("Compressed — saved ${formatBytes(saved)}")
-                        else -> snackbarHostState.showSnackbar("Nothing to compress")
+                        saved > 0 -> snackbarHostState.showSnackbar("Udah dikompres — hemat ${formatBytes(saved)}")
+                        else -> snackbarHostState.showSnackbar("Nggak ada yang perlu dikompres")
                     }
                 }
             }
@@ -913,7 +913,7 @@ fun AppRoot(
                 }
                 if (failed.isNotEmpty()) {
                     scope.launch {
-                        snackbarHostState.showSnackbar("Gagal menghapus ${failed.size} file. Periksa izin.")
+                        snackbarHostState.showSnackbar("Gagal hapus ${failed.size} file. Cek izinnya ya.")
                     }
                 }
             } catch (e: RecoverableSecurityException) {
@@ -1010,17 +1010,17 @@ fun AppRoot(
                     }
                     if (partialCount > 0) {
                         snackbarHostState.showSnackbar(
-                            "$partialCount file pindah lokasi tapi belum terverifikasi — buka ulang app untuk sinkronkan"
+                            "$partialCount file udah pindah tapi belum terverifikasi — buka ulang app buat sinkronin"
                         )
                     }
                     val failedCount = items.size - movedIds.size - partialCount
                     if (failedCount > 0) {
-                        snackbarHostState.showSnackbar("Gagal memindahkan $failedCount file")
+                        snackbarHostState.showSnackbar("Gagal mindahin $failedCount file")
                     }
                 }
             }
         } else if (pending != null) {
-            scope.launch { snackbarHostState.showSnackbar("Izin memindahkan file ditolak") }
+            scope.launch { snackbarHostState.showSnackbar("Izin buat mindahin file ditolak") }
         }
     }
 
@@ -1046,7 +1046,7 @@ fun AppRoot(
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        snackbarHostState.showSnackbar("Gagal meminta izin memindahkan file")
+                        snackbarHostState.showSnackbar("Gagal minta izin buat mindahin file")
                     }
                 }
             } else {
@@ -1090,12 +1090,12 @@ fun AppRoot(
                         }
                         if (partialIds.isNotEmpty()) {
                             snackbarHostState.showSnackbar(
-                                "${partialIds.size} file pindah lokasi tapi belum terverifikasi — buka ulang app untuk sinkronkan"
+                                "${partialIds.size} file udah pindah tapi belum terverifikasi — buka ulang app buat sinkronin"
                             )
                         }
                         val failedCount = items.size - movedIds.size - partialIds.size
                         if (failedCount > 0) {
-                            snackbarHostState.showSnackbar("Gagal memindahkan $failedCount file")
+                            snackbarHostState.showSnackbar("Gagal mindahin $failedCount file")
                         }
                     }
                 }
@@ -1166,7 +1166,7 @@ fun AppRoot(
                     // Custom in-app label takes priority over the raw
                     // folder name — the whole point of it is to stand in
                     // for a device Gallery's own naming that we can't read.
-                    displayName = folderLabels[screen.group.key] ?: screen.group.key,
+                    displayName = folderLabels[screen.group.key] ?: displayGroupName(screen.group.key),
                     progressStore = progressStore,
                     hapticsEnabled = hapticsEnabled,
                     onCompressRequest = ::performCompression,
@@ -1193,7 +1193,7 @@ fun AppRoot(
                                         message = context.resources.getQuantityString(
                                             R.plurals.main_trashed_photos, ids.size, ids.size
                                         ),
-                                        actionLabel = "Undo",
+                                        actionLabel = "Batalin",
                                         duration = SnackbarDuration.Long
                                     )
                                     // Reversible unlike permanent delete above (no
@@ -1206,7 +1206,7 @@ fun AppRoot(
                                     }
                                 }
                             } catch (e: Exception) {
-                                snackbarHostState.showSnackbar("Gagal memproses data swipe")
+                                snackbarHostState.showSnackbar("Gagal ngolah data geseran")
                             }
                         }
                     }
@@ -1291,7 +1291,7 @@ fun AppRoot(
         if (activeCrashLog != null) {
             AlertDialog(
                 onDismissRequest = { activeCrashLog = null },
-                title = { Text("Laporan Deteksi Crash 🛠️") },
+                title = { Text("Laporan Crash 🛠️") },
                 text = {
                     Box(
                         modifier = Modifier
@@ -1307,7 +1307,7 @@ fun AppRoot(
                 },
                 confirmButton = {
                     Button(onClick = { activeCrashLog = null }) {
-                        Text("Saya Mengerti")
+                        Text("Ngerti")
                     }
                 }
             )
@@ -1327,22 +1327,22 @@ private fun PermissionScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            "Clean your gallery",
+            "Bersihin galerimu",
             style = MaterialTheme.typography.headlineMedium
         )
         Spacer(Modifier.height(12.dp))
         Text(
             if (permanentlyDenied) {
-                "Photo access was denied. Enable it from this app's system Settings to continue."
+                "Akses foto ditolak. Nyalain dari Pengaturan sistem app ini buat lanjut."
             } else {
-                "Snaply needs access to your photos to help you swipe through and declutter."
+                "Snaply butuh akses ke foto kamu biar bisa bantu geser-geser dan beresin galeri."
             },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(28.dp))
         GlassButton(
-            text = if (permanentlyDenied) "Open Settings" else "Grant access",
+            text = if (permanentlyDenied) "Buka Pengaturan" else "Kasih akses",
             modifier = Modifier.fillMaxWidth(),
             onClick = if (permanentlyDenied) onOpenSettings else onRequest
         )
@@ -1363,16 +1363,16 @@ private fun AppLockScreen(onUnlockClick: () -> Unit) {
             tint = MaterialTheme.colorScheme.primary
         )
         Spacer(Modifier.height(16.dp))
-        Text("Snaply is locked", style = MaterialTheme.typography.headlineSmall)
+        Text("Snaply dikunci", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(8.dp))
         Text(
-            "Confirm your screen lock to continue.",
+            "Konfirmasi kunci layar kamu buat lanjut.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(28.dp))
         GlassButton(
-            text = "Unlock",
+            text = "Buka kunci",
             modifier = Modifier.fillMaxWidth(),
             onClick = onUnlockClick
         )

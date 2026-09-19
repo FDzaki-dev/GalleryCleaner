@@ -76,7 +76,7 @@ object ApkDownloader {
                 }
 
                 val body = response.body
-                    ?: return@withContext DownloadResult.Error("Empty response body")
+                    ?: return@withContext DownloadResult.Error("Responsnya kosong")
 
                 val totalBytes = body.contentLength().takeIf { it > 0 } ?: expectedSizeBytes
                 var bytesRead = 0L
@@ -96,13 +96,13 @@ object ApkDownloader {
                 if (totalBytes > 0 && bytesRead < totalBytes) {
                     partFile.delete()
                     return@withContext DownloadResult.Error(
-                        "Incomplete download: got $bytesRead of $totalBytes bytes"
+                        "Unduhan nggak lengkap: cuma dapat $bytesRead dari $totalBytes byte"
                     )
                 }
 
                 if (finalFile.exists()) finalFile.delete()
                 if (!partFile.renameTo(finalFile)) {
-                    return@withContext DownloadResult.Error("Could not finalize downloaded file")
+                    return@withContext DownloadResult.Error("Gagal nyelesaiin file hasil unduhan")
                 }
 
                 DownloadResult.Success(finalFile)
@@ -110,7 +110,7 @@ object ApkDownloader {
         } catch (e: IOException) {
             Log.w(TAG, "Download failed", e)
             partFile.delete()
-            DownloadResult.Error(e.message ?: "Network error during download")
+            DownloadResult.Error(e.message ?: "Masalah jaringan pas ngunduh")
         }
     }
 

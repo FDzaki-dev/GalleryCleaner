@@ -300,7 +300,7 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
                 ) {
                     Icon(
                         Icons.Filled.Close,
-                        contentDescription = "Close",
+                        contentDescription = "Tutup",
                         tint = Color.White,
                         modifier = Modifier
                             .size(28.dp)
@@ -569,7 +569,7 @@ private fun VideoPlayerSurface(
                 // batch, and the difference between a guess and a diagnosis
                 // if this still fails after the Batch122 proguard-rules.pro
                 // mitigation.
-                errorDetail = "${error.errorCodeName}: ${error.message ?: "no further detail"}"
+                errorDetail = "${error.errorCodeName}: ${error.message ?: "nggak ada detail lain"}"
                 // Batch123: this specific errorCode+message pairing means a
                 // matching decoder exists but every one tried rejects this
                 // exact resolution/frame-rate as beyond what it can init —
@@ -581,7 +581,7 @@ private fun VideoPlayerSurface(
                     error.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED &&
                     error.message?.contains("EXCEEDS_CAPABILITIES") == true
                 ) {
-                    "This device's hardware can't decode this video's resolution/frame-rate combination."
+                    "Hardware hp ini nggak sanggup nge-decode kombinasi resolusi/frame-rate video ini."
                 } else {
                     ""
                 }
@@ -840,7 +840,7 @@ private fun VideoPlayerSurface(
                     // [Batch135] user report: with no label, brightness vs
                     // volume was ambiguous while dragging — bar+percent
                     // alone didn't say which one was being adjusted.
-                    label = "Brightness",
+                    label = "Kecerahan",
                     level = brightnessLevel,
                     modifier = Modifier
                         .align(Alignment.CenterStart)
@@ -932,7 +932,7 @@ private fun VideoPlayerSurface(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Can't play this video",
+                    "Video ini nggak bisa diputar",
                     color = Color.White,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -1094,30 +1094,30 @@ private fun VideoControlBar(
             IconButton(onClick = onToggleMute) {
                 Icon(
                     if (isMuted) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp,
-                    contentDescription = if (isMuted) "Unmute" else "Mute",
+                    contentDescription = if (isMuted) "Nyalain suara" else "Bisukan",
                     tint = Color.White
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onRewind) {
-                    Icon(Icons.Filled.Replay10, contentDescription = "Rewind 10 seconds", tint = Color.White)
+                    Icon(Icons.Filled.Replay10, contentDescription = "Mundur 10 detik", tint = Color.White)
                 }
                 IconButton(onClick = onPlayPause, modifier = Modifier.size(56.dp)) {
                     Icon(
                         if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        contentDescription = if (isPlaying) "Jeda" else "Putar",
                         tint = Color.White,
                         modifier = Modifier.size(36.dp)
                     )
                 }
                 IconButton(onClick = onForward) {
-                    Icon(Icons.Filled.Forward10, contentDescription = "Forward 10 seconds", tint = Color.White)
+                    Icon(Icons.Filled.Forward10, contentDescription = "Maju 10 detik", tint = Color.White)
                 }
             }
             IconButton(onClick = onToggleRotation) {
                 Icon(
                     if (isLandscapeMode) Icons.Filled.ScreenLockRotation else Icons.Filled.ScreenRotation,
-                    contentDescription = if (isLandscapeMode) "Switch to auto-rotate" else "Rotate to landscape",
+                    contentDescription = if (isLandscapeMode) "Balik ke rotasi otomatis" else "Putar ke landscape",
                     tint = Color.White
                 )
             }
@@ -1137,24 +1137,24 @@ private fun formatPlaybackTime(ms: Long): String {
 
 @Composable
 internal fun FileInfoDialog(item: MediaItem, onDismiss: () -> Unit) {
-    val dateFormat = remember { SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()) }
+    val dateFormat = remember { SimpleDateFormat("d MMM yyyy, HH:mm", Locale.forLanguageTag("id-ID")) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("File Info") },
+        title = { Text("Info File") },
         text = {
             Column {
-                FileInfoRow("Name", item.displayName)
+                FileInfoRow("Nama", item.displayName)
                 FileInfoRow("Album", item.bucketName)
-                FileInfoRow("Date taken", dateFormat.format(Date(item.dateTakenMillis)))
-                FileInfoRow("Size", formatBytes(item.sizeBytes))
+                FileInfoRow("Tanggal diambil", dateFormat.format(Date(item.dateTakenMillis)))
+                FileInfoRow("Ukuran", formatBytes(item.sizeBytes))
                 if (item.width > 0 && item.height > 0) {
-                    FileInfoRow("Dimensions", "${item.width} × ${item.height}")
+                    FileInfoRow("Dimensi", "${item.width} × ${item.height}")
                 }
-                FileInfoRow("Path", item.relativePath)
+                FileInfoRow("Lokasi", item.relativePath)
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("OK") }
+            TextButton(onClick = onDismiss) { Text("Oke") }
         }
     )
 }

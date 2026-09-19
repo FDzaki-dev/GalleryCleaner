@@ -3,6 +3,12 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch141 — 2026-09-19
+- **Bahasa app sekarang Indonesia santai/non-baku, terkunci (hardcode).** Semua teks di layar — Onboarding, Home, Swipe, Grid, Trash, Settings, dialog, notifikasi, snackbar, shortcut launcher, pesan update — pakai gaya "kamu/nggak/udah", apa pun bahasa hp-nya. Nama bulan dan tanggal juga Indonesia.
+- Judul kartu smart group (File terbesar, Foto blur, Foto mirip, File duplikat, Hari ini di masa lalu) ikut Indonesia; progress lama tetap nyambung karena key internalnya tidak diubah.
+- Catatan: di hp yang bahasanya bukan Indonesia, progress swipe grup mode "Bulan" reset sekali karena nama bulan berubah jadi Indonesia.
+- **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch141.
+
 ## Batch140 — 2026-09-19
 - **Setting baru: arah urutan (Default sort + arah)** — sekarang ada tombol pembalik urutan (↑/↓) di sebelah pilihan "SORT BY" (Home) dan di menu sort layar Swipe/Grid ("Default order"/"Reversed order"). Tinggal tap buat balik urutan sesuai field yang lagi aktif: Date → Terbaru/Terlama, Size → Terbesar/Terkecil, Name → A-Z/Z-A. Default OFF, urutan lama tidak berubah kalau tidak disentuh. Item ke-5 dari daftar fitur "Cleaning Options" yang lagi disusul dari app kompetitor ("Sponge") — lihat `ROADMAP.md` untuk sisa daftarnya.
 - **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch140.
