@@ -43,8 +43,8 @@ object MediaRepository {
     // ---- Grouping/sorting — stays here, this IS the orchestration layer ----
 
     /** Groups items either by "Month Year" or by album (bucket) name. */
-    fun group(items: List<MediaItem>, mode: GroupMode, sort: SortOption): List<MediaGroup> {
-        val sorted = sortItems(items, sort)
+    fun group(items: List<MediaItem>, mode: GroupMode, sort: SortOption, reversed: Boolean = false): List<MediaGroup> {
+        val sorted = sortItems(items, sort, reversed)
         val grouped = when (mode) {
             GroupMode.MONTH -> sorted.groupBy { monthKey(it.dateTakenMillis) }
             GroupMode.ALBUM -> sorted.groupBy { it.bucketName }
@@ -72,8 +72,12 @@ object MediaRepository {
     // Was private — made public (Batch20) so SwipeScreen's in-session sort
     // control (ROADMAP Fase A item 4) reuses this exact logic instead of a
     // second implementation that could drift from Home's.
-    fun sortItems(items: List<MediaItem>, sort: SortOption): List<MediaItem> {
-        return when (sort) {
+    // `reversed` defaulted so both existing call sites (group(), and
+    // SwipeScreen's own re-sort) keep compiling and behaving byte-for-byte
+    // the same without passing it — ROADMAP Fase E "Default sort + arah"
+    // is additive on top of this, not a replacement of it.
+    fun sortItems(items: List<MediaItem>, sort: SortOption, reversed: Boolean = false): List<MediaItem> {
+        val sorted = when (sort) {
             SortOption.DATE -> items.sortedByDescending { it.dateTakenMillis }
             SortOption.SIZE -> items.sortedByDescending { it.sizeBytes }
             // Locale.getDefault() hoisted out of the lambda — sortedBy calls
@@ -85,6 +89,11 @@ object MediaRepository {
                 items.sortedBy { it.displayName.lowercase(locale) }
             }
         }
+        // Flips whichever order is natural for `sort` above (Newest->Oldest,
+        // Largest->Smallest, A-Z->Z-A) instead of a per-field comparator
+        // swap — `reversed()` is O(n) with no re-comparison, cheap even for
+        // a large library.
+        return if (reversed) sorted.reversed() else sorted
     }
 
     // SimpleDateFormat is stateful and explicitly NOT thread-safe (it mutates

@@ -485,8 +485,12 @@ internal fun SmartCategoryRow(group: MediaGroup, onClick: () -> Unit) {
 internal fun FilterRow(
     groupMode: GroupMode,
     sortOption: SortOption,
+    // ROADMAP Fase E "Default sort + arah" — defaulted so this stays a
+    // non-breaking addition for any other caller of this composable.
+    sortAscending: Boolean = false,
     onGroupModeChange: (GroupMode) -> Unit,
-    onSortChange: (SortOption) -> Unit
+    onSortChange: (SortOption) -> Unit,
+    onSortDirectionChange: (Boolean) -> Unit = {}
 ) {
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(
@@ -534,6 +538,16 @@ internal fun FilterRow(
                     onClick = { onSortChange(option) }
                 )
             }
+            // ROADMAP Fase E "Default sort + arah". Flips whichever order
+            // is natural for `sortOption` above (Newest->Oldest for Date,
+            // Largest->Smallest for Size, A-Z->Z-A for Name) rather than a
+            // literal ascending/descending label, so one toggle stays
+            // correct no matter which field pill is selected.
+            PillChip(
+                label = if (sortAscending) "↑" else "↓",
+                selected = sortAscending,
+                onClick = { onSortDirectionChange(!sortAscending) }
+            )
         }
     }
 }

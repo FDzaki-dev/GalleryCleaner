@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch140 — 2026-09-19
+- **Setting baru: arah urutan (Default sort + arah)** — sekarang ada tombol pembalik urutan (↑/↓) di sebelah pilihan "SORT BY" (Home) dan di menu sort layar Swipe/Grid ("Default order"/"Reversed order"). Tinggal tap buat balik urutan sesuai field yang lagi aktif: Date → Terbaru/Terlama, Size → Terbesar/Terkecil, Name → A-Z/Z-A. Default OFF, urutan lama tidak berubah kalau tidak disentuh. Item ke-5 dari daftar fitur "Cleaning Options" yang lagi disusul dari app kompetitor ("Sponge") — lihat `ROADMAP.md` untuk sisa daftarnya.
+- **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch140.
+
 ## Batch139 — 2026-09-18
 - **Perbaikan performa: app tidak lagi nge-lag saat scroll Home atau pindah layar.** Ditemukan 1 titik kode yang menghitung ulang daftar folder secara berat langsung di alur tampilan (bukan di latar belakang) setiap kali data foto berubah — kejadian ini sering terpicu pas galeri masih memuat sambil discroll, atau pas kembali dari layar Swipe/Organize setelah menghapus/memindah foto. Sekarang perhitungan itu dipindah ke latar belakang, jadi tidak lagi mengunci tampilan.
 - **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch139.

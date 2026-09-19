@@ -68,6 +68,10 @@ fun HomeScreen(
     onRenameFolder: (String, String) -> Unit,
     onGroupModeChange: (GroupMode) -> Unit,
     onSortChange: (SortOption) -> Unit,
+    // ROADMAP Fase E "Default sort + arah" — defaulted so this stays a
+    // non-breaking addition for any other/future caller of this composable.
+    sortAscending: Boolean = false,
+    onSortDirectionChange: (Boolean) -> Unit = {},
     onGroupClick: (MediaGroup) -> Unit,
     onTrashClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -437,8 +441,10 @@ fun HomeScreen(
                     FilterRow(
                         groupMode = groupMode,
                         sortOption = sortOption,
+                        sortAscending = sortAscending,
                         onGroupModeChange = onGroupModeChange,
-                        onSortChange = onSortChange
+                        onSortChange = onSortChange,
+                        onSortDirectionChange = onSortDirectionChange
                     )
                 }
 

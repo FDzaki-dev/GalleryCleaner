@@ -50,7 +50,12 @@ fun SwipeScreen(
     existingFolders: List<String> = emptyList(),
     onOrganizeRequest: (List<MediaItem>, String) -> Unit = { _, _ -> },
     sortOption: SortOption = SortOption.DATE,
-    onSortChange: (SortOption) -> Unit = {}
+    onSortChange: (SortOption) -> Unit = {},
+    // ROADMAP Fase E "Default sort + arah" — same shared-state pattern as
+    // sortOption/onSortChange just above (one source of truth with Home,
+    // not a screen-local copy).
+    sortAscending: Boolean = false,
+    onSortDirectionChange: (Boolean) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -73,8 +78,8 @@ fun SwipeScreen(
     // MediaRepository.sortItems made public (was private) specifically so
     // this reuses the exact same sort logic Home uses, rather than a
     // second implementation that could silently drift from it.
-    val sortedItems = remember(group.items, sortOption) {
-        MediaRepository.sortItems(group.items, sortOption)
+    val sortedItems = remember(group.items, sortOption, sortAscending) {
+        MediaRepository.sortItems(group.items, sortOption, sortAscending)
     }
     // Tracks the sort actually last applied to `index`/progress, separate
     // from the `sortOption` prop itself — lets the effect below tell "user
@@ -82,6 +87,10 @@ fun SwipeScreen(
     // arrived already matching, nothing to reset" (initial composition,
     // must NOT clobber a restored resume position).
     var lastAppliedSort by remember(group.key) { mutableStateOf(sortOption) }
+    // Same reasoning as lastAppliedSort above, extended to direction — a
+    // direction flip reorders `sortedItems` exactly like a field change
+    // does, so it needs the same index/undo reset below.
+    var lastAppliedDirection by remember(group.key) { mutableStateOf(sortAscending) }
     val pendingDeletes = remember(group.key) { mutableStateListOf<MediaItem>() }
     // Items sent off to a different folder via "Organize" — kept separate
     // from pendingDeletes (they're not deleted, and onFinishWithDeletions'
@@ -132,9 +141,10 @@ fun SwipeScreen(
     // at the wrong photo. pendingDeletes/pendingOrganized are untouched:
     // those are id-based sets, not positional, so they stay correct
     // regardless of reordering.
-    LaunchedEffect(sortOption) {
-        if (sortOption != lastAppliedSort) {
+    LaunchedEffect(sortOption, sortAscending) {
+        if (sortOption != lastAppliedSort || sortAscending != lastAppliedDirection) {
             lastAppliedSort = sortOption
+            lastAppliedDirection = sortAscending
             index = 0
             lastDecision = null
             progressStore.saveProgress(group.key, 0)
@@ -149,7 +159,7 @@ fun SwipeScreen(
     // of warming the one the card will actually ask for. That used to be
     // 900 here vs 600 on the card: every prefetch was pure waste, decoding
     // and caching a bitmap nothing ever displayed.
-    LaunchedEffect(index, group.key, sortOption) {
+    LaunchedEffect(index, group.key, sortOption, sortAscending) {
         val loader = context.imageLoader
         (index + 1..index + 2).forEach { i ->
             sortedItems.getOrNull(i)?.let { item ->
@@ -262,6 +272,22 @@ fun SwipeScreen(
                                     }
                                 )
                             }
+                            // ROADMAP Fase E "Default sort + arah" — flips
+                            // whichever order is natural for `sortOption`
+                            // above (Newest->Oldest/Largest->Smallest/A-Z->Z-A)
+                            // rather than a separate literal ascending
+                            // concept, reusing the same Icons.Filled.Check
+                            // already imported for the field rows above.
+                            DropdownMenuItem(
+                                text = { Text(if (sortAscending) "Reversed order" else "Default order") },
+                                leadingIcon = if (sortAscending) {
+                                    { Icon(Icons.Filled.Check, contentDescription = null) }
+                                } else null,
+                                onClick = {
+                                    showSortMenu = false
+                                    onSortDirectionChange(!sortAscending)
+                                }
+                            )
                         }
                     }
                     // Grid mode is an alternative to swiping one at a time —

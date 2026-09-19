@@ -4,7 +4,7 @@
 APK signed terbaru: **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
 ## Status Ringkas (terbaru)
-✅ Fase A (gap fungsional inti) selesai 4/4 — Batch20. ✅ Fase B (AI on-device) selesai 3/3 — Batch25. ⏳ Fase C (reliability/visual) & Fase D (jangkauan pasar) belum dimulai. 🆕 Fase E (gap fungsional lanjutan, ditemukan Batch129 re-cek Sponge): item #14 "Cleaning Options" 4/9 sub-item selesai (Sound for Videos — Batch129, Enable share text — Batch131, Random count — Batch137, Animate on buttons — Batch138), item #16-20 (History/Home dashboard/Customize view/Notifications split/My Account) BELUM digarap. Lihat `PROJECT_STATE.md` → "Belum Dikerjakan" untuk detail terkini.
+✅ Fase A (gap fungsional inti) selesai 4/4 — Batch20. ✅ Fase B (AI on-device) selesai 3/3 — Batch25. ⏳ Fase C (reliability/visual) & Fase D (jangkauan pasar) belum dimulai. 🆕 Fase E (gap fungsional lanjutan, ditemukan Batch129 re-cek Sponge): item #14 "Cleaning Options" 5/9 sub-item selesai (Sound for Videos — Batch129, Enable share text — Batch131, Random count — Batch137, Animate on buttons — Batch138, Default sort+arah — Batch140), item #16-20 (History/Home dashboard/Customize view/Notifications split/My Account) BELUM digarap. Lihat `PROJECT_STATE.md` → "Belum Dikerjakan" untuk detail terkini.
 
 Tolok ukur: **Sponge - Gallery Cleaner** (`com.prismtree.sponge`,
 ~780rb download, ~510 install/hari, rating 5.0). Cek ulang sebelum
@@ -190,9 +190,14 @@ masing-masing di Section 2b.
     - ✅ Animate on buttons (Batch138) — `SettingsStore.animateButtonsEnabledFlow`,
       dipakai `GlassButton.kt` (press-scale shrink, layered di atas
       feedback tekan tiap `MaterialStyle` yang sudah ada)
-    - ❌ Default sort + arah (field-nya sudah ada via `sortOptionFlow`,
-      ARAH asc/desc belum — `MediaRepository.sortItems` sekarang selalu
-      `sortedByDescending`, hardcoded)
+    - ✅ Default sort + arah (Batch140) — `SettingsStore.sortAscendingFlow`
+      (default false, 0 perubahan behavior existing), `MediaRepository.sortItems`
+      + `.group()` sekarang terima `reversed: Boolean = false` yang
+      membalik urutan natural field yang aktif (Newest→Oldest/Largest→
+      Smallest/A-Z→Z-A) alih-alih literal ascending/descending per-field.
+      Toggle dipasang di Home's FilterRow (pill ↑/↓) DAN SwipeScreen's
+      sort dropdown (item "Default order"/"Reversed order") — pola sama
+      sortOption's dual-entry-point yang sudah ada.
     - ✅ Random count (Batch137) — [KOREKSI ANTI-STALE Batch138: bullet
       ini sempat ketinggalan ❌ padahal Section 2b + PROJECT_STATE.md
       sudah nyatet SELESAI sejak Batch137, dikoreksi sekarang]

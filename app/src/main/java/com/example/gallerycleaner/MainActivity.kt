@@ -444,6 +444,11 @@ fun AppRoot(
     var isLoading by remember { mutableStateOf(false) }
     var groupMode by remember { mutableStateOf(GroupMode.MONTH) }
     var sortOption by remember { mutableStateOf(SortOption.DATE) }
+    // ROADMAP Fase E "Default sort + arah" — the missing direction half of
+    // sortOption above, same local-var-seeded-once pattern (see comment
+    // below), NOT collectAsState for the identical reason: mutated
+    // directly from Home's FilterRow and SwipeScreen's own sort menu.
+    var sortAscending by remember { mutableStateOf(false) }
     // Batch29: load the persisted choice once at startup. A plain
     // `collectAsState` isn't used here (unlike appTheme/randomModeEnabled)
     // because `groupMode`/`sortOption` are mutated directly in several
@@ -458,6 +463,7 @@ fun AppRoot(
     LaunchedEffect(Unit) {
         groupMode = settingsStore.groupModeFlow.first()
         sortOption = settingsStore.sortOptionFlow.first()
+        sortAscending = settingsStore.sortAscendingFlow.first()
     }
     // [Batch117] Bug report: rotating the device (portrait<->landscape) while
     // reviewing a folder always dumped the user back to Home first. Root
@@ -587,9 +593,9 @@ fun AppRoot(
     }
 
     var groups by remember { mutableStateOf<List<MediaGroup>>(emptyList()) }
-    LaunchedEffect(activeMedia, groupMode, sortOption) {
+    LaunchedEffect(activeMedia, groupMode, sortOption, sortAscending) {
         groups = withContext(Dispatchers.Default) {
-            MediaRepository.group(activeMedia, groupMode, sortOption)
+            MediaRepository.group(activeMedia, groupMode, sortOption, sortAscending)
         }
     }
 
@@ -1174,6 +1180,8 @@ fun AppRoot(
                     // which matches how every other shared setting in this
                     // app already behaves (groupMode, randomModeEnabled).
                     onSortChange = { sortOption = it; scope.launch { settingsStore.setSortOption(it) } },
+                    sortAscending = sortAscending,
+                    onSortDirectionChange = { sortAscending = it; scope.launch { settingsStore.setSortAscending(it) } },
                     onBack = { selectedGroup = null; selectedGroupKey = null },
                     onFinishWithDeletions = { deletions ->
                         scope.launch {
@@ -1234,6 +1242,8 @@ fun AppRoot(
                     },
                     onGroupModeChange = { groupMode = it; scope.launch { settingsStore.setGroupMode(it) } },
                     onSortChange = { sortOption = it; scope.launch { settingsStore.setSortOption(it) } },
+                    sortAscending = sortAscending,
+                    onSortDirectionChange = { sortAscending = it; scope.launch { settingsStore.setSortAscending(it) } },
                     onGroupClick = { group ->
                         // Reshuffled fresh on every entry rather than once and
                         // cached — see randomModeEnabledFlow's doc comment for

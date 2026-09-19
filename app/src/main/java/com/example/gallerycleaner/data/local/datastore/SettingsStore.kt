@@ -36,6 +36,7 @@ private val CLEANUP_GOAL_BYTES_KEY = longPreferencesKey("cleanup_goal_bytes")
 private val BACKUP_BEFORE_DELETE_ENABLED_KEY = booleanPreferencesKey("backup_before_delete_enabled")
 private val GROUP_MODE_KEY = stringPreferencesKey("group_mode")
 private val SORT_OPTION_KEY = stringPreferencesKey("sort_option")
+private val SORT_ASCENDING_KEY = booleanPreferencesKey("sort_ascending")
 private val VIDEO_SOUND_ENABLED_KEY = booleanPreferencesKey("video_sound_enabled")
 private val SHARE_TEXT_ENABLED_KEY = booleanPreferencesKey("share_text_enabled")
 private val ANIMATE_BUTTONS_ENABLED_KEY = booleanPreferencesKey("animate_buttons_enabled")
@@ -242,6 +243,27 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setSortOption(option: SortOption) {
         context.settingsDataStore.edit { prefs -> prefs[SORT_OPTION_KEY] = option.name }
+    }
+
+    /** ROADMAP Fase E, "Cleaning Options" item "Default sort + arah" — the
+     *  *field* (DATE/SIZE/NAME) was already persisted above via
+     *  [sortOptionFlow] since Batch20; this is the missing *direction*
+     *  half (`MediaRepository.sortItems` used to hardcode
+     *  `sortedByDescending` for DATE/SIZE and ascending for NAME with no
+     *  way to flip it). Named "ascending" for the setting's own identity,
+     *  but consumed by `sortItems` as "reverse whichever order is natural
+     *  for the current field" (Newest->Oldest, Largest->Smallest,
+     *  A-Z->Z-A) rather than a literal ascending/descending comparator
+     *  swap — that keeps its meaning correct no matter which SortOption is
+     *  active, instead of requiring a per-field special case here.
+     *  Defaults to false so existing sort behavior is 100% unchanged for
+     *  every user until they explicitly flip it. */
+    val sortAscendingFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[SORT_ASCENDING_KEY] ?: false
+    }
+
+    suspend fun setSortAscending(ascending: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[SORT_ASCENDING_KEY] = ascending }
     }
 
     /** [Batch129, default corrected Batch132] Whether videos play with
