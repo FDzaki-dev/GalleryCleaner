@@ -342,7 +342,7 @@ fun SettingsScreen(
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(Modifier.weight(1f)) {
+                        Column(Modifier.weight(1f).padding(end = 12.dp)) {
                             Text(stringResource(R.string.settings_match_system_title), style = MaterialTheme.typography.bodyLarge)
                             Spacer(Modifier.height(2.dp))
                             Text(
@@ -369,7 +369,7 @@ fun SettingsScreen(
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(Modifier.weight(1f)) {
+                        Column(Modifier.weight(1f).padding(end = 12.dp)) {
                             Text(stringResource(R.string.settings_dark_mode_title), style = MaterialTheme.typography.bodyLarge)
                             Spacer(Modifier.height(2.dp))
                             Text(
@@ -453,7 +453,7 @@ fun SettingsScreen(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(stringResource(R.string.settings_backup_before_delete_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -478,7 +478,7 @@ fun SettingsScreen(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(stringResource(R.string.settings_cleaning_reminders_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -500,7 +500,7 @@ fun SettingsScreen(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(stringResource(R.string.settings_random_mode_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -532,7 +532,7 @@ fun SettingsScreen(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(stringResource(R.string.settings_random_count_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -574,7 +574,7 @@ fun SettingsScreen(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(stringResource(R.string.settings_video_sound_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -596,7 +596,7 @@ fun SettingsScreen(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(stringResource(R.string.settings_share_text_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -622,7 +622,7 @@ fun SettingsScreen(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(stringResource(R.string.settings_animate_buttons_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -647,7 +647,7 @@ fun SettingsScreen(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(stringResource(R.string.settings_swipe_haptics_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -672,7 +672,7 @@ fun SettingsScreen(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(stringResource(R.string.settings_app_lock_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -707,7 +707,7 @@ fun SettingsScreen(
                         ) { onCheckForUpdate() },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(stringResource(R.string.settings_check_update_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         val subtitle = when (val current = updateState) {
@@ -986,7 +986,7 @@ private fun ThemeStyleCard(style: ThemeStyle, selected: Boolean, onClick: () -> 
             )
         }
         Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
             Text(stringResource(style.labelRes), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(2.dp))
             Text(

@@ -3,6 +3,11 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch142 — 2026-09-19
+- **Teks tidak lagi kepotong jadi "…".** Nama file panjang (kartu File terbesar, viewer) dan ringkasan folder sekarang tampil penuh dengan turun baris.
+- **Teks dikasih ruang napas (inset):** label tombol tidak nempel tepi dan rata tengah; teks di Settings tidak nempel Switch; dialog Info File lebih lega. Badge Trash "Kedaluwarsa hari ini" dipersingkat jadi "Habis hari ini".
+- **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch142.
+
 ## Batch141 — 2026-09-19
 - **Bahasa app sekarang Indonesia santai/non-baku, terkunci (hardcode).** Semua teks di layar — Onboarding, Home, Swipe, Grid, Trash, Settings, dialog, notifikasi, snackbar, shortcut launcher, pesan update — pakai gaya "kamu/nggak/udah", apa pun bahasa hp-nya. Nama bulan dan tanggal juga Indonesia.
 - Judul kartu smart group (File terbesar, Foto blur, Foto mirip, File duplikat, Hari ini di masa lalu) ikut Indonesia; progress lama tetap nyambung karena key internalnya tidak diubah.

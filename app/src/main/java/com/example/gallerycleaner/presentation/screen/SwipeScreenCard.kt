@@ -44,7 +44,6 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextOverflow
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -314,8 +313,6 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
                         item.displayName,
                         color = Color.White,
                         style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                             .weight(1f, fill = false)
                             .background(Color.Black.copy(alpha = 0.45f), RoundedCornerShape(6.dp))
@@ -1164,11 +1161,11 @@ private fun FileInfoRow(label: String, value: String) {
     Row(modifier = Modifier.padding(vertical = 3.dp)) {
         Text(
             label,
-            modifier = Modifier.width(96.dp),
+            modifier = Modifier.width(112.dp).padding(end = 8.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Text(value, style = MaterialTheme.typography.bodyMedium)
+        Text(value, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
     }
 }
 

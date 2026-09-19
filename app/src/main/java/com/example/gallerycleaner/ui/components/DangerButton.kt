@@ -7,6 +7,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 
 /**
  * Shared destructive-action CTA — solid, opaque `colorScheme.secondary`
@@ -46,6 +47,6 @@ fun DangerButton(
             contentColor = Color(0xFF1A0E0C)
         )
     ) {
-        Text(text)
+        Text(text, textAlign = TextAlign.Center)
     }
 }

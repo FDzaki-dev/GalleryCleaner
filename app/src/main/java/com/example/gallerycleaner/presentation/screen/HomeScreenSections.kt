@@ -128,14 +128,10 @@ internal fun LargestFilesCard(items: List<MediaItem>, onClick: () -> Unit) {
                     Column(Modifier.weight(1f)) {
                         Text(
                             item.displayName,
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
                             item.bucketName,
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

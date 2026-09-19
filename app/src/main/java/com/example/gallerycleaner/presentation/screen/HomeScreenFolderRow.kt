@@ -127,8 +127,7 @@ internal fun GroupRow(
                             folderSummaryText(distinctFolders),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }

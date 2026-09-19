@@ -113,7 +113,7 @@
     <string name="trash_restore_button">Pulihin</string>
     <string name="trash_delete_permanently_button">Hapus permanen</string>
     <string name="trash_empty_state">Sampahnya kosong.</string>
-    <string name="trash_expires_today">Kedaluwarsa hari ini</string>
+    <string name="trash_expires_today">Habis hari ini</string>
     <string name="trash_days_left">%1$d hari lagi</string>
     <string name="trash_empty_dialog_title">Kosongin Sampah?</string>
     <string name="trash_empty_dialog_body">Ini bakal ngehapus permanen semua %1$d item di Sampah. Nggak bisa dibatalin.</string>

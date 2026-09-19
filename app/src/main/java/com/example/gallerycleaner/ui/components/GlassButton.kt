@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +21,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import com.example.gallerycleaner.SettingsStore
 import com.example.gallerycleaner.ui.theme.Cupertino
@@ -123,7 +125,9 @@ fun GlassButton(
                     color = if (isPressed) MidnightGlass.GlowBlue else MidnightGlass.TextBright,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 0.4.sp
+                    letterSpacing = 0.4.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 12.dp)
                 )
             }
         }
@@ -147,7 +151,9 @@ fun GlassButton(
                     color = if (isPressed) SkeuoLite.AccentBrass else SkeuoLite.TextBright,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 0.4.sp
+                    letterSpacing = 0.4.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 12.dp)
                 )
             }
         }
@@ -176,7 +182,9 @@ fun GlassButton(
                         color = Neumorph.TextOnBrass,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 0.4.sp
+                        letterSpacing = 0.4.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 12.dp)
                     )
                 }
             }
@@ -208,7 +216,9 @@ fun GlassButton(
                         color = Cupertino.TextOnAccent,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 0.4.sp
+                        letterSpacing = 0.4.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 12.dp)
                     )
                 }
             }
@@ -237,7 +247,9 @@ fun GlassButton(
                         color = Painted.TextOnAccent,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
-                        letterSpacing = 0.4.sp
+                        letterSpacing = 0.4.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 12.dp)
                     )
                 }
             }
