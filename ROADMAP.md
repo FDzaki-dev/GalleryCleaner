@@ -120,7 +120,8 @@ kepakai fisik di screen recording (72 detik), 0 ada di Section 1 lama:
   — 0 file consumer disentuh (`GlassButton.kt` baca setting-nya sendiri
   secara lokal, sama pola `VideoPlayerSurface`), jadi 6 call site
   `GlassButton` yang ada 0 kesenggol satupun.
-- ❌ 5 sisa item "Cleaning Options" Sponge (Manage move-to albums,
+- ✅ **Manage move-to albums** (Batch144, SELESAI) — lihat #14 di bawah.
+- ❌ 5 sisa item "Cleaning Options" Sponge (Manage move-to albums, [KOREKSI Batch144: yang ini sudah ✅]
   Personalize cleaning screen, Swipe direction, Default sort+arah,
   Manage albums) —
   BELUM digarap, per-item beda kompleksitas (beberapa cuma toggle+wiring
@@ -184,7 +185,9 @@ masing-masing di Section 2b.
     - ✅ Sound for Videos (Batch129) — `SettingsStore.videoSoundEnabledFlow`
     - ✅ Enable share text (Batch131) — `SettingsStore.shareTextEnabledFlow`,
       dipakai `SwipeScreen.kt` share intent (`EXTRA_TEXT` = nama file)
-    - ❌ Manage move-to albums
+    - ✅ Manage move-to albums (Batch144) — `SettingsStore.pinnedMoveFoldersFlow`/`hiddenMoveFoldersFlow`,
+      dipakai `OrganizeFolderDialog` (`SwipeScreenControls.kt`) lewat `SwipeScreen.kt`: pin ke atas,
+      sembunyiin, "Tampilin semua", mode "Kelola" in-context (bukan layar Settings)
     - ❌ Personalize cleaning screen
     - ❌ Swipe direction for delete (Left/Right)
     - ✅ Animate on buttons (Batch138) — `SettingsStore.animateButtonsEnabledFlow`,

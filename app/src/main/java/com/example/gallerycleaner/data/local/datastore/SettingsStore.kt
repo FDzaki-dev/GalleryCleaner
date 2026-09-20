@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -40,6 +41,8 @@ private val SORT_ASCENDING_KEY = booleanPreferencesKey("sort_ascending")
 private val VIDEO_SOUND_ENABLED_KEY = booleanPreferencesKey("video_sound_enabled")
 private val SHARE_TEXT_ENABLED_KEY = booleanPreferencesKey("share_text_enabled")
 private val ANIMATE_BUTTONS_ENABLED_KEY = booleanPreferencesKey("animate_buttons_enabled")
+private val PINNED_MOVE_FOLDERS_KEY = stringSetPreferencesKey("pinned_move_folders")
+private val HIDDEN_MOVE_FOLDERS_KEY = stringSetPreferencesKey("hidden_move_folders")
 
 /** Default cleanup goal (ROADMAP Fase A item 3): 2 GB. Arbitrary but
  *  reasonable starting target — big enough to feel worth working toward,
@@ -338,5 +341,56 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setAnimateButtonsEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[ANIMATE_BUTTONS_ENABLED_KEY] = enabled }
+    }
+
+    /** ROADMAP Fase E, "Cleaning Options" item "Manage move-to albums"
+     *  (Batch144). Folder tujuan yang di-PIN muncul paling atas di dialog
+     *  "Pindahin ke folder" (`OrganizeFolderDialog`). Nilainya `relativePath`
+     *  persis kayak `MediaItem.relativePath` (trailing slash ikut). Default
+     *  kosong = 0 perubahan behavior dari sebelum fitur ini ada. Path yang
+     *  foldernya sudah nggak ada di library cukup diabaikan dialog. */
+    val pinnedMoveFoldersFlow: Flow<Set<String>> = context.settingsDataStore.data.map { prefs ->
+        prefs[PINNED_MOVE_FOLDERS_KEY] ?: emptySet()
+    }
+
+    /** Pasangan [pinnedMoveFoldersFlow]: folder yang DISEMBUNYIIN dari daftar
+     *  tujuan pindah (cuma di dialog itu — folder aslinya, foto di dalamnya,
+     *  dan tampilan Home 0 tersentuh). Tetap kelihatan di mode "Kelola"
+     *  supaya bisa ditampilin lagi. Default kosong. */
+    val hiddenMoveFoldersFlow: Flow<Set<String>> = context.settingsDataStore.data.map { prefs ->
+        prefs[HIDDEN_MOVE_FOLDERS_KEY] ?: emptySet()
+    }
+
+    /** Pin/lepas pin. Nge-pin otomatis mencabut status sembunyi folder yang
+     *  sama (satu edit atomic) — folder nggak mungkin pinned + hidden. */
+    suspend fun setMoveFolderPinned(folder: String, pinned: Boolean) {
+        context.settingsDataStore.edit { prefs ->
+            val pinnedSet = (prefs[PINNED_MOVE_FOLDERS_KEY] ?: emptySet()).toMutableSet()
+            val hiddenSet = (prefs[HIDDEN_MOVE_FOLDERS_KEY] ?: emptySet()).toMutableSet()
+            if (pinned) {
+                pinnedSet.add(folder)
+                hiddenSet.remove(folder)
+            } else {
+                pinnedSet.remove(folder)
+            }
+            prefs[PINNED_MOVE_FOLDERS_KEY] = pinnedSet
+            prefs[HIDDEN_MOVE_FOLDERS_KEY] = hiddenSet
+        }
+    }
+
+    /** Sembunyiin/tampilin lagi. Nyembunyiin otomatis nyabut pin folder yang sama. */
+    suspend fun setMoveFolderHidden(folder: String, hidden: Boolean) {
+        context.settingsDataStore.edit { prefs ->
+            val pinnedSet = (prefs[PINNED_MOVE_FOLDERS_KEY] ?: emptySet()).toMutableSet()
+            val hiddenSet = (prefs[HIDDEN_MOVE_FOLDERS_KEY] ?: emptySet()).toMutableSet()
+            if (hidden) {
+                hiddenSet.add(folder)
+                pinnedSet.remove(folder)
+            } else {
+                hiddenSet.remove(folder)
+            }
+            prefs[PINNED_MOVE_FOLDERS_KEY] = pinnedSet
+            prefs[HIDDEN_MOVE_FOLDERS_KEY] = hiddenSet
+        }
     }
 }

@@ -3,6 +3,11 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch144 — 2026-09-20
+- **Kelola folder tujuan pindah.** Di dialog "Pindahin ke folder" ada tombol **Kelola**: Pin folder favorit biar muncul paling atas, atau Sembunyiin folder yang nggak pernah dipakai (foldernya sendiri nggak kehapus/berubah). Pilihanmu kesimpan walau app ditutup.
+- Daftar folder sekarang bisa dilihat semua lewat **Tampilin semua** (sebelumnya cuma 6 folder pertama), dan seluruh dialog bisa di-scroll jadi nggak ada yang kepotong.
+- **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch144.
+
 ## Batch143 — 2026-09-20
 - **Judul di bar atas (Swipe, Sampah, Home) nggak kepotong lagi.** Kalau judul (misal nama folder panjang) nggak muat di sebelah ikon, judulnya pindah ke baris sendiri di bawah ikon dan boleh turun baris — nggak ada lagi "…" atau teks terpotong. Kalau muat, tampilan tetap 1 baris kayak biasa.
 - Kolom search di Home tetap 1 baris seperti sebelumnya.

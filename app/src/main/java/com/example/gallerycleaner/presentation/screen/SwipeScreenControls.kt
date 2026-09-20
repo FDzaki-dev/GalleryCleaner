@@ -2,6 +2,8 @@ package com.example.gallerycleaner
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -264,22 +266,50 @@ private fun StatColumn(label: String, value: String) {
  *  exist in the library (so a stray typo can't scatter photos into a new
  *  near-duplicate folder), or type a new one to create. [suggestedFolders]
  *  should be distinct `MediaItem.relativePath` values, trailing slash
- *  included (same shape the rest of the app already uses). */
+ *  included (same shape the rest of the app already uses).
+ *
+ *  Batch144 ("Manage move-to albums"): tombol "Kelola" buka mode kelola —
+ *  PIN folder biar naik ke atas, atau SEMBUNYIIN folder dari daftar ini
+ *  (cuma daftar tujuan; foldernya sendiri 0 tersentuh). Sebelumnya daftar
+ *  ini cuma `take(6)` urutan abjad tanpa cara nyampe folder ke-7 dst, jadi
+ *  sekarang ada "Tampilin semua". State pin/sembunyi dipegang pemanggil
+ *  (SettingsStore) — default param bikin dialog tetap valid tanpa itu. */
 @Composable
 internal fun OrganizeFolderDialog(
     itemCount: Int,
     suggestedFolders: List<String>,
     onConfirm: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    pinnedFolders: Set<String> = emptySet(),
+    hiddenFolders: Set<String> = emptySet(),
+    onTogglePinned: (String) -> Unit = {},
+    onToggleHidden: (String) -> Unit = {}
 ) {
     var customFolder by remember { mutableStateOf("") }
     var selectedExisting by remember { mutableStateOf<String?>(null) }
+    var manageMode by remember { mutableStateOf(false) }
+    var showAll by remember { mutableStateOf(false) }
+    // sortedBy stabil: pinned (false) naik ke atas, urutan abjad asli tetap
+    // dijaga di dalam tiap kelompok.
+    val orderedFolders = remember(suggestedFolders, pinnedFolders) {
+        suggestedFolders.sortedBy { it !in pinnedFolders }
+    }
+    val visibleFolders = orderedFolders.filter { it !in hiddenFolders }
+    val shownFolders = when {
+        manageMode -> orderedFolders
+        showAll -> visibleFolders
+        else -> visibleFolders.take(6)
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (itemCount == 1) "Pindahin ke folder" else "Pindahin $itemCount item ke folder") },
         text = {
-            Column {
+            // Batch144: seluruh isi dialog bisa di-scroll — daftar folder
+            // sekarang bisa panjang ("Tampilin semua"/mode Kelola) dan
+            // AlertDialog M3 sendiri TIDAK scroll (isi yang kelewat tinggi
+            // layar, mis. landscape, bakal kepotong).
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 // Audit Gap P1 #10: on API 30+ MoveHelper.supportsBatchWriteRequest()
                 // already gets ONE MediaStore.createWriteRequest() consent dialog
                 // for the whole selection (see MainActivity.kt's performOrganize) —
@@ -301,34 +331,98 @@ internal fun OrganizeFolderDialog(
                     Spacer(Modifier.height(10.dp))
                 }
                 if (suggestedFolders.isNotEmpty()) {
-                    Text(
-                        "Folder yang udah ada",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Folder yang udah ada",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f).padding(end = 8.dp)
+                        )
+                        TextButton(onClick = { manageMode = !manageMode }) {
+                            Text(if (manageMode) "Beres" else "Kelola")
+                        }
+                    }
+                    if (manageMode) {
+                        Text(
+                            "Pin biar folder muncul paling atas. Sembunyiin buat nyingkirin folder dari daftar ini — nggak ngehapus apa pun.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Spacer(Modifier.height(6.dp))
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        suggestedFolders.take(6).forEach { folder ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        selectedExisting = folder
-                                        customFolder = ""
+                        shownFolders.forEach { folder ->
+                            val isPinned = folder in pinnedFolders
+                            val isHidden = folder in hiddenFolders
+                            if (manageMode) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        (if (isPinned) "★ " else "") + folder,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = if (isHidden) {
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        }
+                                    )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        TextButton(onClick = { onTogglePinned(folder) }) {
+                                            Text(if (isPinned) "Lepas pin" else "Pin ke atas")
+                                        }
+                                        TextButton(
+                                            onClick = {
+                                                if (folder == selectedExisting) selectedExisting = null
+                                                onToggleHidden(folder)
+                                            }
+                                        ) {
+                                            Text(if (isHidden) "Tampilin lagi" else "Sembunyiin")
+                                        }
                                     }
-                                    .padding(vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(
-                                    selected = selectedExisting == folder,
-                                    onClick = {
-                                        selectedExisting = folder
-                                        customFolder = ""
-                                    }
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(folder, style = MaterialTheme.typography.bodyMedium)
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            selectedExisting = folder
+                                            customFolder = ""
+                                        }
+                                        .padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    RadioButton(
+                                        selected = selectedExisting == folder,
+                                        onClick = {
+                                            selectedExisting = folder
+                                            customFolder = ""
+                                        }
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        (if (isPinned) "★ " else "") + folder,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
                             }
+                        }
+                    }
+                    if (!manageMode && visibleFolders.isEmpty()) {
+                        Text(
+                            "Semua folder lagi disembunyiin — tap Kelola buat nampilin lagi.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (!manageMode && !showAll && visibleFolders.size > 6) {
+                        TextButton(onClick = { showAll = true }) {
+                            Text("Tampilin semua (${visibleFolders.size})")
                         }
                     }
                     Spacer(Modifier.height(8.dp))

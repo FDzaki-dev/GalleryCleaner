@@ -68,6 +68,10 @@ fun SwipeScreen(
     // default reasoning.
     val settingsStore = remember { SettingsStore(context) }
     val shareTextEnabled by settingsStore.shareTextEnabledFlow.collectAsState(initial = false)
+    // Batch144 "Manage move-to albums": pin/sembunyi folder tujuan di
+    // OrganizeFolderDialog. Default kosong = dialog persis kayak sebelumnya.
+    val pinnedMoveFolders by settingsStore.pinnedMoveFoldersFlow.collectAsState(initial = emptySet<String>())
+    val hiddenMoveFolders by settingsStore.hiddenMoveFoldersFlow.collectAsState(initial = emptySet<String>())
     var index by remember(group.key) { mutableIntStateOf(0) }
     // Re-sorted view of this folder's items — ROADMAP Fase A item 4.
     // Audit finding (Batch20): Sort already reached SwipeScreen correctly
@@ -502,6 +506,14 @@ fun SwipeScreen(
         OrganizeFolderDialog(
             itemCount = itemsToOrganize.size,
             suggestedFolders = existingFolders,
+            pinnedFolders = pinnedMoveFolders,
+            hiddenFolders = hiddenMoveFolders,
+            onTogglePinned = { folder ->
+                scope.launch { settingsStore.setMoveFolderPinned(folder, folder !in pinnedMoveFolders) }
+            },
+            onToggleHidden = { folder ->
+                scope.launch { settingsStore.setMoveFolderHidden(folder, folder !in hiddenMoveFolders) }
+            },
             onConfirm = { targetFolder ->
                 pendingOrganized.addAll(itemsToOrganize.filterNot { it.id in pendingOrganizedIds })
                 onOrganizeRequest(itemsToOrganize, targetFolder)
