@@ -26,6 +26,7 @@ import coil.request.ImageRequest
 import com.example.gallerycleaner.ui.components.GlassCard
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.example.gallerycleaner.ui.components.AdaptiveTopBar
 
 // Shared between the prefetch pass above and SwipeCard's own MediaPreview
 // call below — both MUST request the same decode size, since Coil's cache
@@ -205,7 +206,7 @@ fun SwipeScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            AdaptiveTopBar(
                 title = { Text(displayName) },
                 navigationIcon = {
                     IconButton(onClick = { finishAndExit() }) {
@@ -306,9 +307,7 @@ fun SwipeScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.72f)
-                )
+                containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.72f)
             )
         },
         // Transparent (Batch22) — see matching comment in HomeScreen.kt.

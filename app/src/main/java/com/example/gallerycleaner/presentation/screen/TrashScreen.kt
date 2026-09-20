@@ -30,6 +30,7 @@ import coil.request.ImageRequest
 import com.example.gallerycleaner.ui.components.DangerButton
 import com.example.gallerycleaner.ui.components.GlassButton
 import com.example.gallerycleaner.ui.components.GlassCard
+import com.example.gallerycleaner.ui.components.AdaptiveTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,7 +85,7 @@ fun TrashScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            AdaptiveTopBar(
                 title = {
                     Text(
                         if (selected.isEmpty()) stringResource(R.string.trash_title_count, items.size)
@@ -123,9 +124,7 @@ fun TrashScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.72f)
-                )
+                containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.72f)
             )
         },
         // Transparent (Batch22) — see matching comment in HomeScreen.kt.

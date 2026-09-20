@@ -36,6 +36,7 @@ import coil.request.ImageRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import java.util.Calendar
+import com.example.gallerycleaner.ui.components.AdaptiveTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -162,7 +163,8 @@ fun HomeScreen(
         contentColor = MaterialTheme.colorScheme.onBackground,
         topBar = {
             Column {
-                TopAppBar(
+                AdaptiveTopBar(
+                    allowTitleWrap = !isSearchActive,
                     title = {
                         if (isSearchActive) {
                             TextField(
@@ -254,16 +256,14 @@ fun HomeScreen(
                             }
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        // Translucent (Batch22, was fully opaque) so the top
-                        // bar reads as a frosted glass strip over the
-                        // scrolling content behind it, matching the panels
-                        // below — no Modifier.blur (minSdk 24, see
-                        // MidnightGlassTokens doc comment), translucency
-                        // alone carries the effect here same as it does for
-                        // GlassCard/GlassButton.
-                        containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.72f)
-                    )
+                    // Translucent (Batch22, was fully opaque) so the top
+                    // bar reads as a frosted glass strip over the
+                    // scrolling content behind it, matching the panels
+                    // below — no Modifier.blur (minSdk 24, see
+                    // MidnightGlassTokens doc comment), translucency
+                    // alone carries the effect here same as it does for
+                    // GlassCard/GlassButton.
+                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.72f)
                 )
                 // Thin, unobtrusive cue that the rest of a large gallery is still
                 // streaming in behind the scenes — the groups already on screen
