@@ -141,8 +141,8 @@ kepakai fisik di screen recording (72 detik), 0 ada di Section 1 lama:
 - ❌ Settings > My Account (sign in/up) — indikasi fitur akun/cloud, scope
   jauh lebih besar dari toggle biasa (butuh auth+backend), TIDAK
   direkomendasikan dikejar tanpa keputusan produk eksplisit dari user
-- ❌ Notifications displit jadi 2 toggle (in-progress + monthly) — saat
-  ini cuma 1 (`cleaningReminderEnabledFlow`)
+- ✅ Notifications displit jadi 2 toggle (in-progress + monthly) — SELESAI Batch145
+  (dulu cuma 1: `cleaningReminderEnabledFlow`, sekarang = bulanan)
 
 ## 3. Roadmap (goals, bukan jadwal tanggal — tiap fase = beberapa batch)
 
@@ -213,7 +213,7 @@ masing-masing di Section 2b.
     project ini peran beda (folder browser), butuh keputusan arsitektur
     dulu: dashboard baru terpisah, atau `HomeScreen.kt` di-repurpose?
 18. ❌ "Customize view" bottom sheet (layar swipe)
-19. ❌ Notifications: split jadi 2 toggle (in-progress + monthly)
+19. ✅ Notifications: split jadi 2 toggle (in-progress + monthly) — Batch145 (`SettingsStore` + `CleaningReminderWorker` + `SettingsScreen`)
 20. ❌ Settings > My Account (sign in/up) — SENGAJA ditaruh prioritas
     PALING RENDAH: butuh auth+backend, scope beda kelas dari 19 item lain
     di Fase E, jangan dikerjakan tanpa keputusan produk eksplisit user

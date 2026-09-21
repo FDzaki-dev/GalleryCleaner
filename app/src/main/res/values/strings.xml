@@ -60,8 +60,10 @@
     <string name="settings_backup_before_delete_subtitle">Salin tiap foto/video ke Pictures atau Movies &gt; GalleryCleaner &gt; Backup sebelum dihapus permanen.</string>
 
     <string name="settings_section_notifications">Notifikasi</string>
-    <string name="settings_cleaning_reminders_title">Pengingat bersih-bersih</string>
-    <string name="settings_cleaning_reminders_subtitle">Diingetin sehari sekali kalau ada screenshot atau file gede yang layak dicek.</string>
+    <string name="settings_in_progress_reminder_title">Pengingat sesi belum kelar</string>
+    <string name="settings_in_progress_reminder_subtitle">Diingetin (paling sering 3 hari sekali) kalau ada folder yang udah mulai kamu geser tapi belum kelar. Nggak aktif pas Mode bersih acak nyala.</string>
+    <string name="settings_cleaning_reminders_title">Pengingat bulanan</string>
+    <string name="settings_cleaning_reminders_subtitle">Diingetin sebulan sekali kalau ada screenshot atau file gede yang layak dicek.</string>
 
     <string name="settings_section_swiping">Geser</string>
     <string name="settings_random_mode_title">Mode bersih acak</string>

@@ -3,6 +3,11 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch145 — 2026-09-21
+- **Notifikasi sekarang 2 toggle terpisah** di Pengaturan: **Pengingat sesi belum kelar** (ngingetin kalau ada folder yang udah kamu geser separuh, paling sering 3 hari sekali) dan **Pengingat bulanan** (screenshot/file gede yang layak dicek, sebulan sekali). Dua-duanya default mati, dan masing-masing punya channel notifikasi sendiri di pengaturan sistem.
+- Catatan: kalau kamu sebelumnya nyalain pengingat lama, sekarang jadi bulanan (dulu tiap hari). Pengingat sesi belum kelar nggak aktif pas Mode bersih acak nyala.
+- **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch145.
+
 ## Batch144 — 2026-09-20
 - **Kelola folder tujuan pindah.** Di dialog "Pindahin ke folder" ada tombol **Kelola**: Pin folder favorit biar muncul paling atas, atau Sembunyiin folder yang nggak pernah dipakai (foldernya sendiri nggak kehapus/berubah). Pilihanmu kesimpan walau app ditutup.
 - Daftar folder sekarang bisa dilihat semua lewat **Tampilin semua** (sebelumnya cuma 6 folder pertama), dan seluruh dialog bisa di-scroll jadi nggak ada yang kepotong.

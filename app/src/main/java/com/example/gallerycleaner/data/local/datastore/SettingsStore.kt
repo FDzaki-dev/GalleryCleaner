@@ -41,6 +41,9 @@ private val SORT_ASCENDING_KEY = booleanPreferencesKey("sort_ascending")
 private val VIDEO_SOUND_ENABLED_KEY = booleanPreferencesKey("video_sound_enabled")
 private val SHARE_TEXT_ENABLED_KEY = booleanPreferencesKey("share_text_enabled")
 private val ANIMATE_BUTTONS_ENABLED_KEY = booleanPreferencesKey("animate_buttons_enabled")
+private val IN_PROGRESS_REMINDER_ENABLED_KEY = booleanPreferencesKey("in_progress_reminder_enabled")
+private val LAST_MONTHLY_REMINDER_KEY = longPreferencesKey("last_monthly_reminder_millis")
+private val LAST_IN_PROGRESS_REMINDER_KEY = longPreferencesKey("last_in_progress_reminder_millis")
 private val PINNED_MOVE_FOLDERS_KEY = stringSetPreferencesKey("pinned_move_folders")
 private val HIDDEN_MOVE_FOLDERS_KEY = stringSetPreferencesKey("hidden_move_folders")
 
@@ -341,6 +344,46 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setAnimateButtonsEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[ANIMATE_BUTTONS_ENABLED_KEY] = enabled }
+    }
+
+    /** ROADMAP Fase E #19 "Notifications split jadi 2 toggle" (Batch145).
+     *  Sebelumnya cuma 1 toggle (`cleaningReminderEnabledFlow`, cek harian
+     *  screenshot/file gede). Sekarang jadi 2, keduanya OPT-IN default OFF:
+     *   - `cleaningReminderEnabledFlow` (key DIPAKAI ULANG, nama flow sengaja
+     *     nggak diganti supaya 0 konsumen berubah) = PENGINGAT BULANAN —
+     *     isi cek-nya sama persis, cuma cadence-nya sekarang max sebulan
+     *     sekali (`lastMonthlyReminderMillisFlow`), bukan tiap hari;
+     *   - `inProgressReminderEnabledFlow` (ini) = PENGINGAT SESI BELUM KELAR —
+     *     ngingetin kalau ada grup yang sudah mulai digeser tapi belum
+     *     selesai, max 3 hari sekali, dan DILEWATI saat Mode bersih acak nyala
+     *     (index progress di mode acak cuma bermakna dalam 1 sesi shuffle,
+     *     lihat MainActivity — jadi nggak bisa dipercaya buat pengingat). */
+    val inProgressReminderEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[IN_PROGRESS_REMINDER_ENABLED_KEY] ?: false
+    }
+
+    suspend fun setInProgressReminderEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[IN_PROGRESS_REMINDER_ENABLED_KEY] = enabled }
+    }
+
+    /** Kapan pengingat bulanan TERAKHIR benar-benar terkirim (0 = belum
+     *  pernah). Cuma ditulis kalau notifikasinya beneran ke-post — izin
+     *  ditolak/item kurang dari ambang berarti dicek lagi run berikutnya. */
+    val lastMonthlyReminderMillisFlow: Flow<Long> = context.settingsDataStore.data.map { prefs ->
+        prefs[LAST_MONTHLY_REMINDER_KEY] ?: 0L
+    }
+
+    suspend fun setLastMonthlyReminderMillis(millis: Long) {
+        context.settingsDataStore.edit { prefs -> prefs[LAST_MONTHLY_REMINDER_KEY] = millis }
+    }
+
+    /** Pasangan [lastMonthlyReminderMillisFlow] buat pengingat sesi belum kelar. */
+    val lastInProgressReminderMillisFlow: Flow<Long> = context.settingsDataStore.data.map { prefs ->
+        prefs[LAST_IN_PROGRESS_REMINDER_KEY] ?: 0L
+    }
+
+    suspend fun setLastInProgressReminderMillis(millis: Long) {
+        context.settingsDataStore.edit { prefs -> prefs[LAST_IN_PROGRESS_REMINDER_KEY] = millis }
     }
 
     /** ROADMAP Fase E, "Cleaning Options" item "Manage move-to albums"

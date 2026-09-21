@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,6 +66,7 @@ fun SettingsScreen(
         initial = SettingsStore.DEFAULT_TRASH_RETENTION_DAYS
     )
     val reminderEnabled by settingsStore.cleaningReminderEnabledFlow.collectAsState(initial = false)
+    val inProgressReminderEnabled by settingsStore.inProgressReminderEnabledFlow.collectAsState(initial = false)
     val hapticsEnabled by settingsStore.hapticFeedbackEnabledFlow.collectAsState(initial = true)
     val randomModeEnabled by settingsStore.randomModeEnabledFlow.collectAsState(initial = false)
     val randomCount by settingsStore.randomCountFlow.collectAsState(initial = DEFAULT_RANDOM_COUNT)
@@ -81,34 +83,54 @@ fun SettingsScreen(
         (context.getSystemService(Context.KEYGUARD_SERVICE) as? android.app.KeyguardManager)?.isDeviceSecure == true
     }
 
-    // Only reached on API 33+ when the toggle is turned on and permission
-    // isn't already granted. On denial we deliberately do nothing — the
-    // Flow-backed `reminderEnabled` stays false since we never persisted
-    // true in that branch, so the switch snaps back on its own.
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            scope.launch { settingsStore.setCleaningReminderEnabled(true) }
+    // Batch145 (Notifications split): 2 toggle — bulanan (`monthly = true`,
+    // cleaningReminderEnabledFlow) + sesi belum kelar (`monthly = false`) —
+    // berbagi 1 launcher izin dan 1 worker (CleaningReminderWorker). Worker
+    // dijadwalin kalau SALAH SATU nyala dan dibatalin cuma kalau KEDUANYA mati.
+    // `pendingReminderMonthly` ngingat toggle mana yang minta izin (rememberSaveable
+    // supaya selamat dari recreate activity pas dialog izin muncul).
+    var pendingReminderMonthly by rememberSaveable { mutableStateOf<Boolean?>(null) }
+
+    fun applyReminderToggle(monthly: Boolean, enabled: Boolean) {
+        val monthlyAfter = if (monthly) enabled else reminderEnabled
+        val inProgressAfter = if (monthly) inProgressReminderEnabled else enabled
+        scope.launch {
+            if (monthly) settingsStore.setCleaningReminderEnabled(enabled)
+            else settingsStore.setInProgressReminderEnabled(enabled)
+        }
+        if (monthlyAfter || inProgressAfter) {
             CleaningReminderWorker.schedule(context)
+        } else {
+            CleaningReminderWorker.cancel(context)
         }
     }
 
-    fun onReminderToggle(enabled: Boolean) {
+    // Only reached on API 33+ when a toggle is turned on and permission
+    // isn't already granted. On denial we deliberately do nothing — the
+    // Flow-backed toggle state stays false since we never persisted true
+    // in that branch, so the switch snaps back on its own.
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val monthly = pendingReminderMonthly
+        pendingReminderMonthly = null
+        if (granted && monthly != null) applyReminderToggle(monthly, true)
+    }
+
+    fun onReminderToggle(monthly: Boolean, enabled: Boolean) {
         if (enabled) {
             val needsRuntimePermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                 ContextCompat.checkSelfPermission(
                     context, Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             if (needsRuntimePermission) {
+                pendingReminderMonthly = monthly
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             } else {
-                scope.launch { settingsStore.setCleaningReminderEnabled(true) }
-                CleaningReminderWorker.schedule(context)
+                applyReminderToggle(monthly, true)
             }
         } else {
-            scope.launch { settingsStore.setCleaningReminderEnabled(false) }
-            CleaningReminderWorker.cancel(context)
+            applyReminderToggle(monthly, false)
         }
     }
 
@@ -479,6 +501,28 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text(stringResource(R.string.settings_in_progress_reminder_title), style = MaterialTheme.typography.bodyLarge)
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            stringResource(R.string.settings_in_progress_reminder_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = inProgressReminderEnabled,
+                        onCheckedChange = { onReminderToggle(false, it) }
+                    )
+                }
+            }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(stringResource(R.string.settings_cleaning_reminders_title), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -487,7 +531,7 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Switch(checked = reminderEnabled, onCheckedChange = ::onReminderToggle)
+                    Switch(checked = reminderEnabled, onCheckedChange = { onReminderToggle(true, it) })
                 }
             }
 
