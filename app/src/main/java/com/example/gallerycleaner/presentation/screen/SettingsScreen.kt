@@ -77,6 +77,11 @@ fun SettingsScreen(
     val videoSoundEnabled by settingsStore.videoSoundEnabledFlow.collectAsState(initial = true)
     val shareTextEnabled by settingsStore.shareTextEnabledFlow.collectAsState(initial = false)
     val animateButtonsEnabled by settingsStore.animateButtonsEnabledFlow.collectAsState(initial = true)
+    // [Batch146] 4 toggle "Tampilan layar bersih-bersih" (default sama dgn SettingsStore)
+    val showTopMediaStrip by settingsStore.showTopMediaStripFlow.collectAsState(initial = true)
+    val showFileDetails by settingsStore.showFileDetailsFlow.collectAsState(initial = true)
+    val showMoveFolders by settingsStore.showMoveFoldersFlow.collectAsState(initial = true)
+    val proceedButtonOnTop by settingsStore.proceedButtonOnTopFlow.collectAsState(initial = false)
     val appLockEnabled by settingsStore.appLockEnabledFlow.collectAsState(initial = false)
     val backupBeforeDeleteEnabled by settingsStore.backupBeforeDeleteEnabledFlow.collectAsState(initial = false)
     val isDeviceSecure = remember {
@@ -683,6 +688,44 @@ fun SettingsScreen(
             }
 
             item { Spacer(Modifier.height(24.dp)) }
+            // [Batch146] "Personalize cleaning screen" (ROADMAP Fase E) —
+            // 4 toggle dirujuk dari Sponge 2.6.1. Efek sebenarnya ada di
+            // SwipeScreen.kt/SwipeScreenControls.kt; layar ini cuma nyimpen flag.
+            item { SettingsSectionLabel(stringResource(R.string.settings_section_cleaning_screen)) }
+            item {
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_top_strip_title),
+                    subtitle = stringResource(R.string.settings_top_strip_subtitle),
+                    checked = showTopMediaStrip,
+                    onCheckedChange = { scope.launch { settingsStore.setShowTopMediaStrip(it) } }
+                )
+            }
+            item {
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_file_details_title),
+                    subtitle = stringResource(R.string.settings_file_details_subtitle),
+                    checked = showFileDetails,
+                    onCheckedChange = { scope.launch { settingsStore.setShowFileDetails(it) } }
+                )
+            }
+            item {
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_move_folders_title),
+                    subtitle = stringResource(R.string.settings_move_folders_subtitle),
+                    checked = showMoveFolders,
+                    onCheckedChange = { scope.launch { settingsStore.setShowMoveFolders(it) } }
+                )
+            }
+            item {
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_proceed_top_title),
+                    subtitle = stringResource(R.string.settings_proceed_top_subtitle),
+                    checked = proceedButtonOnTop,
+                    onCheckedChange = { scope.launch { settingsStore.setProceedButtonOnTop(it) } }
+                )
+            }
+
+            item { Spacer(Modifier.height(24.dp)) }
             item { SettingsSectionLabel(stringResource(R.string.settings_section_feedback)) }
             item {
                 Row(
@@ -1047,5 +1090,35 @@ private fun ThemeStyleCard(style: ThemeStyle, selected: Boolean, onClick: () -> 
                 tint = MaterialTheme.colorScheme.primary
             )
         }
+    }
+}
+
+/** [Batch146] Baris judul + subtitle + Switch, bentuknya identik dengan 3
+ *  baris "Opsi Bersih-bersih" di atas (Batch129/131/138) — dipakai cuma buat
+ *  4 toggle "Tampilan layar bersih-bersih" baru supaya nggak nyalin blok yang
+ *  sama 4x. Baris lama sengaja nggak disentuh (NO STRUCTURAL REWRITE). */
+@Composable
+private fun SettingsSwitchRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Spacer(Modifier.height(2.dp))
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }

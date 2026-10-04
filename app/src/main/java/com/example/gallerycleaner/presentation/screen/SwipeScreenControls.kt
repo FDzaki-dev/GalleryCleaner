@@ -30,14 +30,20 @@ import com.example.gallerycleaner.ui.theme.NeumorphShape
 import com.example.gallerycleaner.ui.theme.PaintedShape
 
 @Composable
-internal fun InfoBar(item: MediaItem, position: Int, total: Int) {
+internal fun InfoBar(item: MediaItem, position: Int, total: Int, showDetails: Boolean = true) {
     val format = item.displayName.substringAfterLast('.', "").uppercase().ifEmpty { "?" }
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        InfoChip(formatBytes(item.sizeBytes))
-        InfoChip(format)
+        // [Batch146] showDetails=false (Pengaturan > Tampilan layar
+        // bersih-bersih) nyembunyiin chip ukuran+format; penanda posisi
+        // "N/Total" SENGAJA tetap tampil — itu indikator progres, bukan
+        // detail file.
+        if (showDetails) {
+            InfoChip(formatBytes(item.sizeBytes))
+            InfoChip(format)
+        }
         InfoChip("$position/$total")
     }
 }

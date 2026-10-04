@@ -4,7 +4,7 @@
 APK signed terbaru: **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
 ## Status Ringkas (terbaru)
-✅ Fase A (gap fungsional inti) selesai 4/4 — Batch20. ✅ Fase B (AI on-device) selesai 3/3 — Batch25. ⏳ Fase C (reliability/visual) & Fase D (jangkauan pasar) belum dimulai. 🆕 Fase E (gap fungsional lanjutan, ditemukan Batch129 re-cek Sponge): item #14 "Cleaning Options" 5/9 sub-item selesai (Sound for Videos — Batch129, Enable share text — Batch131, Random count — Batch137, Animate on buttons — Batch138, Default sort+arah — Batch140), item #16-20 (History/Home dashboard/Customize view/Notifications split/My Account) BELUM digarap. Lihat `PROJECT_STATE.md` → "Belum Dikerjakan" untuk detail terkini.
+✅ Fase A (gap fungsional inti) selesai 4/4 — Batch20. ✅ Fase B (AI on-device) selesai 3/3 — Batch25. ⏳ Fase C (reliability/visual) & Fase D (jangkauan pasar) belum dimulai. 🆕 Fase E (gap fungsional lanjutan, ditemukan Batch129 re-cek Sponge): item #14 "Cleaning Options" 7/9 sub-item selesai (Sound for Videos — Batch129, Enable share text — Batch131, Random count — Batch137, Animate on buttons — Batch138, Default sort+arah — Batch140, Manage move-to albums — Batch144, Personalize cleaning screen — Batch146) [KOREKSI ANTI-STALE Batch146: angka lama "5/9" ketinggalan Batch144], item #16-18/#20 (History/Home dashboard/Customize view bottom sheet/My Account) BELUM digarap, #19 Notifications split SELESAI Batch145. Lihat `PROJECT_STATE.md` → "Belum Dikerjakan" untuk detail terkini.
 
 Tolok ukur: **Sponge - Gallery Cleaner** (`com.prismtree.sponge`,
 ~780rb download, ~510 install/hari, rating 5.0). Cek ulang sebelum
@@ -121,9 +121,14 @@ kepakai fisik di screen recording (72 detik), 0 ada di Section 1 lama:
   secara lokal, sama pola `VideoPlayerSurface`), jadi 6 call site
   `GlassButton` yang ada 0 kesenggol satupun.
 - ✅ **Manage move-to albums** (Batch144, SELESAI) — lihat #14 di bawah.
-- ❌ 5 sisa item "Cleaning Options" Sponge (Manage move-to albums, [KOREKSI Batch144: yang ini sudah ✅]
-  Personalize cleaning screen, Swipe direction, Default sort+arah,
-  Manage albums) —
+- ✅ **Personalize cleaning screen** (Batch146, SELESAI) — dirujuk dari string
+  pool APK Sponge 2.6.1 ("Choose what you want to see while cleaning"): 4
+  toggle (Top media strip, Show detailed file info, Show folders to move
+  media, Move proceed button to top as checkmark). Di Snaply jadi section
+  "Tampilan layar bersih-bersih" di Pengaturan; lihat #14 di bawah.
+- ❌ 2 sisa item "Cleaning Options" Sponge (Swipe direction, Manage albums;
+  [KOREKSI ANTI-STALE Batch146: Manage move-to albums ✅ Batch144, Personalize
+  cleaning screen ✅ Batch146, Default sort+arah ✅ Batch140]) —
   BELUM digarap, per-item beda kompleksitas (beberapa cuma toggle+wiring
   ringan mirip Batch129/131/137/138, beberapa — swipe direction, manage
   albums — nyentuh logic inti `SwipeScreenCard.kt`/`SwipeScreen.kt` lebih
@@ -137,7 +142,7 @@ kepakai fisik di screen recording (72 detik), 0 ada di Section 1 lama:
 - ❌ Home dashboard model Sponge (streak/rating-prompt/resume-card) —
   `HomeScreen.kt` project ini sekarang perannya folder/album browser,
   BUKAN dashboard statistik — beda arsitektur, bukan sekadar tambah widget
-- ❌ "Customize view" bottom sheet di swipe screen (4 toggle layout)
+- 🟡 "Customize view" bottom sheet di swipe screen — 4 toggle-nya sudah ada di Pengaturan (Batch146), shortcut bottom sheet di dalam layar swipe BELUM
 - ❌ Settings > My Account (sign in/up) — indikasi fitur akun/cloud, scope
   jauh lebih besar dari toggle biasa (butuh auth+backend), TIDAK
   direkomendasikan dikejar tanpa keputusan produk eksplisit dari user
@@ -188,7 +193,11 @@ masing-masing di Section 2b.
     - ✅ Manage move-to albums (Batch144) — `SettingsStore.pinnedMoveFoldersFlow`/`hiddenMoveFoldersFlow`,
       dipakai `OrganizeFolderDialog` (`SwipeScreenControls.kt`) lewat `SwipeScreen.kt`: pin ke atas,
       sembunyiin, "Tampilin semua", mode "Kelola" in-context (bukan layar Settings)
-    - ❌ Personalize cleaning screen
+    - ✅ Personalize cleaning screen (Batch146) — `SettingsStore.showTopMediaStripFlow`/
+      `showFileDetailsFlow`/`showMoveFoldersFlow`/`proceedButtonOnTopFlow`, dipakai
+      `SwipeScreen.kt` (gate `Filmstrip`, `InfoBar(showDetails)`, `onOrganize`/
+      `onOrganizeSelected` jadi null, ikon centang top bar → `finishAndExit()`);
+      3 pertama default ON (0 perubahan behavior), centang default OFF
     - ❌ Swipe direction for delete (Left/Right)
     - ✅ Animate on buttons (Batch138) — `SettingsStore.animateButtonsEnabledFlow`,
       dipakai `GlassButton.kt` (press-scale shrink, layered di atas
@@ -212,7 +221,7 @@ masing-masing di Section 2b.
 17. ❌ Home dashboard model Sponge (streak/resume-card) — `HomeScreen.kt`
     project ini peran beda (folder browser), butuh keputusan arsitektur
     dulu: dashboard baru terpisah, atau `HomeScreen.kt` di-repurpose?
-18. ❌ "Customize view" bottom sheet (layar swipe)
+18. 🟡 "Customize view" bottom sheet (layar swipe) — 4 toggle ada di Pengaturan (Batch146); shortcut bottom sheet di layar swipe belum
 19. ✅ Notifications: split jadi 2 toggle (in-progress + monthly) — Batch145 (`SettingsStore` + `CleaningReminderWorker` + `SettingsScreen`)
 20. ❌ Settings > My Account (sign in/up) — SENGAJA ditaruh prioritas
     PALING RENDAH: butuh auth+backend, scope beda kelas dari 19 item lain

@@ -79,6 +79,16 @@
     <string name="settings_animate_buttons_title">Animasi tombol</string>
     <string name="settings_animate_buttons_subtitle">Matiin biar respons pas nekan tombol lebih cepat, tanpa gerakan.</string>
 
+    <string name="settings_section_cleaning_screen">Tampilan layar bersih-bersih</string>
+    <string name="settings_top_strip_title">Strip media di atas</string>
+    <string name="settings_top_strip_subtitle">Tampilin deretan thumbnail di atas kartu buat lompat cepat antar item.</string>
+    <string name="settings_file_details_title">Detail file lengkap</string>
+    <string name="settings_file_details_subtitle">Tampilin ukuran dan format file di atas kartu. Nomor urutan tetap kelihatan.</string>
+    <string name="settings_move_folders_title">Tombol pindah ke folder</string>
+    <string name="settings_move_folders_subtitle">Tampilin tombol buat mindahin item ke folder lain, baik di mode geser maupun grid.</string>
+    <string name="settings_proceed_top_title">Tombol proses di atas</string>
+    <string name="settings_proceed_top_subtitle">Pasang tombol centang di bar atas buat langsung nerapin item yang udah kamu tandai lalu keluar, tanpa balik dulu.</string>
+
     <string name="settings_section_feedback">Umpan balik</string>
     <string name="settings_swipe_haptics_title">Getaran pas geser</string>
     <string name="settings_swipe_haptics_subtitle">Getar singkat pas kamu nyimpen atau ngehapus foto.</string>

@@ -46,6 +46,10 @@ private val LAST_MONTHLY_REMINDER_KEY = longPreferencesKey("last_monthly_reminde
 private val LAST_IN_PROGRESS_REMINDER_KEY = longPreferencesKey("last_in_progress_reminder_millis")
 private val PINNED_MOVE_FOLDERS_KEY = stringSetPreferencesKey("pinned_move_folders")
 private val HIDDEN_MOVE_FOLDERS_KEY = stringSetPreferencesKey("hidden_move_folders")
+private val SHOW_TOP_MEDIA_STRIP_KEY = booleanPreferencesKey("show_top_media_strip")
+private val SHOW_FILE_DETAILS_KEY = booleanPreferencesKey("show_file_details")
+private val SHOW_MOVE_FOLDERS_KEY = booleanPreferencesKey("show_move_folders")
+private val PROCEED_BUTTON_ON_TOP_KEY = booleanPreferencesKey("proceed_button_on_top")
 
 /** Default cleanup goal (ROADMAP Fase A item 3): 2 GB. Arbitrary but
  *  reasonable starting target — big enough to feel worth working toward,
@@ -344,6 +348,48 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setAnimateButtonsEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[ANIMATE_BUTTONS_ENABLED_KEY] = enabled }
+    }
+
+    /** [Batch146] ROADMAP Fase E "Personalize cleaning screen" — 4 toggle
+     *  tampilan layar swipe, dirujuk dari Sponge 2.6.1 ("Choose what you
+     *  want to see while cleaning": Top media strip, Show detailed file
+     *  info, Show folders to move media, Move proceed button to top as
+     *  checkmark). Tiga pertama default TRUE = layar persis kayak sebelum
+     *  batch ini (0 perubahan behavior buat yang nggak buka Pengaturan);
+     *  yang terakhir default FALSE karena nambah elemen baru di top bar.
+     *  Dibaca langsung di SwipeScreen.kt lewat SettingsStore lokal (pola
+     *  sama shareTextEnabledFlow Batch131), 0 parameter baru dari
+     *  MainActivity. */
+    val showTopMediaStripFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[SHOW_TOP_MEDIA_STRIP_KEY] ?: true
+    }
+
+    suspend fun setShowTopMediaStrip(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[SHOW_TOP_MEDIA_STRIP_KEY] = enabled }
+    }
+
+    val showFileDetailsFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[SHOW_FILE_DETAILS_KEY] ?: true
+    }
+
+    suspend fun setShowFileDetails(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[SHOW_FILE_DETAILS_KEY] = enabled }
+    }
+
+    val showMoveFoldersFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[SHOW_MOVE_FOLDERS_KEY] ?: true
+    }
+
+    suspend fun setShowMoveFolders(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[SHOW_MOVE_FOLDERS_KEY] = enabled }
+    }
+
+    val proceedButtonOnTopFlow: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[PROCEED_BUTTON_ON_TOP_KEY] ?: false
+    }
+
+    suspend fun setProceedButtonOnTop(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[PROCEED_BUTTON_ON_TOP_KEY] = enabled }
     }
 
     /** ROADMAP Fase E #19 "Notifications split jadi 2 toggle" (Batch145).

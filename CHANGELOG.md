@@ -3,6 +3,12 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch146 — 2026-10-04
+- **Layar bersih-bersih sekarang bisa kamu atur sendiri.** Di Pengaturan ada section baru **Tampilan layar bersih-bersih** dengan 4 saklar: **Strip media di atas** (deretan thumbnail), **Detail file lengkap** (ukuran + format; nomor urutan tetap tampil), **Tombol pindah ke folder** (di mode geser maupun grid), dan **Tombol proses di atas** (ikon centang di bar atas buat langsung nerapin item yang udah ditandai lalu keluar).
+- Tiga saklar pertama default nyala, jadi tampilan lama nggak berubah kalau kamu nggak buka Pengaturan. Tombol proses di atas default mati.
+- Dirujuk dari app pembanding **Sponge 2.6.1** (fiturnya, bukan kodenya).
+- **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch146.
+
 ## Batch145 — 2026-09-21
 - **Notifikasi sekarang 2 toggle terpisah** di Pengaturan: **Pengingat sesi belum kelar** (ngingetin kalau ada folder yang udah kamu geser separuh, paling sering 3 hari sekali) dan **Pengingat bulanan** (screenshot/file gede yang layak dicek, sebulan sekali). Dua-duanya default mati, dan masing-masing punya channel notifikasi sendiri di pengaturan sistem.
 - Catatan: kalau kamu sebelumnya nyalain pengingat lama, sekarang jadi bulanan (dulu tiap hari). Pengingat sesi belum kelar nggak aktif pas Mode bersih acak nyala.

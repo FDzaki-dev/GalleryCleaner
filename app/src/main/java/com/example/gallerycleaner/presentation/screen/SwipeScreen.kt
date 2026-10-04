@@ -72,6 +72,13 @@ fun SwipeScreen(
     // OrganizeFolderDialog. Default kosong = dialog persis kayak sebelumnya.
     val pinnedMoveFolders by settingsStore.pinnedMoveFoldersFlow.collectAsState(initial = emptySet<String>())
     val hiddenMoveFolders by settingsStore.hiddenMoveFoldersFlow.collectAsState(initial = emptySet<String>())
+    // [Batch146] "Personalize cleaning screen" (Fase E) — 4 toggle tampilan
+    // dari Sponge 2.6.1. Initial = nilai default di SettingsStore biar frame
+    // pertama nggak kedip beda dari kondisi yang disimpan.
+    val showTopMediaStrip by settingsStore.showTopMediaStripFlow.collectAsState(initial = true)
+    val showFileDetails by settingsStore.showFileDetailsFlow.collectAsState(initial = true)
+    val showMoveFolders by settingsStore.showMoveFoldersFlow.collectAsState(initial = true)
+    val proceedButtonOnTop by settingsStore.proceedButtonOnTopFlow.collectAsState(initial = false)
     var index by remember(group.key) { mutableIntStateOf(0) }
     // Re-sorted view of this folder's items — ROADMAP Fase A item 4.
     // Audit finding (Batch20): Sort already reached SwipeScreen correctly
@@ -310,6 +317,21 @@ fun SwipeScreen(
                             contentDescription = if (viewMode == SwipeViewMode.Swipe) "Ganti ke tampilan grid" else "Ganti ke tampilan geser"
                         )
                     }
+                    // [Batch146] "Move proceed button to top as checkmark"
+                    // (Sponge 2.6.1). Jalur yang sama persis dengan tombol
+                    // Kembali/BackHandler — finishAndExit() nyimpen progres,
+                    // nyerahin pendingDeletes, lalu keluar — jadi 0 logic
+                    // baru, cuma jalan pintas yang kelihatan. Digate
+                    // !isTransitioning kayak tombol Undo biar keputusan yang
+                    // lagi animasi nggak ketinggalan.
+                    if (proceedButtonOnTop) {
+                        IconButton(
+                            enabled = !isTransitioning,
+                            onClick = { finishAndExit() }
+                        ) {
+                            Icon(Icons.Filled.Check, contentDescription = "Proses yang ditandai lalu keluar")
+                        }
+                    }
                 },
                 containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.72f)
             )
@@ -401,25 +423,29 @@ fun SwipeScreen(
                         gridSelected.clear()
                     },
                     pendingOrganizedIds = pendingOrganizedIds,
-                    onOrganizeSelected = {
-                        organizeTarget = sortedItems.filter { it.id in gridSelected }
-                    },
+                    onOrganizeSelected = if (showMoveFolders) {
+                        {
+                            organizeTarget = sortedItems.filter { it.id in gridSelected }
+                        }
+                    } else null,
                     onZoomRequest = { zoomedGridItem = it }
                 )
             } else {
-                Filmstrip(
-                    items = sortedItems,
-                    currentIndex = index,
-                    onSelect = { tapped ->
-                        index = tapped
-                        scope.launch { progressStore.saveProgress(group.key, index) }
-                    },
-                    organizedIds = pendingOrganizedIds,
-                    deletedIds = pendingDeleteIds
-                )
+                if (showTopMediaStrip) {
+                    Filmstrip(
+                        items = sortedItems,
+                        currentIndex = index,
+                        onSelect = { tapped ->
+                            index = tapped
+                            scope.launch { progressStore.saveProgress(group.key, index) }
+                        },
+                        organizedIds = pendingOrganizedIds,
+                        deletedIds = pendingDeleteIds
+                    )
+                }
 
                 if (currentItem != null) {
-                    InfoBar(item = currentItem, position = currentPosition, total = sortedItems.size)
+                    InfoBar(item = currentItem, position = currentPosition, total = sortedItems.size, showDetails = showFileDetails)
                 }
 
                 Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -478,11 +504,13 @@ fun SwipeScreen(
                                 buttonDecision = SwipeDecision.Keep
                             }
                         },
-                        onOrganize = {
-                            if (!isTransitioning) {
-                                organizeTarget = listOf(currentItem)
+                        onOrganize = if (showMoveFolders) {
+                            {
+                                if (!isTransitioning) {
+                                    organizeTarget = listOf(currentItem)
+                                }
                             }
-                        }
+                        } else null
                     )
                 }
             }
