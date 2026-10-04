@@ -3,6 +3,11 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch147 — 2026-10-04
+- **Buka folder yang udah kelar dicek semua sekarang ditanya dulu.** Dulu langsung mentok di layar "selesai" tanpa pilihan lain. Sekarang muncul dialog **"Udah kelar semua"** dengan **Cek ulang** (mulai lagi dari item pertama) atau **Nggak usah** (tetap di layar selesai). Dialog cuma muncul pas folder baru dibuka, bukan pas kamu baru aja nyelesaiin geseran terakhir.
+- Dirujuk dari perilaku app pembanding **Sponge 2.6.1** (fiturnya, bukan kodenya).
+- **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch147.
+
 ## Batch146 — 2026-10-04
 - **Layar bersih-bersih sekarang bisa kamu atur sendiri.** Di Pengaturan ada section baru **Tampilan layar bersih-bersih** dengan 4 saklar: **Strip media di atas** (deretan thumbnail), **Detail file lengkap** (ukuran + format; nomor urutan tetap tampil), **Tombol pindah ke folder** (di mode geser maupun grid), dan **Tombol proses di atas** (ikon centang di bar atas buat langsung nerapin item yang udah ditandai lalu keluar).
 - Tiga saklar pertama default nyala, jadi tampilan lama nggak berubah kalau kamu nggak buka Pengaturan. Tombol proses di atas default mati.

@@ -111,6 +111,12 @@ fun SwipeScreen(
     val pendingOrganized = remember(group.key) { mutableStateListOf<MediaItem>() }
     var organizeTarget by remember(group.key) { mutableStateOf<List<MediaItem>?>(null) }
     var restored by remember(group.key) { mutableStateOf(false) }
+    // [Batch147] Prompt "cek ulang dari awal?" — dirujuk dari perilaku Sponge
+    // 2.6.1 ("You have already reviewed all the items for this album...").
+    // Cuma nyala SEKALI per pembukaan folder, tepat setelah progres lama
+    // dipulihkan dan ternyata sudah mentok di ujung; nggak pernah nyala
+    // gara-gara user baru selesai geser di sesi yang sama.
+    var showReviewAgainPrompt by remember(group.key) { mutableStateOf(false) }
     var lastDecision by remember(group.key) { mutableStateOf<Pair<MediaItem, SwipeDecision>?>(null) }
     var buttonDecision by remember(group.key) { mutableStateOf<SwipeDecision?>(null) }
     // Batch99: rememberSaveable, same reasoning as Batch97/98 — rotation survival sweep
@@ -142,7 +148,14 @@ fun SwipeScreen(
     var zoomedGridItem by remember(group.key) { mutableStateOf<MediaItem?>(null) }
 
     LaunchedEffect(group.key) {
-        index = progressStore.progressFlow(group.key).first().coerceIn(0, sortedItems.size)
+        val savedIndex = progressStore.progressFlow(group.key).first()
+        index = savedIndex.coerceIn(0, sortedItems.size)
+        // [Batch147] Folder yang kebuka dengan progres sudah penuh dulunya
+        // langsung jatuh ke panel "selesai" tanpa jalan keluar selain Kembali.
+        // Item kosong dikecualikan (nggak ada yang bisa dicek ulang).
+        if (sortedItems.isNotEmpty() && savedIndex >= sortedItems.size) {
+            showReviewAgainPrompt = true
+        }
         restored = true
     }
 
@@ -529,6 +542,29 @@ fun SwipeScreen(
     }
     if (showInfo && currentItem != null) {
         FileInfoDialog(item = currentItem, onDismiss = { showInfo = false })
+    }
+    // [Batch147] "Cek ulang dari awal?" — konfirmasi = persis efek ganti sort
+    // di LaunchedEffect(sortOption, sortAscending): posisi ke 0, undo satu
+    // langkah direset, progres tersimpan ikut 0. pendingDeletes/pendingOrganized
+    // sengaja nggak disentuh (berbasis id, bukan posisi). "Nggak usah" cuma
+    // nutup dialog; panel selesai di belakangnya tetap jadi tampilan awal.
+    if (showReviewAgainPrompt) {
+        AlertDialog(
+            onDismissRequest = { showReviewAgainPrompt = false },
+            title = { Text("Udah kelar semua") },
+            text = { Text("Semua item di \"$displayName\" udah pernah kamu cek. Mau cek ulang dari awal?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showReviewAgainPrompt = false
+                    index = 0
+                    lastDecision = null
+                    scope.launch { progressStore.saveProgress(group.key, 0) }
+                }) { Text("Cek ulang") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReviewAgainPrompt = false }) { Text("Nggak usah") }
+            }
+        )
     }
     organizeTarget?.let { itemsToOrganize ->
         OrganizeFolderDialog(
