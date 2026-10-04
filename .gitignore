@@ -3,6 +3,7 @@
 *.aab
 /build/
 /app/build/
+/tools/static-analysis/build/
 .gradle/
 local.properties
 

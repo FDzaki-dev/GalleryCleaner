@@ -3,6 +3,12 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch148 — 2026-10-05
+- **Seluruh teks aplikasi kini berbahasa Indonesia baku** (standar KBBI), dengan sapaan "Anda". Gaya santai sebelumnya (mis. "nggak", "udah", "buat") diganti: "tidak", "sudah", "untuk"; "file" menjadi "berkas", "scan" menjadi "pindai", "grid" menjadi "kisi", "Cek" menjadi "Periksa". Mencakup layar, dialog, notifikasi, dan pesan galat.
+- Tidak ada perubahan fitur atau perilaku.
+- Ditambahkan konfigurasi analisis statis (detekt dan lint) yang berjalan di CI tanpa pernah menahan pembuatan APK.
+- **Belum tervalidasi build/device asli** — detail teknis lengkap: `PROJECT_STATE.md` Batch148.
+
 ## Batch147 — 2026-10-04
 - **Buka folder yang udah kelar dicek semua sekarang ditanya dulu.** Dulu langsung mentok di layar "selesai" tanpa pilihan lain. Sekarang muncul dialog **"Udah kelar semua"** dengan **Cek ulang** (mulai lagi dari item pertama) atau **Nggak usah** (tetap di layar selesai). Dialog cuma muncul pas folder baru dibuka, bukan pas kamu baru aja nyelesaiin geseran terakhir.
 - Dirujuk dari perilaku app pembanding **Sponge 2.6.1** (fiturnya, bukan kodenya).

@@ -90,10 +90,10 @@ class TrashExpiryWorker(
             manager.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ID,
-                    "Sampah siap dikosongin",
+                    "Sampah siap dikosongkan",
                     NotificationManager.IMPORTANCE_DEFAULT
                 ).apply {
-                    description = "Ngasih tahu kamu kalau barang di Sampah udah lewat batas simpan dan siap dihapus permanen"
+                    description = "Memberi tahu Anda jika isi Sampah telah melewati batas simpan dan siap dihapus permanen"
                 }
             )
         }
@@ -125,8 +125,8 @@ class TrashExpiryWorker(
         val itemWord = "item"
         val builder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_delete)
-            .setContentTitle("Sampah siap dikosongin")
-            .setContentText("$count $itemWord udah lewat batas simpan — tap buat cek dan hapus permanen.")
+            .setContentTitle("Sampah siap dikosongkan")
+            .setContentText("$count $itemWord telah melewati batas simpan — ketuk untuk memeriksa dan menghapus permanen.")
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)

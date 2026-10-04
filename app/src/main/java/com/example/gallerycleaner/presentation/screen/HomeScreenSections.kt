@@ -53,19 +53,19 @@ internal fun ExpiryBanner(count: Int, expiryDays: Int, onClean: () -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "$count item udah lebih dari $expiryDays hari nangkring di Sampah",
+                    "$count item sudah lebih dari $expiryDays hari berada di Sampah",
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "Hapus permanen biar ruang penyimpanan lega",
+                    "Hapus permanen agar ruang penyimpanan lebih lega",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Spacer(Modifier.width(12.dp))
-            DangerButton(text = "Bersihin", onClick = onClean)
+            DangerButton(text = "Bersihkan", onClick = onClean)
         }
     }
 }
@@ -96,15 +96,15 @@ internal fun LargestFilesCard(items: List<MediaItem>, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("File paling boros ruang", fontWeight = FontWeight.SemiBold)
+                    Text("Berkas paling memakan ruang", fontWeight = FontWeight.SemiBold)
                     Text(
-                        "5 file yang paling banyak makan penyimpanan",
+                        "5 berkas yang paling banyak memakai penyimpanan",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Text(
-                    "Cek",
+                    "Periksa",
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -185,7 +185,7 @@ internal fun StorageDashboard(
             if (trashReclaimableBytes > 0) {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "${formatBytes(trashReclaimableBytes)} nunggu di Sampah — kosongin biar ruangnya balik",
+                    "${formatBytes(trashReclaimableBytes)} menunggu di Sampah — kosongkan agar ruangnya kembali",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary
                 )
@@ -204,7 +204,7 @@ internal fun StorageDashboard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Target bersih-bersih",
+                    "Target pembersihan",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -231,7 +231,7 @@ internal fun StorageDashboard(
             if (goalProgress >= 1f) {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Target tercapai! Tap buat bikin target baru.",
+                    "Target tercapai! Ketuk untuk membuat target baru.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -241,7 +241,7 @@ internal fun StorageDashboard(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "Total selama ini: ${formatBytes(totalFreedBytes)} lega · $totalDeletedCount item dibersihin",
+                    "Total sejauh ini: ${formatBytes(totalFreedBytes)} dibebaskan · $totalDeletedCount item dibersihkan",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -278,7 +278,7 @@ private fun CleanupGoalDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Atur target bersih-bersih") },
+        title = { Text("Atur target pembersihan") },
         text = {
             Column {
                 Text(
@@ -396,7 +396,7 @@ internal fun ScanTriggerRow(title: String, subtitle: String, scanning: Boolean, 
             if (scanning) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
             } else {
-                Text("Scan", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                Text("Pindai", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -433,7 +433,7 @@ internal fun CancellableScanTriggerRow(
                 Text(title, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    if (scanning) "Lagi scan… ${(progress * 100).toInt()}%" else subtitle,
+                    if (scanning) "Sedang memindai… ${(progress * 100).toInt()}%" else subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -442,7 +442,7 @@ internal fun CancellableScanTriggerRow(
             if (scanning) {
                 TextButton(onClick = onCancel) { Text("Batal") }
             } else {
-                Text("Scan", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                Text("Pindai", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -504,9 +504,9 @@ internal fun FilterRow(
         // per-row summary confirms it in practice once a Month row shows.
         Text(
             if (groupMode == GroupMode.MONTH) {
-                "Satu baris per bulan, gabungin foto dari semua folder"
+                "Satu baris per bulan, menggabungkan foto dari semua folder"
             } else {
-                "Satu baris per folder, persis kayak di hp kamu"
+                "Satu baris per folder, persis seperti di ponsel Anda"
             },
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),

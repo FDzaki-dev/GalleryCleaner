@@ -48,7 +48,7 @@ object BackupHelper {
             try {
                 if (copyOne(context, item)) backedUp++
             } catch (e: Exception) {
-                Log.e("BackupHelper", "Gagal backup: ${item.displayName}", e)
+                Log.e("BackupHelper", "Gagal mencadangkan: ${item.displayName}", e)
                 // Intentionally swallowed per-item — see class doc: a single
                 // failed backup must never block the deletion itself.
             }

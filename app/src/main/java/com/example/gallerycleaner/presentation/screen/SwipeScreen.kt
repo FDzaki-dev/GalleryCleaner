@@ -270,7 +270,7 @@ fun SwipeScreen(
                                     scope.launch { progressStore.saveProgress(group.key, index) }
                                 }
                             ) {
-                                Icon(painterResource(id = R.drawable.ic_undo), contentDescription = "Batalin geseran terakhir")
+                                Icon(painterResource(id = R.drawable.ic_undo), contentDescription = "Batalkan geseran terakhir")
                             }
                         }
                     }
@@ -304,7 +304,7 @@ fun SwipeScreen(
                             // concept, reusing the same Icons.Filled.Check
                             // already imported for the field rows above.
                             DropdownMenuItem(
-                                text = { Text(if (sortAscending) "Urutan dibalik" else "Urutan bawaan") },
+                                text = { Text(if (sortAscending) "Urutan dibalikkan" else "Urutan bawaan") },
                                 leadingIcon = if (sortAscending) {
                                     { Icon(Icons.Filled.Check, contentDescription = null) }
                                 } else null,
@@ -327,7 +327,7 @@ fun SwipeScreen(
                     }) {
                         Icon(
                             if (viewMode == SwipeViewMode.Swipe) painterResource(id = R.drawable.ic_grid_view) else painterResource(id = R.drawable.ic_view_carousel),
-                            contentDescription = if (viewMode == SwipeViewMode.Swipe) "Ganti ke tampilan grid" else "Ganti ke tampilan geser"
+                            contentDescription = if (viewMode == SwipeViewMode.Swipe) "Beralih ke tampilan kisi" else "Beralih ke tampilan geser"
                         )
                     }
                     // [Batch146] "Move proceed button to top as checkmark"
@@ -342,7 +342,7 @@ fun SwipeScreen(
                             enabled = !isTransitioning,
                             onClick = { finishAndExit() }
                         ) {
-                            Icon(Icons.Filled.Check, contentDescription = "Proses yang ditandai lalu keluar")
+                            Icon(Icons.Filled.Check, contentDescription = "Proses item yang ditandai lalu keluar")
                         }
                     }
                 },
@@ -387,9 +387,9 @@ fun SwipeScreen(
             // able to suppress this notice.
             val heuristicSuggestionText = when (group.key) {
                 "Similar photos" ->
-                    "Ini cuma saran kecocokan, bukan duplikat yang pasti — dikelompokin berdasarkan kemiripan visual. Cek tiap foto dulu sebelum dihapus."
+                    "Ini hanya saran kecocokan, bukan duplikat yang pasti — dikelompokkan berdasarkan kemiripan visual. Periksa setiap foto terlebih dahulu sebelum dihapus."
                 "Blurry photos" ->
-                    "Disaranin karena kemungkinan blur — cuma perkiraan otomatis, bukan jaminan. Foto soft-focus yang emang disengaja juga bisa ikut ketandain. Cek tiap foto dulu sebelum dihapus."
+                    "Disarankan karena kemungkinan buram — hanya perkiraan otomatis, bukan jaminan. Foto berfokus lembut yang memang disengaja juga dapat ikut tertandai. Periksa setiap foto terlebih dahulu sebelum dihapus."
                 else -> null
             }
             if (heuristicSuggestionText != null) {
@@ -551,18 +551,18 @@ fun SwipeScreen(
     if (showReviewAgainPrompt) {
         AlertDialog(
             onDismissRequest = { showReviewAgainPrompt = false },
-            title = { Text("Udah kelar semua") },
-            text = { Text("Semua item di \"$displayName\" udah pernah kamu cek. Mau cek ulang dari awal?") },
+            title = { Text("Semua sudah selesai") },
+            text = { Text("Semua item di \"$displayName\" sudah pernah Anda periksa. Ingin memeriksa ulang dari awal?") },
             confirmButton = {
                 TextButton(onClick = {
                     showReviewAgainPrompt = false
                     index = 0
                     lastDecision = null
                     scope.launch { progressStore.saveProgress(group.key, 0) }
-                }) { Text("Cek ulang") }
+                }) { Text("Periksa ulang") }
             },
             dismissButton = {
-                TextButton(onClick = { showReviewAgainPrompt = false }) { Text("Nggak usah") }
+                TextButton(onClick = { showReviewAgainPrompt = false }) { Text("Tidak usah") }
             }
         )
     }

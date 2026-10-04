@@ -194,7 +194,7 @@ class MainActivity : FragmentActivity() {
                     val promptInfo = remember {
                         BiometricPrompt.PromptInfo.Builder()
                             .setTitle("Buka kunci Snaply")
-                            .setSubtitle("Konfirmasi kunci layar kamu buat lanjut")
+                            .setSubtitle("Konfirmasi kunci layar Anda untuk melanjutkan")
                             // No setNegativeButtonText(): mutually exclusive
                             // with DEVICE_CREDENTIAL below — the system
                             // supplies its own cancel affordance instead.
@@ -770,7 +770,7 @@ fun AppRoot(
             }
         } else if (items != null) {
             scope.launch {
-                snackbarHostState.showSnackbar("Gagal hapus file atau izinnya ditolak")
+                snackbarHostState.showSnackbar("Gagal menghapus berkas atau izin ditolak")
             }
         }
         pendingDeleteRetry = null
@@ -798,7 +798,7 @@ fun AppRoot(
                 }
                 withContext(Dispatchers.Main) {
                     snackbarHostState.showSnackbar(
-                        if (saved > 0) "Udah dikompres — hemat ${formatBytes(saved)}" else "Nggak ada yang perlu dikompres"
+                        if (saved > 0) "Berhasil dikompres — hemat ${formatBytes(saved)}" else "Tidak ada yang perlu dikompres"
                     )
                 }
             }
@@ -827,7 +827,7 @@ fun AppRoot(
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        snackbarHostState.showSnackbar("Gagal minta izin kompresi")
+                        snackbarHostState.showSnackbar("Gagal meminta izin kompresi")
                     }
                 }
             } else {
@@ -846,10 +846,10 @@ fun AppRoot(
                 withContext(Dispatchers.Main) {
                     when {
                         needsPermission -> snackbarHostState.showSnackbar(
-                            "Beberapa foto butuh izin tambahan — coba lagi satu-satu ya"
+                            "Beberapa foto memerlukan izin tambahan — coba lagi satu per satu"
                         )
-                        saved > 0 -> snackbarHostState.showSnackbar("Udah dikompres — hemat ${formatBytes(saved)}")
-                        else -> snackbarHostState.showSnackbar("Nggak ada yang perlu dikompres")
+                        saved > 0 -> snackbarHostState.showSnackbar("Berhasil dikompres — hemat ${formatBytes(saved)}")
+                        else -> snackbarHostState.showSnackbar("Tidak ada yang perlu dikompres")
                     }
                 }
             }
@@ -913,7 +913,7 @@ fun AppRoot(
                 }
                 if (failed.isNotEmpty()) {
                     scope.launch {
-                        snackbarHostState.showSnackbar("Gagal hapus ${failed.size} file. Cek izinnya ya.")
+                        snackbarHostState.showSnackbar("Gagal menghapus ${failed.size} berkas. Periksa izinnya.")
                     }
                 }
             } catch (e: RecoverableSecurityException) {
@@ -1010,17 +1010,17 @@ fun AppRoot(
                     }
                     if (partialCount > 0) {
                         snackbarHostState.showSnackbar(
-                            "$partialCount file udah pindah tapi belum terverifikasi — buka ulang app buat sinkronin"
+                            "$partialCount berkas sudah dipindahkan tetapi belum terverifikasi — buka ulang aplikasi untuk menyinkronkan"
                         )
                     }
                     val failedCount = items.size - movedIds.size - partialCount
                     if (failedCount > 0) {
-                        snackbarHostState.showSnackbar("Gagal mindahin $failedCount file")
+                        snackbarHostState.showSnackbar("Gagal memindahkan $failedCount berkas")
                     }
                 }
             }
         } else if (pending != null) {
-            scope.launch { snackbarHostState.showSnackbar("Izin buat mindahin file ditolak") }
+            scope.launch { snackbarHostState.showSnackbar("Izin untuk memindahkan berkas ditolak") }
         }
     }
 
@@ -1046,7 +1046,7 @@ fun AppRoot(
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        snackbarHostState.showSnackbar("Gagal minta izin buat mindahin file")
+                        snackbarHostState.showSnackbar("Gagal meminta izin untuk memindahkan berkas")
                     }
                 }
             } else {
@@ -1090,12 +1090,12 @@ fun AppRoot(
                         }
                         if (partialIds.isNotEmpty()) {
                             snackbarHostState.showSnackbar(
-                                "${partialIds.size} file udah pindah tapi belum terverifikasi — buka ulang app buat sinkronin"
+                                "${partialIds.size} berkas sudah dipindahkan tetapi belum terverifikasi — buka ulang aplikasi untuk menyinkronkan"
                             )
                         }
                         val failedCount = items.size - movedIds.size - partialIds.size
                         if (failedCount > 0) {
-                            snackbarHostState.showSnackbar("Gagal mindahin $failedCount file")
+                            snackbarHostState.showSnackbar("Gagal memindahkan $failedCount berkas")
                         }
                     }
                 }
@@ -1193,7 +1193,7 @@ fun AppRoot(
                                         message = context.resources.getQuantityString(
                                             R.plurals.main_trashed_photos, ids.size, ids.size
                                         ),
-                                        actionLabel = "Batalin",
+                                        actionLabel = "Batalkan",
                                         duration = SnackbarDuration.Long
                                     )
                                     // Reversible unlike permanent delete above (no
@@ -1206,7 +1206,7 @@ fun AppRoot(
                                     }
                                 }
                             } catch (e: Exception) {
-                                snackbarHostState.showSnackbar("Gagal ngolah data geseran")
+                                snackbarHostState.showSnackbar("Gagal memproses data geseran")
                             }
                         }
                     }
@@ -1291,7 +1291,7 @@ fun AppRoot(
         if (activeCrashLog != null) {
             AlertDialog(
                 onDismissRequest = { activeCrashLog = null },
-                title = { Text("Laporan Crash 🛠️") },
+                title = { Text("Laporan Aplikasi Berhenti 🛠️") },
                 text = {
                     Box(
                         modifier = Modifier
@@ -1307,7 +1307,7 @@ fun AppRoot(
                 },
                 confirmButton = {
                     Button(onClick = { activeCrashLog = null }) {
-                        Text("Ngerti")
+                        Text("Mengerti")
                     }
                 }
             )
@@ -1327,22 +1327,22 @@ private fun PermissionScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            "Bersihin galerimu",
+            "Bersihkan galeri Anda",
             style = MaterialTheme.typography.headlineMedium
         )
         Spacer(Modifier.height(12.dp))
         Text(
             if (permanentlyDenied) {
-                "Akses foto ditolak. Nyalain dari Pengaturan sistem app ini buat lanjut."
+                "Akses foto ditolak. Aktifkan melalui Pengaturan sistem aplikasi ini untuk melanjutkan."
             } else {
-                "Snaply butuh akses ke foto kamu biar bisa bantu geser-geser dan beresin galeri."
+                "Snaply memerlukan akses ke foto Anda agar dapat membantu menggeser dan merapikan galeri."
             },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(28.dp))
         GlassButton(
-            text = if (permanentlyDenied) "Buka Pengaturan" else "Kasih akses",
+            text = if (permanentlyDenied) "Buka Pengaturan" else "Beri akses",
             modifier = Modifier.fillMaxWidth(),
             onClick = if (permanentlyDenied) onOpenSettings else onRequest
         )
@@ -1366,7 +1366,7 @@ private fun AppLockScreen(onUnlockClick: () -> Unit) {
         Text("Snaply dikunci", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(8.dp))
         Text(
-            "Konfirmasi kunci layar kamu buat lanjut.",
+            "Konfirmasi kunci layar Anda untuk melanjutkan.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

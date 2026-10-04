@@ -246,17 +246,17 @@ internal fun FinishedPanel(deletedCount: Int, reviewedCount: Int, onDone: () -> 
             )
         }
         Spacer(Modifier.height(20.dp))
-        Text("Misi kelar!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
+        Text("Selesai!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(20.dp))
         GlassCard(contentPadding = 0.dp) {
             Row(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
-                StatColumn("Item dicek", "$reviewedCount")
+                StatColumn("Item diperiksa", "$reviewedCount")
                 Spacer(Modifier.width(32.dp))
-                StatColumn("Masuk Sampah", "$deletedCount")
+                StatColumn("Masuk ke Sampah", "$deletedCount")
             }
         }
         Spacer(Modifier.height(28.dp))
-        GlassButton(text = "Lanjut", onClick = onDone)
+        GlassButton(text = "Lanjutkan", onClick = onDone)
     }
 }
 
@@ -309,7 +309,7 @@ internal fun OrganizeFolderDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (itemCount == 1) "Pindahin ke folder" else "Pindahin $itemCount item ke folder") },
+        title = { Text(if (itemCount == 1) "Pindahkan ke folder" else "Pindahkan $itemCount item ke folder") },
         text = {
             // Batch144: seluruh isi dialog bisa di-scroll — daftar folder
             // sekarang bisa panjang ("Tampilin semua"/mode Kelola) dan
@@ -330,7 +330,7 @@ internal fun OrganizeFolderDialog(
                 // way), so the note only shows for itemCount > 1.
                 if (itemCount > 1 && !MoveHelper.supportsBatchWriteRequest()) {
                     Text(
-                        "Versi Android kamu mungkin munculin izin terpisah buat tiap foto yang butuh izin.",
+                        "Versi Android Anda mungkin menampilkan permintaan izin terpisah untuk setiap foto yang memerlukannya.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -342,18 +342,18 @@ internal fun OrganizeFolderDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Folder yang udah ada",
+                            "Folder yang sudah ada",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.weight(1f).padding(end = 8.dp)
                         )
                         TextButton(onClick = { manageMode = !manageMode }) {
-                            Text(if (manageMode) "Beres" else "Kelola")
+                            Text(if (manageMode) "Selesai" else "Kelola")
                         }
                     }
                     if (manageMode) {
                         Text(
-                            "Pin biar folder muncul paling atas. Sembunyiin buat nyingkirin folder dari daftar ini — nggak ngehapus apa pun.",
+                            "Sematkan agar folder muncul paling atas. Sembunyikan untuk menyingkirkan folder dari daftar ini — tidak menghapus apa pun.",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -380,7 +380,7 @@ internal fun OrganizeFolderDialog(
                                     )
                                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                         TextButton(onClick = { onTogglePinned(folder) }) {
-                                            Text(if (isPinned) "Lepas pin" else "Pin ke atas")
+                                            Text(if (isPinned) "Lepas sematan" else "Sematkan ke atas")
                                         }
                                         TextButton(
                                             onClick = {
@@ -388,7 +388,7 @@ internal fun OrganizeFolderDialog(
                                                 onToggleHidden(folder)
                                             }
                                         ) {
-                                            Text(if (isHidden) "Tampilin lagi" else "Sembunyiin")
+                                            Text(if (isHidden) "Tampilkan lagi" else "Sembunyikan")
                                         }
                                     }
                                 }
@@ -421,20 +421,20 @@ internal fun OrganizeFolderDialog(
                     }
                     if (!manageMode && visibleFolders.isEmpty()) {
                         Text(
-                            "Semua folder lagi disembunyiin — tap Kelola buat nampilin lagi.",
+                            "Semua folder sedang disembunyikan — ketuk Kelola untuk menampilkannya kembali.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     if (!manageMode && !showAll && visibleFolders.size > 6) {
                         TextButton(onClick = { showAll = true }) {
-                            Text("Tampilin semua (${visibleFolders.size})")
+                            Text("Tampilkan semua (${visibleFolders.size})")
                         }
                     }
                     Spacer(Modifier.height(8.dp))
                 }
                 Text(
-                    "Atau bikin yang baru",
+                    "Atau buat yang baru",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -459,7 +459,7 @@ internal fun OrganizeFolderDialog(
                 enabled = target != null,
                 onClick = { target?.let(onConfirm) }
             ) {
-                Text("Pindah")
+                Text("Pindahkan")
             }
         },
         dismissButton = {

@@ -5,130 +5,131 @@
     <string name="shortcut_settings_short">Pengaturan</string>
     <string name="shortcut_settings_long">Buka Pengaturan</string>
 
+    <!-- Batch148: seluruh teks UI memakai bahasa Indonesia baku (KBBI/PUEBI), sapaan "Anda". Menggantikan gaya santai Batch141. -->
     <!-- Batch67 (Audit Gap P2 #11, stage 1/4: OnboardingScreen.kt) -->
-    <string name="onboarding_page1_title">Geser buat milah</string>
-    <string name="onboarding_page1_body">Geser ke kanan (atau tap ✓) buat nyimpen foto, geser ke kiri (atau tap ✕) buat ngehapus. Satu keputusan tiap kali, nggak perlu bongkar-bongkar folder.</string>
-    <string name="onboarding_page2_title">Nggak langsung ilang kok</string>
-    <string name="onboarding_page2_body">Foto yang dihapus masuk Sampah dulu, nggak langsung lenyap dari hp kamu. Bisa dipulihin kapan aja, atau atur berapa lama Sampah nyimpen barang di Pengaturan.</string>
-    <string name="onboarding_page3_title">Atau bersihin sekaligus</string>
-    <string name="onboarding_page3_body">Di folder mana pun, ganti ke tampilan grid buat milih banyak foto sekaligus, nggak perlu geser satu-satu — pas banget buat beresin satu album penuh dengan cepat. Tap ikon zoom di thumbnail buat lihat ukuran penuhnya dulu sebelum mutusin.</string>
-    <string name="onboarding_page4_title">Biar app yang nyari sampahnya</string>
-    <string name="onboarding_page4_body">Di layar utama ada tombol scan buat foto blur dan foto burst yang hampir kembar — tap buat scan, cek hasilnya, terus putusin sendiri. Nggak ada yang jalan diam-diam di belakang layar tanpa kamu suruh.</string>
-    <string name="onboarding_page5_title">Kecilin tanpa ngehapus</string>
-    <string name="onboarding_page5_body">Belum rela ngelepas sebuah foto? Pilih di tampilan grid terus tap Kompres buat ngecilin ukuran filenya, tapi fotonya tetap kelihatan sama.</string>
-    <string name="onboarding_page6_title">Flashback dulu</string>
-    <string name="onboarding_page6_body">\"Hari ini di masa lalu\" nampilin foto dari tanggal yang sama di tahun-tahun sebelumnya, langsung di layar utama — pengingat buat nengok kenangan lama, bukan cuma ngapus sampah baru.</string>
+    <string name="onboarding_page1_title">Geser untuk memilah</string>
+    <string name="onboarding_page1_body">Geser ke kanan (atau ketuk ✓) untuk menyimpan foto, geser ke kiri (atau ketuk ✕) untuk menghapusnya. Satu keputusan setiap kali, tanpa perlu membongkar folder satu per satu.</string>
+    <string name="onboarding_page2_title">Tidak langsung hilang</string>
+    <string name="onboarding_page2_body">Foto yang dihapus masuk ke Sampah terlebih dahulu dan tidak langsung lenyap dari ponsel Anda. Foto dapat dipulihkan kapan saja, atau atur lama penyimpanan Sampah di Pengaturan.</string>
+    <string name="onboarding_page3_title">Atau bersihkan sekaligus</string>
+    <string name="onboarding_page3_body">Pada folder mana pun, beralihlah ke tampilan kisi untuk memilih banyak foto sekaligus tanpa menggesernya satu per satu — cocok untuk merapikan satu album penuh dengan cepat. Ketuk ikon perbesar pada gambar mini untuk melihat ukuran penuhnya sebelum memutuskan.</string>
+    <string name="onboarding_page4_title">Biarkan aplikasi mencari sampahnya</string>
+    <string name="onboarding_page4_body">Pada layar utama terdapat tombol pindai untuk foto buram dan foto jepretan beruntun yang nyaris kembar — ketuk untuk memindai, periksa hasilnya, lalu putuskan sendiri. Tidak ada proses yang berjalan diam-diam di latar belakang tanpa perintah Anda.</string>
+    <string name="onboarding_page5_title">Perkecil tanpa menghapus</string>
+    <string name="onboarding_page5_body">Belum rela melepas sebuah foto? Pilih foto pada tampilan kisi, lalu ketuk Kompres untuk memperkecil ukuran berkasnya, sementara tampilan fotonya tetap sama.</string>
+    <string name="onboarding_page6_title">Kilas balik</string>
+    <string name="onboarding_page6_body">\"Hari ini di masa lalu\" menampilkan foto dari tanggal yang sama pada tahun-tahun sebelumnya, langsung di layar utama — pengingat untuk menengok kenangan lama, bukan sekadar menghapus sampah baru.</string>
     <string name="onboarding_page7_title">Cari apa pun dengan cepat</string>
-    <string name="onboarding_page7_body">Pakai ikon cari di layar utama buat langsung loncat ke folder atau foto lewat namanya, nggak perlu scroll panjang-panjang.</string>
-    <string name="onboarding_page8_title">Bikin sesuai gayamu</string>
-    <string name="onboarding_page8_body">Di Pengaturan ada beberapa gaya warna selain tampilan bawaan, plus tombol buat getaran singkat pas kamu geser — nyala dari awal, gampang dimatiin.</string>
+    <string name="onboarding_page7_body">Gunakan ikon cari di layar utama untuk langsung menuju folder atau foto melalui namanya, tanpa perlu menggulir panjang.</string>
+    <string name="onboarding_page8_title">Sesuaikan dengan gaya Anda</string>
+    <string name="onboarding_page8_body">Pengaturan menyediakan beberapa gaya warna selain tampilan bawaan, serta tombol getaran singkat saat Anda menggeser — aktif sejak awal dan mudah dimatikan.</string>
     <string name="onboarding_page9_title">Tetap privat</string>
-    <string name="onboarding_page9_body">Kalau kamu pengen galeri tetap aman di balik kunci layar hp, nyalain Kunci aplikasi di Pengaturan — pakai PIN, pola, atau biometrik yang udah kamu set.</string>
+    <string name="onboarding_page9_body">Jika Anda ingin galeri tetap aman di balik kunci layar ponsel, aktifkan Kunci aplikasi di Pengaturan — gunakan PIN, pola, atau biometrik yang sudah Anda atur.</string>
     <string name="onboarding_skip">Lewati</string>
     <string name="onboarding_get_started">Mulai</string>
-    <string name="onboarding_next">Lanjut</string>
+    <string name="onboarding_next">Lanjutkan</string>
 
     <!-- Batch69 (Audit Gap P2 #11, stage 2/4: SettingsScreen.kt) -->
     <string name="settings_title">Pengaturan</string>
     <string name="settings_back_cd">Kembali</string>
 
     <string name="settings_section_appearance">Tampilan</string>
-    <string name="settings_match_system_title">Ikutin sistem</string>
-    <string name="settings_match_system_subtitle">Otomatis ngikutin pengaturan terang/gelap di hp ini.</string>
+    <string name="settings_match_system_title">Ikuti sistem</string>
+    <string name="settings_match_system_subtitle">Otomatis mengikuti pengaturan terang/gelap pada ponsel ini.</string>
     <string name="settings_dark_mode_title">Mode gelap</string>
-    <string name="settings_dark_mode_subtitle_system">Lagi ngikutin pengaturan sistem.</string>
-    <string name="settings_dark_mode_subtitle_off">Kalau mati, tampilannya terang.</string>
+    <string name="settings_dark_mode_subtitle_system">Sedang mengikuti pengaturan sistem.</string>
+    <string name="settings_dark_mode_subtitle_off">Jika dimatikan, tampilan menjadi terang.</string>
 
     <string name="settings_section_color_style">Gaya warna</string>
-    <string name="settings_color_style_hint">Berlaku buat mode Terang dan Gelap di atas.</string>
+    <string name="settings_color_style_hint">Berlaku untuk mode Terang dan Gelap di atas.</string>
     <string name="settings_theme_signature_label">Signature</string>
     <string name="settings_theme_signature_desc">Glassmorphism biru tengah malam — panel kaca buram di atas cahaya navy pekat.</string>
     <string name="settings_theme_amber_reserve_label">Amber Reserve</string>
     <string name="settings_theme_amber_reserve_desc">Neumorphism navy pekat — panel bayangan ganda yang lembut, tanpa garis tepi, tanpa kaca.</string>
     <string name="settings_theme_indigo_noir_label">Indigo Noir</string>
-    <string name="settings_theme_indigo_noir_desc">Indigo pekat dengan aksen platinum &amp; dusty rose.</string>
+    <string name="settings_theme_indigo_noir_desc">Indigo pekat dengan aksen platinum dan merah muda kusam.</string>
     <string name="settings_theme_sage_wash_label">Sage Wash</string>
-    <string name="settings_theme_sage_wash_desc">Basis Material 3 dengan sapuan cat air lukis tangan — aksen lumut &amp; terakota yang kalem.</string>
+    <string name="settings_theme_sage_wash_desc">Basis Material 3 dengan sapuan cat air lukis tangan — aksen lumut dan terakota yang kalem.</string>
     <string name="settings_theme_selected_cd">Terpilih</string>
 
     <string name="settings_section_trash">Sampah</string>
-    <string name="settings_trash_retention_hint">Otomatis tandain barang di Sampah buat dibersihin setelah:</string>
+    <string name="settings_trash_retention_hint">Tandai otomatis isi Sampah untuk dibersihkan setelah:</string>
     <string name="settings_trash_retention_days">%1$d hari</string>
 
     <string name="settings_section_backup">Cadangan</string>
-    <string name="settings_backup_before_delete_title">Cadangin sebelum dihapus</string>
-    <string name="settings_backup_before_delete_subtitle">Salin tiap foto/video ke Pictures atau Movies &gt; GalleryCleaner &gt; Backup sebelum dihapus permanen.</string>
+    <string name="settings_backup_before_delete_title">Cadangkan sebelum dihapus</string>
+    <string name="settings_backup_before_delete_subtitle">Salin setiap foto/video ke Pictures atau Movies &gt; GalleryCleaner &gt; Backup sebelum dihapus permanen.</string>
 
     <string name="settings_section_notifications">Notifikasi</string>
-    <string name="settings_in_progress_reminder_title">Pengingat sesi belum kelar</string>
-    <string name="settings_in_progress_reminder_subtitle">Diingetin (paling sering 3 hari sekali) kalau ada folder yang udah mulai kamu geser tapi belum kelar. Nggak aktif pas Mode bersih acak nyala.</string>
+    <string name="settings_in_progress_reminder_title">Pengingat sesi yang belum selesai</string>
+    <string name="settings_in_progress_reminder_subtitle">Mengingatkan (paling sering 3 hari sekali) jika ada folder yang sudah mulai Anda geser tetapi belum selesai. Tidak aktif saat Mode pembersihan acak menyala.</string>
     <string name="settings_cleaning_reminders_title">Pengingat bulanan</string>
-    <string name="settings_cleaning_reminders_subtitle">Diingetin sebulan sekali kalau ada screenshot atau file gede yang layak dicek.</string>
+    <string name="settings_cleaning_reminders_subtitle">Mengingatkan sebulan sekali jika ada tangkapan layar atau berkas besar yang layak diperiksa.</string>
 
     <string name="settings_section_swiping">Geser</string>
-    <string name="settings_random_mode_title">Mode bersih acak</string>
-    <string name="settings_random_mode_subtitle">Acak urutan foto di folder tiap kali dibuka, bukan urut tanggal.</string>
+    <string name="settings_random_mode_title">Mode pembersihan acak</string>
+    <string name="settings_random_mode_subtitle">Acak urutan foto di dalam folder setiap kali dibuka, bukan berurutan menurut tanggal.</string>
     <string name="settings_random_count_title">Jumlah acak</string>
-    <string name="settings_random_count_subtitle">Ambil %1$d item dari folder tiap kali mode acak ngacak folder itu.</string>
+    <string name="settings_random_count_subtitle">Ambil %1$d item dari folder setiap kali mode acak mengacak folder tersebut.</string>
 
-    <string name="settings_section_cleaning_options">Opsi Bersih-bersih</string>
+    <string name="settings_section_cleaning_options">Opsi Pembersihan</string>
     <string name="settings_video_sound_title">Suara video</string>
-    <string name="settings_video_sound_subtitle">Matiin kalau mau cek video tanpa suara.</string>
-    <string name="settings_share_text_title">Sertakan nama pas dibagiin</string>
-    <string name="settings_share_text_subtitle">Lampirin nama file sebagai teks bareng foto atau video pas kamu bagiin.</string>
+    <string name="settings_video_sound_subtitle">Matikan jika ingin memeriksa video tanpa suara.</string>
+    <string name="settings_share_text_title">Sertakan nama saat membagikan</string>
+    <string name="settings_share_text_subtitle">Lampirkan nama berkas sebagai teks bersama foto atau video saat Anda membagikannya.</string>
     <string name="settings_animate_buttons_title">Animasi tombol</string>
-    <string name="settings_animate_buttons_subtitle">Matiin biar respons pas nekan tombol lebih cepat, tanpa gerakan.</string>
+    <string name="settings_animate_buttons_subtitle">Matikan agar respons saat menekan tombol lebih cepat, tanpa gerakan.</string>
 
-    <string name="settings_section_cleaning_screen">Tampilan layar bersih-bersih</string>
-    <string name="settings_top_strip_title">Strip media di atas</string>
-    <string name="settings_top_strip_subtitle">Tampilin deretan thumbnail di atas kartu buat lompat cepat antar item.</string>
-    <string name="settings_file_details_title">Detail file lengkap</string>
-    <string name="settings_file_details_subtitle">Tampilin ukuran dan format file di atas kartu. Nomor urutan tetap kelihatan.</string>
+    <string name="settings_section_cleaning_screen">Tampilan layar pembersihan</string>
+    <string name="settings_top_strip_title">Deretan media di atas</string>
+    <string name="settings_top_strip_subtitle">Tampilkan deretan gambar mini di atas kartu untuk berpindah cepat antaritem.</string>
+    <string name="settings_file_details_title">Detail berkas lengkap</string>
+    <string name="settings_file_details_subtitle">Tampilkan ukuran dan format berkas di atas kartu. Nomor urutan tetap terlihat.</string>
     <string name="settings_move_folders_title">Tombol pindah ke folder</string>
-    <string name="settings_move_folders_subtitle">Tampilin tombol buat mindahin item ke folder lain, baik di mode geser maupun grid.</string>
+    <string name="settings_move_folders_subtitle">Tampilkan tombol untuk memindahkan item ke folder lain, baik pada mode geser maupun mode kisi.</string>
     <string name="settings_proceed_top_title">Tombol proses di atas</string>
-    <string name="settings_proceed_top_subtitle">Pasang tombol centang di bar atas buat langsung nerapin item yang udah kamu tandai lalu keluar, tanpa balik dulu.</string>
+    <string name="settings_proceed_top_subtitle">Pasang tombol centang pada bilah atas untuk langsung menerapkan item yang telah ditandai lalu keluar, tanpa harus kembali terlebih dahulu.</string>
 
     <string name="settings_section_feedback">Umpan balik</string>
-    <string name="settings_swipe_haptics_title">Getaran pas geser</string>
-    <string name="settings_swipe_haptics_subtitle">Getar singkat pas kamu nyimpen atau ngehapus foto.</string>
+    <string name="settings_swipe_haptics_title">Getaran saat menggeser</string>
+    <string name="settings_swipe_haptics_subtitle">Getar singkat saat Anda menyimpan atau menghapus foto.</string>
 
     <string name="settings_section_privacy">Privasi</string>
     <string name="settings_app_lock_title">Kunci aplikasi</string>
-    <string name="settings_app_lock_subtitle_secure">Wajib pakai kunci layar kamu (PIN, pola, atau biometrik) buat buka app.</string>
-    <string name="settings_app_lock_subtitle_insecure">Pasang kunci layar dulu di hp ini (Pengaturan &gt; Keamanan).</string>
+    <string name="settings_app_lock_subtitle_secure">Wajib menggunakan kunci layar Anda (PIN, pola, atau biometrik) untuk membuka aplikasi.</string>
+    <string name="settings_app_lock_subtitle_insecure">Pasang kunci layar terlebih dahulu pada ponsel ini (Pengaturan &gt; Keamanan).</string>
 
     <string name="settings_section_about">Tentang</string>
-    <string name="settings_check_update_title">Cek pembaruan</string>
-    <string name="settings_update_idle">Tap buat cek versi terbaru di GitHub.</string>
-    <string name="settings_update_checking">Lagi ngecek…</string>
-    <string name="settings_update_uptodate">Kamu udah pakai versi terbaru.</string>
-    <string name="settings_update_available">Versi %1$s udah tersedia.</string>
-    <string name="settings_update_downloading">Lagi ngunduh… %1$d%%</string>
-    <string name="settings_update_ready">Udah diunduh — tap buat install.</string>
-    <string name="settings_update_error">Gagal ngecek pembaruan: %1$s</string>
+    <string name="settings_check_update_title">Periksa pembaruan</string>
+    <string name="settings_update_idle">Ketuk untuk memeriksa versi terbaru di GitHub.</string>
+    <string name="settings_update_checking">Sedang memeriksa…</string>
+    <string name="settings_update_uptodate">Anda sudah menggunakan versi terbaru.</string>
+    <string name="settings_update_available">Versi %1$s tersedia.</string>
+    <string name="settings_update_downloading">Sedang mengunduh… %1$d%%</string>
+    <string name="settings_update_ready">Sudah diunduh — ketuk untuk memasang.</string>
+    <string name="settings_update_error">Gagal memeriksa pembaruan: %1$s</string>
 
     <string name="settings_update_dialog_version_line">Terpasang %1$s → Baru %2$s</string>
-    <string name="settings_update_dialog_downloading_progress">%1$d%% — jangan ditutup dulu sampai kelar.</string>
-    <string name="settings_update_dialog_ready_body">Udah diunduh. Habis ini Android bakal minta kamu konfirmasi install.</string>
+    <string name="settings_update_dialog_downloading_progress">%1$d%% — jangan ditutup sampai selesai.</string>
+    <string name="settings_update_dialog_ready_body">Sudah diunduh. Selanjutnya Android akan meminta Anda mengonfirmasi pemasangan.</string>
     <string name="settings_update_dialog_download_btn">Unduh</string>
-    <string name="settings_update_dialog_install_btn">Install</string>
+    <string name="settings_update_dialog_install_btn">Pasang</string>
     <string name="settings_update_dialog_cancel_btn">Batal</string>
 
     <!-- Batch70 (Audit Gap P2 #11, stage 3/4: TrashScreen.kt) -->
     <string name="trash_title_count">Sampah (%1$d)</string>
     <string name="trash_title_selected">%1$d dipilih</string>
     <string name="trash_back_cd">Kembali</string>
-    <string name="trash_empty_button">Kosongin Sampah</string>
+    <string name="trash_empty_button">Kosongkan Sampah</string>
     <string name="trash_select_all">Pilih semua</string>
-    <string name="trash_deselect_all">Batal pilih semua</string>
-    <string name="trash_restore_button">Pulihin</string>
+    <string name="trash_deselect_all">Batalkan pilihan</string>
+    <string name="trash_restore_button">Pulihkan</string>
     <string name="trash_delete_permanently_button">Hapus permanen</string>
-    <string name="trash_empty_state">Sampahnya kosong.</string>
+    <string name="trash_empty_state">Sampah kosong.</string>
     <string name="trash_expires_today">Habis hari ini</string>
     <string name="trash_days_left">%1$d hari lagi</string>
-    <string name="trash_empty_dialog_title">Kosongin Sampah?</string>
-    <string name="trash_empty_dialog_body">Ini bakal ngehapus permanen semua %1$d item di Sampah. Nggak bisa dibatalin.</string>
+    <string name="trash_empty_dialog_title">Kosongkan Sampah?</string>
+    <string name="trash_empty_dialog_body">Tindakan ini akan menghapus permanen seluruh %1$d item di Sampah. Tindakan ini tidak dapat dibatalkan.</string>
     <string name="trash_empty_dialog_confirm">Hapus Semua</string>
     <string name="trash_empty_dialog_cancel">Batal</string>
 
@@ -138,42 +139,42 @@
     <string name="home_clear_search_cd">Hapus teks pencarian</string>
     <string name="home_search_cd">Cari</string>
     <string name="home_refresh_cd">Muat ulang galeri</string>
-    <string name="home_random_mode_on_cd">Mode bersih acak nyala — tap buat matiin</string>
-    <string name="home_random_mode_off_cd">Mode bersih acak mati — tap buat nyalain</string>
+    <string name="home_random_mode_on_cd">Mode pembersihan acak aktif — ketuk untuk menonaktifkan</string>
+    <string name="home_random_mode_off_cd">Mode pembersihan acak nonaktif — ketuk untuk mengaktifkan</string>
     <string name="home_settings_cd">Pengaturan</string>
     <string name="home_trash_label">Sampah</string>
     <string name="home_trash_count">Sampah (%1$d)</string>
-    <string name="home_no_photos_found">Fotonya nggak ketemu.</string>
+    <string name="home_no_photos_found">Foto tidak ditemukan.</string>
     <string name="home_section_on_this_day">HARI INI DI MASA LALU</string>
-    <string name="home_section_quick_clean">BERSIH CEPAT</string>
+    <string name="home_section_quick_clean">PEMBERSIHAN CEPAT</string>
     <string name="home_section_smart_detection">DETEKSI PINTAR</string>
     <string name="home_section_all_photos">SEMUA FOTO</string>
-    <string name="home_scan_blurry_title">Foto blur</string>
-    <string name="home_scan_blurry_idle_subtitle">Cari foto nggak fokus di hp ini</string>
+    <string name="home_scan_blurry_title">Foto buram</string>
+    <string name="home_scan_blurry_idle_subtitle">Cari foto yang tidak fokus pada ponsel ini</string>
     <string name="home_scan_similar_title">Foto mirip</string>
-    <string name="home_scan_similar_idle_subtitle">Cari foto burst dan jepretan ulang yang hampir kembar</string>
-    <string name="home_scan_duplicate_title">File duplikat</string>
-    <string name="home_scan_duplicate_idle_subtitle">Cari salinan yang persis sama byte demi byte</string>
-    <string name="home_scan_none_found">Nggak ada</string>
-    <string name="home_scan_found_count">%1$d ketemu — tap buat cek</string>
+    <string name="home_scan_similar_idle_subtitle">Cari foto jepretan beruntun dan jepretan ulang yang nyaris kembar</string>
+    <string name="home_scan_duplicate_title">Berkas duplikat</string>
+    <string name="home_scan_duplicate_idle_subtitle">Cari salinan yang isinya persis sama</string>
+    <string name="home_scan_none_found">Tidak ada</string>
+    <string name="home_scan_found_count">%1$d ditemukan — ketuk untuk memeriksa</string>
 
     <!-- Batch72 (Audit Gap P2 #12, stage 1/2: MainActivity.kt + HomeScreenSections.kt) -->
-    <!-- Batch141: bahasa Indonesia nggak punya bentuk jamak — `one` dan `other` sengaja identik biar aman di locale device mana pun. -->
+    <!-- Batch141: bahasa Indonesia tidak memiliki bentuk jamak — `one` dan `other` sengaja identik agar aman di lokal perangkat mana pun. -->
     <plurals name="main_deleted_photos">
-        <item quantity="one">%1$d foto dihapus — %2$s lega</item>
-        <item quantity="other">%1$d foto dihapus — %2$s lega</item>
+        <item quantity="one">%1$d foto dihapus — %2$s dibebaskan</item>
+        <item quantity="other">%1$d foto dihapus — %2$s dibebaskan</item>
     </plurals>
     <plurals name="main_moved_photos">
-        <item quantity="one">%1$d foto dipindah ke %2$s</item>
-        <item quantity="other">%1$d foto dipindah ke %2$s</item>
+        <item quantity="one">%1$d foto dipindahkan ke %2$s</item>
+        <item quantity="other">%1$d foto dipindahkan ke %2$s</item>
     </plurals>
     <plurals name="main_restored_photos">
-        <item quantity="one">%1$d foto dipulihin</item>
-        <item quantity="other">%1$d foto dipulihin</item>
+        <item quantity="one">%1$d foto dipulihkan</item>
+        <item quantity="other">%1$d foto dipulihkan</item>
     </plurals>
     <plurals name="main_trashed_photos">
-        <item quantity="one">%1$d foto masuk Sampah</item>
-        <item quantity="other">%1$d foto masuk Sampah</item>
+        <item quantity="one">%1$d foto masuk ke Sampah</item>
+        <item quantity="other">%1$d foto masuk ke Sampah</item>
     </plurals>
     <plurals name="home_years_ago">
         <item quantity="one">%1$d tahun lalu</item>
@@ -182,7 +183,7 @@
 
     <!-- Batch73 (Audit Gap P2 #12, stage 2/2 FINAL: HomeScreen.kt near-dup group count) -->
     <plurals name="home_near_dup_found_groups">
-        <item quantity="one">%1$d foto dalam %2$d grup — tap buat cek</item>
-        <item quantity="other">%1$d foto dalam %2$d grup — tap buat cek</item>
+        <item quantity="one">%1$d foto dalam %2$d grup — ketuk untuk memeriksa</item>
+        <item quantity="other">%1$d foto dalam %2$d grup — ketuk untuk memeriksa</item>
     </plurals>
 </resources>

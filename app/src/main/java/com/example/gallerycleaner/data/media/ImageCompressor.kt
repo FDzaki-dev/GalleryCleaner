@@ -104,7 +104,7 @@ object ImageCompressor {
             Log.e("ImageCompressor", "OOM decoding ${item.uri} (${item.displayName})", e)
             null
         } catch (e: Exception) {
-            Log.e("ImageCompressor", "Gagal decode: ${item.uri}", e)
+            Log.e("ImageCompressor", "Gagal mendekode: ${item.uri}", e)
             null
         } ?: return Result.Failed
 

@@ -1,0 +1,111 @@
+# Snaply — konfigurasi detekt 1.23.6 (Batch148).
+#
+# Dipakai bersama `buildUponDefaultConfig = true` (lihat
+# tools/static-analysis/build.gradle.kts): file ini HANYA menimpa bawaan detekt,
+# jadi semua rule yang tidak disebut di sini mengikuti default detekt.
+#
+# Prinsip: acuan validasi ketat untuk POTENSI BUG LOGIKA/MEKANISME yang bisa
+# diamati (null-safety, pengecualian yang tertelan, coroutine, locale), BUKAN
+# gaya penulisan. Rule gaya/kompleksitas/penamaan/komentar dimatikan karena
+# Compose (fungsi @Composable berpenamaan PascalCase, lambda bersarang, parameter
+# banyak) menghasilkan ratusan temuan palsu yang menenggelamkan temuan nyata.
+#
+# NON-BLOCKING: detekt tidak boleh menggagalkan build. Lapisan pengamannya ada di
+# dua tempat — `maxIssues: -1` di sini dan `ignoreFailures = true` di Gradle.
+
+build:
+  maxIssues: -1
+  excludeCorrectable: false
+
+config:
+  validation: true
+  warningsAsErrors: false
+
+# --- Kelompok rule yang dimatikan seluruhnya (bukan deteksi bug logika) -----
+comments:
+  active: false
+
+complexity:
+  active: false
+
+naming:
+  active: false
+
+style:
+  active: false
+
+# --- Potensi bug: inti dari validasi ketat ------------------------------------
+potential-bugs:
+  active: true
+  AvoidReferentialEquality:
+    active: true
+  CastNullableToNonNullableType:
+    active: true
+  DoubleMutabilityForCollection:
+    active: true
+  ImplicitDefaultLocale:
+    active: true
+  MapGetWithNotNullAssertionOperator:
+    active: true
+  UnconditionalJumpStatementInLoop:
+    active: true
+  UnreachableCode:
+    active: true
+  UnsafeCallOnNullableType:
+    active: true
+  UnsafeCast:
+    active: true
+  UnusedUnaryOperator:
+    active: true
+  UselessPostfixExpression:
+    active: true
+
+# --- Pengecualian yang tertelan / dilempar terlalu umum -----------------------
+exceptions:
+  active: true
+  InstanceOfCheckForException:
+    active: true
+  NotImplementedDeclaration:
+    active: true
+  PrintStackTrace:
+    active: true
+  RethrowCaughtException:
+    active: true
+  ReturnFromFinally:
+    active: true
+  SwallowedException:
+    active: true
+  ThrowingExceptionFromFinally:
+    active: true
+  ThrowingNewInstanceOfSameException:
+    active: true
+  TooGenericExceptionCaught:
+    active: true
+  TooGenericExceptionThrown:
+    active: true
+
+# --- Coroutine ----------------------------------------------------------------
+coroutines:
+  active: true
+  GlobalCoroutineUsage:
+    active: true
+  # SENGAJA mati: aturan proyek mewajibkan I/O berat di Dispatchers.IO dan CPU di
+  # Dispatchers.Default secara langsung (tanpa injeksi). Rule ini akan menandai
+  # SETIAP pemakaian yang justru benar menurut aturan tersebut.
+  InjectDispatcher:
+    active: false
+  RedundantSuspendModifier:
+    active: true
+  SleepInsteadOfDelay:
+    active: true
+  SuspendFunSwallowedCancellation:
+    active: true
+  SuspendFunWithFlowReturnType:
+    active: true
+
+# --- Blok kosong & performa: pakai bawaan detekt, tetap aktif -----------------
+empty-blocks:
+  active: true
+
+performance:
+  active: true

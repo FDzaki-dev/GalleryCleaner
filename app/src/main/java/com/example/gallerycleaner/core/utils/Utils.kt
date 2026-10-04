@@ -12,18 +12,18 @@ fun formatBytes(bytes: Long): String {
     return if (digitGroups == 0) "$bytes B" else "%.1f %s".format(value, units[digitGroups])
 }
 
-/** Teks tampil (Indonesia) buat key grup sintetis. Key aslinya SENGAJA tetap
+/** Teks tampil (Indonesia baku) untuk key grup sintetis. Key aslinya SENGAJA tetap
  *  literal Inggris — dipakai sebagai id progress/label DataStore dan `when`
  *  di SwipeScreen/MainActivity — jadi cuma dipetakan saat ditampilkan. */
 fun displayGroupName(key: String): String = when {
-    key == "Largest files" -> "File terbesar"
-    key == "Large files (10MB+)" -> "File gede (10MB+)"
+    key == "Largest files" -> "Berkas terbesar"
+    key == "Large files (10MB+)" -> "Berkas besar (10MB+)"
     key == "On this day" -> "Hari ini di masa lalu"
-    key == "Blurry photos" -> "Foto blur"
+    key == "Blurry photos" -> "Foto buram"
     key == "Similar photos" -> "Foto mirip"
     key.startsWith("Similar photos (") -> "Foto mirip" + key.removePrefix("Similar photos")
-    key == "Duplicate files" -> "File duplikat"
+    key == "Duplicate files" -> "Berkas duplikat"
     key == "Search results" -> "Hasil pencarian"
-    key == "Unknown album" -> "Album nggak dikenal"
+    key == "Unknown album" -> "Album tidak dikenal"
     else -> key
 }

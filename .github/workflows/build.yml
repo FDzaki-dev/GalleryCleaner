@@ -327,3 +327,89 @@ jobs:
               echo "| Build log | \`${LOG_FILE}\` — see the uploaded artifact above ⬆️ |"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # [Batch148] Validasi statis NON-BLOCKING: detekt + lintDebug sebagai acuan utama
+  # validasi ketat. Job TERPISAH dari `build` (jalan paralel) dan `continue-on-error`,
+  # jadi hasil analisis — apa pun isinya — tidak pernah menahan APK/rilis. Laporan
+  # diunggah sebagai artifact; ringkasan jumlah temuan ada di Job Summary.
+  static-analysis:
+    name: Static analysis (detekt + lintDebug, non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    # signingConfigs.release di app/build.gradle.kts melempar GradleException saat
+    # KONFIGURASI jika 4 variabel ini kosong, sehingga setiap invokasi Gradle
+    # (termasuk lintDebug) memerlukannya. Job ini tidak pernah menandatangani apa
+    # pun, jadi nilai dummy (bukan secret) cukup — berkasnya tidak perlu ada karena
+    # hanya dibaca saat proses penandatanganan.
+    env:
+      RELEASE_KEYSTORE_PATH: /tmp/unused-static-analysis.jks
+      RELEASE_KEYSTORE_PASSWORD: unused
+      RELEASE_KEY_ALIAS: unused
+      RELEASE_KEY_PASSWORD: unused
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+
+      - name: Install Android SDK components
+        run: |
+          sdkmanager "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+      # Build Gradle terpisah (tools/static-analysis) — lihat settings.gradle.kts di sana.
+      - name: detekt (non-blocking)
+        run: |
+          cd tools/static-analysis
+          gradle --no-daemon --stacktrace detekt 2>&1 | tee "$RUNNER_TEMP/detekt.log" || true
+
+      - name: lintDebug (non-blocking)
+        run: |
+          gradle --no-daemon --stacktrace lintDebug 2>&1 | tee "$RUNNER_TEMP/lint.log" || true
+
+      - name: Ringkasan temuan
+        if: always()
+        run: |
+          {
+            echo "## 🔎 Analisis statis (non-blocking) — run #${GITHUB_RUN_NUMBER}"
+            echo ""
+            DETEKT_TXT="tools/static-analysis/build/reports/detekt/detekt.txt"
+            if [ -f "$DETEKT_TXT" ]; then
+              echo "- **detekt**: $(grep -c -E ' - \[.*\] at .*:[0-9]+:[0-9]+' "$DETEKT_TXT" || true) temuan"
+            else
+              echo "- **detekt**: laporan tidak terbentuk — lihat \`detekt.log\` di artifact"
+            fi
+            LINT_XML="app/build/reports/lint-results-debug.xml"
+            if [ -f "$LINT_XML" ]; then
+              echo "- **lintDebug**: $(grep -c 'severity="Error"' "$LINT_XML" || true) error, $(grep -c 'severity="Warning"' "$LINT_XML" || true) warning, $(grep -c 'severity="Fatal"' "$LINT_XML" || true) fatal"
+            else
+              echo "- **lintDebug**: laporan tidak terbentuk — lihat \`lint.log\` di artifact"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload laporan analisis statis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-analysis-reports
+          path: |
+            tools/static-analysis/build/reports/detekt/
+            app/build/reports/lint-results-debug.html
+            app/build/reports/lint-results-debug.xml
+            app/build/reports/lint-results-debug.sarif
+            ${{ runner.temp }}/detekt.log
+            ${{ runner.temp }}/lint.log
+          if-no-files-found: warn

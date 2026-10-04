@@ -119,6 +119,23 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    // [Batch148] Android Lint (`gradle lintDebug`) sebagai acuan validasi ketat,
+    // NON-BLOCKING: temuan hanya dilaporkan, tidak pernah menggagalkan build.
+    // Aturan severity ada di app/lint.xml; detekt dikonfigurasi terpisah di
+    // tools/static-analysis (build Gradle sendiri, sengaja tidak menyentuh build
+    // ini). Catatan: abortOnError = false juga berlaku untuk lintVitalRelease yang
+    // otomatis jalan di assembleRelease — sebelumnya lint "fatal" bisa menggagalkan
+    // build rilis, sekarang hanya dilaporkan. Panduan: konfigurasi_detekt_lint.md.
+    lint {
+        abortOnError = false
+        warningsAsErrors = false
+        checkDependencies = false
+        lintConfig = file("lint.xml")
+        htmlReport = true
+        xmlReport = true
+        sarifReport = true
+    }
 }
 
 dependencies {

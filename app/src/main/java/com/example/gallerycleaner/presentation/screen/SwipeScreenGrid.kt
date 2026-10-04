@@ -87,7 +87,7 @@ internal fun GridSelectContent(
                     visibleItems.map { it.id }.filterNot { it in selected }.forEach(onToggleSelect)
                 }
             }) {
-                Text(if (allSelected) "Batal pilih semua" else "Pilih semua")
+                Text(if (allSelected) "Batalkan pilihan" else "Pilih semua")
             }
         }
 
@@ -167,7 +167,7 @@ internal fun GridSelectContent(
                     GlassButton(text = "Kompres ${selected.size}", onClick = onCompressSelected)
                     if (onOrganizeSelected != null) {
                         Spacer(Modifier.width(12.dp))
-                        GlassButton(text = "Pindahin ${selected.size}", onClick = onOrganizeSelected)
+                        GlassButton(text = "Pindahkan ${selected.size}", onClick = onOrganizeSelected)
                     }
                     Spacer(Modifier.width(12.dp))
                     DangerButton(text = "Hapus ${selected.size} yang dipilih", onClick = onDeleteSelected)

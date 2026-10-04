@@ -99,9 +99,9 @@ class CleaningReminderWorker(
                 val posted = postNotification(
                     channelId = CHANNEL_ID,
                     channelName = "Pengingat bulanan",
-                    channelDescription = "Sebulan sekali ngasih tahu kalau ada screenshot atau file gede yang layak dicek",
+                    channelDescription = "Mengingatkan sebulan sekali jika ada tangkapan layar atau berkas besar yang layak diperiksa",
                     notificationId = NOTIFICATION_ID,
-                    text = "Ada $cleanupCount item yang layak dicek — screenshot atau file gede."
+                    text = "Ada $cleanupCount item yang layak diperiksa — tangkapan layar atau berkas besar."
                 )
                 if (posted) settingsStore.setLastMonthlyReminderMillis(now)
             }
@@ -131,10 +131,10 @@ class CleaningReminderWorker(
             if (bestName != null) {
                 val posted = postNotification(
                     channelId = IN_PROGRESS_CHANNEL_ID,
-                    channelName = "Pengingat sesi belum kelar",
-                    channelDescription = "Ngingetin kalau ada folder yang udah mulai kamu geser tapi belum kelar",
+                    channelName = "Pengingat sesi yang belum selesai",
+                    channelDescription = "Mengingatkan jika ada folder yang sudah mulai Anda geser tetapi belum selesai",
                     notificationId = IN_PROGRESS_NOTIFICATION_ID,
-                    text = "Lanjutin bersih-bersih $bestName yuk — baru $bestDone dari $bestTotal yang kamu cek."
+                    text = "Lanjutkan pembersihan $bestName — baru $bestDone dari $bestTotal yang Anda periksa."
                 )
                 if (posted) settingsStore.setLastInProgressReminderMillis(now)
             }

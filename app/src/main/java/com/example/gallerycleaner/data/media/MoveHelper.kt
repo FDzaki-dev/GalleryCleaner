@@ -153,7 +153,7 @@ object MoveHelper {
         } catch (e: RecoverableSecurityException) {
             Result.NeedsPermission(e.userAction.actionIntent.intentSender)
         } catch (e: Exception) {
-            Log.e("MoveHelper", "File dipindah tapi MediaStore gagal diupdate: ${item.uri}", e)
+            Log.e("MoveHelper", "Berkas dipindahkan tetapi MediaStore gagal diperbarui: ${item.uri}", e)
             confirmOrPartial(context, sourceFile, targetFile, normalizedTarget)
         }
     }

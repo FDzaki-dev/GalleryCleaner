@@ -223,6 +223,11 @@ masing-masing di Section 2b.
     dulu: dashboard baru terpisah, atau `HomeScreen.kt` di-repurpose?
 18. 🟡 "Customize view" bottom sheet (layar swipe) — 4 toggle ada di Pengaturan (Batch146); shortcut bottom sheet di layar swipe belum
 19. ✅ Notifications: split jadi 2 toggle (in-progress + monthly) — Batch145 (`SettingsStore` + `CleaningReminderWorker` + `SettingsScreen`)
+22. ✅ Konfigurasi detekt + lintDebug sebagai acuan validasi ketat NON-BLOCKING (Batch148) —
+    `config/detekt/detekt.yml`, `tools/static-analysis/` (build Gradle terpisah), `app/lint.xml`,
+    job CI `static-analysis`; panduan: `konfigurasi_detekt_lint.md`
+23. ✅ Bahasa aplikasi diubah ke Indonesia baku standar KBBI, sapaan "Anda" (Batch148) —
+    `strings.xml` + literal Kotlin di 16 file; menggantikan gaya santai Batch141
 21. ✅ Prompt "cek ulang dari awal?" saat folder kebuka dengan progres sudah penuh —
     Batch147, dirujuk dari perilaku Sponge 2.6.1 (`SwipeScreen.kt`, 1 file, 0 key/setting baru)
 20. ❌ Settings > My Account (sign in/up) — SENGAJA ditaruh prioritas

@@ -143,7 +143,7 @@ internal fun GroupRow(
                 IconButton(onClick = { showRenameDialog = true }) {
                     Icon(
                         Icons.Filled.Edit,
-                        contentDescription = "Ganti nama folder",
+                        contentDescription = "Ubah nama folder",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
@@ -180,7 +180,7 @@ private fun folderSummaryText(folders: List<String>): String =
     if (folders.size <= 2) {
         folders.joinToString(", ")
     } else {
-        "${folders.take(2).joinToString(", ")} +${folders.size - 2} lagi"
+        "${folders.take(2).joinToString(", ")} +${folders.size - 2} lainnya"
     }
 
 @Composable
@@ -197,12 +197,12 @@ internal fun RenameFolderDialog(
     var text by rememberSaveable { mutableStateOf(currentName) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Ganti Nama Folder") },
+        title = { Text("Ubah Nama Folder") },
         text = {
             Column {
                 Text(
-                    "Ini cuma ngubah nama yang tampil di app ini — nggak ngubah " +
-                        "nama folder aslinya dan nggak ngaruh ke app Galeri di hp kamu.",
+                    "Tindakan ini hanya mengubah nama yang tampil di aplikasi ini — tidak mengubah " +
+                        "nama folder aslinya dan tidak memengaruhi aplikasi Galeri di ponsel Anda.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -224,7 +224,7 @@ internal fun RenameFolderDialog(
         dismissButton = {
             Row {
                 if (hasCustomLabel) {
-                    TextButton(onClick = onResetToOriginal) { Text("Reset") }
+                    TextButton(onClick = onResetToOriginal) { Text("Setel ulang") }
                 }
                 TextButton(onClick = onDismiss) { Text("Batal") }
             }

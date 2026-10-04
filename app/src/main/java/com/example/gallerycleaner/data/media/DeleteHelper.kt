@@ -46,7 +46,7 @@ object DeleteHelper {
                 // Exception catch, never folded into it).
                 throw e
             } catch (e: Exception) {
-                Log.e("DeleteHelper", "Error saat menghapus: $uri", e)
+                Log.e("DeleteHelper", "Kesalahan saat menghapus: $uri", e)
                 failed.add(uri)
             }
         }

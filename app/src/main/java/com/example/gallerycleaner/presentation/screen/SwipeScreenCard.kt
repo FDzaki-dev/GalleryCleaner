@@ -566,7 +566,7 @@ private fun VideoPlayerSurface(
                 // batch, and the difference between a guess and a diagnosis
                 // if this still fails after the Batch122 proguard-rules.pro
                 // mitigation.
-                errorDetail = "${error.errorCodeName}: ${error.message ?: "nggak ada detail lain"}"
+                errorDetail = "${error.errorCodeName}: ${error.message ?: "tidak ada detail lain"}"
                 // Batch123: this specific errorCode+message pairing means a
                 // matching decoder exists but every one tried rejects this
                 // exact resolution/frame-rate as beyond what it can init —
@@ -578,7 +578,7 @@ private fun VideoPlayerSurface(
                     error.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED &&
                     error.message?.contains("EXCEEDS_CAPABILITIES") == true
                 ) {
-                    "Hardware hp ini nggak sanggup nge-decode kombinasi resolusi/frame-rate video ini."
+                    "Perangkat keras ponsel ini tidak sanggup mendekode kombinasi resolusi dan laju bingkai video ini."
                 } else {
                     ""
                 }
@@ -929,7 +929,7 @@ private fun VideoPlayerSurface(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Video ini nggak bisa diputar",
+                    "Video ini tidak dapat diputar",
                     color = Color.White,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -1091,7 +1091,7 @@ private fun VideoControlBar(
             IconButton(onClick = onToggleMute) {
                 Icon(
                     if (isMuted) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp,
-                    contentDescription = if (isMuted) "Nyalain suara" else "Bisukan",
+                    contentDescription = if (isMuted) "Nyalakan suara" else "Bisukan",
                     tint = Color.White
                 )
             }
@@ -1114,7 +1114,7 @@ private fun VideoControlBar(
             IconButton(onClick = onToggleRotation) {
                 Icon(
                     if (isLandscapeMode) Icons.Filled.ScreenLockRotation else Icons.Filled.ScreenRotation,
-                    contentDescription = if (isLandscapeMode) "Balik ke rotasi otomatis" else "Putar ke landscape",
+                    contentDescription = if (isLandscapeMode) "Kembali ke rotasi otomatis" else "Putar ke lanskap",
                     tint = Color.White
                 )
             }
@@ -1137,7 +1137,7 @@ internal fun FileInfoDialog(item: MediaItem, onDismiss: () -> Unit) {
     val dateFormat = remember { SimpleDateFormat("d MMM yyyy, HH:mm", Locale.forLanguageTag("id-ID")) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Info File") },
+        title = { Text("Info Berkas") },
         text = {
             Column {
                 FileInfoRow("Nama", item.displayName)

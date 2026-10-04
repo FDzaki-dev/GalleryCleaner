@@ -136,16 +136,16 @@ object UpdateChecker {
 
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    return@withContext CheckResult.Error("Error API GitHub: HTTP ${response.code}")
+                    return@withContext CheckResult.Error("Kesalahan API GitHub: HTTP ${response.code}")
                 }
 
                 val bodyString = response.body?.string()
-                    ?: return@withContext CheckResult.Error("Responsnya kosong")
+                    ?: return@withContext CheckResult.Error("Respons kosong")
 
                 val json = JSONObject(bodyString)
                 val tagName = json.optString("tag_name", "")
                 if (tagName.isEmpty()) {
-                    return@withContext CheckResult.Error("Rilisnya nggak punya tag_name")
+                    return@withContext CheckResult.Error("Rilis tidak memiliki tag_name")
                 }
 
                 val assets: JSONArray = json.optJSONArray("assets") ?: JSONArray()
@@ -164,7 +164,7 @@ object UpdateChecker {
                 }
 
                 if (apkUrl == null) {
-                    return@withContext CheckResult.Error("Rilis terbaru nggak ada file .apk-nya")
+                    return@withContext CheckResult.Error("Rilis terbaru tidak memiliki berkas .apk")
                 }
 
                 val rawNotes = json.optString("body", "")
@@ -197,7 +197,7 @@ object UpdateChecker {
             CheckResult.Error(e.message ?: "Masalah jaringan")
         } catch (e: Exception) {
             Log.w(TAG, "Update check failed (parse)", e)
-            CheckResult.Error(e.message ?: "Error nggak terduga")
+            CheckResult.Error(e.message ?: "Kesalahan tak terduga")
         }
     }
 

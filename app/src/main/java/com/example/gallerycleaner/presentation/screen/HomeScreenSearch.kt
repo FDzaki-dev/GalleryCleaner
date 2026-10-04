@@ -49,7 +49,7 @@ internal fun SearchResultsContent(
     if (query.isBlank()) {
         Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                "Cari folder atau foto lewat namanya",
+                "Cari folder atau foto berdasarkan namanya",
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -57,7 +57,7 @@ internal fun SearchResultsContent(
     }
     if (matchingFolders.isEmpty() && matchingPhotos.isEmpty()) {
         Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Nggak ada hasil buat \"$query\"", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Tidak ada hasil untuk \"$query\"", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Batch148 — konfigurasi Android Lint untuk `lintDebug` (acuan validasi ketat,
+    NON-BLOCKING: abortOnError = false di app/build.gradle.kts).
+
+    Fokus: kelas masalah yang menyebabkan bug logika/perilaku nyata di perangkat
+    (API tidak tersedia, izin, thread, locale, PendingIntent, state Compose).
+    Severity "error" di sini hanya memberi label keras di laporan — build tidak
+    pernah digagalkan olehnya.
+-->
+<lint>
+    <!-- Kamus Typos lint berbahasa Inggris — menghasilkan temuan palsu untuk teks Indonesia. -->
+    <issue id="Typos" severity="ignore" />
+
+    <!-- Perilaku perangkat / API -->
+    <issue id="NewApi" severity="error" />
+    <issue id="MissingPermission" severity="error" />
+    <issue id="WrongThread" severity="error" />
+    <issue id="WrongConstant" severity="error" />
+    <issue id="CheckResult" severity="error" />
+
+    <!-- Locale & format (tanggal/angka) -->
+    <issue id="DefaultLocale" severity="error" />
+    <issue id="SimpleDateFormat" severity="error" />
+
+    <!-- Notifikasi & PendingIntent (dipakai worker pengingat) -->
+    <issue id="UnspecifiedImmutableFlag" severity="error" />
+    <issue id="NotificationPermission" severity="error" />
+
+    <!-- State Compose -->
+    <issue id="UnrememberedMutableState" severity="error" />
+    <issue id="StateFlowValueCalledInComposition" severity="error" />
+    <issue id="FlowOperatorInvokedInComposition" severity="error" />
+
+    <!-- minSdk 31 (Batch105): cabang SDK_INT lama jadi kode mati — tandai agar bisa dibersihkan. -->
+    <issue id="ObsoleteSdkInt" severity="warning" />
+    <issue id="UnusedResources" severity="warning" />
+</lint>
