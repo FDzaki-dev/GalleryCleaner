@@ -186,7 +186,8 @@ fun SwipeScreen(
     // and caching a bitmap nothing ever displayed.
     LaunchedEffect(index, group.key, sortOption, sortAscending) {
         val loader = context.imageLoader
-        (index + 1..index + 2).forEach { i ->
+        // [Batch150] detekt ForEachOnRange: forEach pada range -> for biasa (hasil sama).
+        for (i in (index + 1)..(index + 2)) {
             sortedItems.getOrNull(i)?.let { item ->
                 loader.enqueue(
                     ImageRequest.Builder(context)

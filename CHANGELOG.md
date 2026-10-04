@@ -3,6 +3,13 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch150 — 2026-10-05
+- Perbaikan dari laporan analisis statis (lintDebug dan detekt) agar jumlah temuan turun, tanpa mengubah fitur:
+  - Warna lapisan belakang pada panel neumorphism dihitung dengan cara yang aman dari rentang nilai yang tidak valid. Tampilan sama, risiko crash hilang.
+  - Penggunaan API pemutar video (Media3) kini ditandai sebagai opt-in yang disengaja.
+  - Satu perulangan kecil pada prefetch gambar disederhanakan.
+- **Belum tervalidasi build/device asli** — hasilnya dinilai dari run CI berikutnya (lintDebug dan detekt). Detail: `PROJECT_STATE.md` Batch150.
+
 ## Batch149 — 2026-10-05
 - Laporan analisis statis di CI kini diberi penanda **Snaply** agar tidak tertukar dengan proyek lain: nama artifact `Snaply_static-analysis-reports_run<N>`, berkas `SNAPLY.txt` di dalamnya, dan judul ringkasan job.
 - Tidak ada perubahan pada aplikasi.

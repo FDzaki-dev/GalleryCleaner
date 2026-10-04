@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.addOutline
+import androidx.compose.ui.graphics.colorspace.ColorSpaces
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -247,7 +248,14 @@ fun NeumorphSurface(
         // apart — mid overshoots to 80% of that line and back overshoots
         // PAST pressedFillColor entirely (160%) instead of stopping at it,
         // so all 3 layers land on evenly-spaced, clearly separate tones.
-        val stackBackColor = lerp(fillColor, pressedFillColor, 1.6f)
+        // [Batch150] lint `Range` (lintDebug run #1): `lerp()` Compose menjamin
+        // `fraction` hanya di 0..1, sedangkan 1.6 di sini SENGAJA melewati
+        // pressedFillColor (lihat catatan Batch79 di atas). Di luar kontrak itu
+        // hasilnya tidak dijamin — komponen Oklab yang keluar rentang bisa
+        // melempar IllegalArgumentException di konstruktor Color. Diganti helper
+        // `extrapolateColor` (rumus Oklab yang sama, tapi dijepit ke rentang
+        // valid) — warna sama untuk nilai yang selama ini lolos, tanpa risiko crash.
+        val stackBackColor = extrapolateColor(fillColor, pressedFillColor, 1.6f)
         val stackMidColor = lerp(fillColor, pressedFillColor, 0.8f)
         val stackFrontColor = fillColor
         val stackInset = stackOffset * 2
@@ -318,4 +326,23 @@ fun NeumorphSurface(
             Box(modifier = Modifier.padding(contentPadding), content = content)
         }
     }
+}
+
+/** Ekstrapolasi garis `from`→`to` di ruang Oklab (rumus yang sama dengan
+ *  `lerp()` Compose), tetapi `fraction` boleh di luar 0..1 dan tiap komponen
+ *  dijepit ke rentang valid ruang warnanya, sehingga tidak pernah melempar. */
+private fun extrapolateColor(from: Color, to: Color, fraction: Float): Color {
+    val space = ColorSpaces.Oklab
+    val a = from.convert(space)
+    val b = to.convert(space)
+    return Color(
+        red = (a.red + (b.red - a.red) * fraction)
+            .coerceIn(space.getMinValue(0), space.getMaxValue(0)),
+        green = (a.green + (b.green - a.green) * fraction)
+            .coerceIn(space.getMinValue(1), space.getMaxValue(1)),
+        blue = (a.blue + (b.blue - a.blue) * fraction)
+            .coerceIn(space.getMinValue(2), space.getMaxValue(2)),
+        alpha = (a.alpha + (b.alpha - a.alpha) * fraction).coerceIn(0f, 1f),
+        colorSpace = space
+    ).convert(from.colorSpace)
 }

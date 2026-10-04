@@ -54,6 +54,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.MediaItem as Media3MediaItem
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
@@ -418,6 +419,13 @@ internal fun FullscreenViewer(item: MediaItem, onDismiss: () -> Unit) {
  * from Batch122 (errorCodeName + message) is kept as-is underneath it,
  * nothing removed.
  */
+// [Batch150] lint `UnsafeOptInUsageError` x4 (lintDebug run #1, baris 486-488):
+// DefaultRenderersFactory/setEnableDecoderFallback/ExoPlayer.Builder bertanda
+// @UnstableApi di Media3 1.4.1 (dipin sengaja — lihat app/build.gradle.kts).
+// Opt-in dinyatakan di fungsi ini saja (bukan @UnstableApi, yang akan menjalar ke
+// pemanggil). Wajib androidx.annotation.OptIn, BUKAN kotlin.OptIn — dokumentasi
+// resmi Media3: lint hanya mengenali yang pertama. 0 perubahan perilaku.
+@androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 private fun VideoPlayerSurface(
     uri: Uri,
