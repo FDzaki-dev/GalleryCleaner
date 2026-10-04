@@ -40,7 +40,15 @@ Laporan:
 - detekt: `tools/static-analysis/build/reports/detekt/detekt.{html,xml,txt,sarif}`
 - lint: `app/build/reports/lint-results-debug.{html,xml,sarif}`
 
-Di CI, ringkasan jumlah temuan tampil di Job Summary dan laporan lengkap ada di artifact `static-analysis-reports`.
+Di CI, ringkasan jumlah temuan tampil di Job Summary dan laporan lengkap ada di artifact **`Snaply_static-analysis-reports_run<N>`**.
+
+### Penanda proyek
+
+Nama repositori adalah `GalleryCleaner`, sedangkan aplikasinya Snaply, dan proyek lain memiliki artifact serupa. Agar tidak tertukar:
+
+- nama artifact selalu diawali `Snaply_` dan memuat nomor run;
+- isi ZIP: `SNAPLY.txt` (proyek, repositori, run, branch, commit, waktu, jumlah temuan), `detekt/`, `lint/`, `log/`;
+- judul Job Summary dan nama job juga memuat "Snaply".
 
 ## Catatan
 

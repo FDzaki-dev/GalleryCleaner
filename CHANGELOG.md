@@ -3,6 +3,10 @@
 ## 🔗 Rilis Terbaru
 APK signed terbaru (auto-published tiap push ke `main`): **https://github.com/FDzaki-dev/GalleryCleaner/releases/latest**
 
+## Batch149 — 2026-10-05
+- Laporan analisis statis di CI kini diberi penanda **Snaply** agar tidak tertukar dengan proyek lain: nama artifact `Snaply_static-analysis-reports_run<N>`, berkas `SNAPLY.txt` di dalamnya, dan judul ringkasan job.
+- Tidak ada perubahan pada aplikasi.
+
 ## Batch148 — 2026-10-05
 - **Seluruh teks aplikasi kini berbahasa Indonesia baku** (standar KBBI), dengan sapaan "Anda". Gaya santai sebelumnya (mis. "nggak", "udah", "buat") diganti: "tidak", "sudah", "untuk"; "file" menjadi "berkas", "scan" menjadi "pindai", "grid" menjadi "kisi", "Cek" menjadi "Periksa". Mencakup layar, dialog, notifikasi, dan pesan galat.
 - Tidak ada perubahan fitur atau perilaku.

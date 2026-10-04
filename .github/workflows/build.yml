@@ -333,7 +333,7 @@ jobs:
   # jadi hasil analisis — apa pun isinya — tidak pernah menahan APK/rilis. Laporan
   # diunggah sebagai artifact; ringkasan jumlah temuan ada di Job Summary.
   static-analysis:
-    name: Static analysis (detekt + lintDebug, non-blocking)
+    name: "Snaply · Static analysis (detekt + lintDebug, non-blocking)"
     runs-on: ubuntu-latest
     continue-on-error: true
 
@@ -380,36 +380,56 @@ jobs:
         run: |
           gradle --no-daemon --stacktrace lintDebug 2>&1 | tee "$RUNNER_TEMP/lint.log" || true
 
-      - name: Ringkasan temuan
+      # [Batch149] Penanda proyek: repositori ini bernama GalleryCleaner (itu juga yang
+      # tertulis di path laporan), sedangkan aplikasinya Snaply — dan proyek lain milik
+      # user punya artifact berjudul serupa. Jadi nama artifact, nama folder staging,
+      # berkas SNAPLY.txt, dan judul ringkasan semuanya memuat "Snaply".
+      - name: Susun laporan + penanda Snaply
         if: always()
         run: |
+          STAGE="$RUNNER_TEMP/Snaply_static-analysis_run${GITHUB_RUN_NUMBER}"
+          mkdir -p "$STAGE/detekt" "$STAGE/lint" "$STAGE/log"
+          cp -r tools/static-analysis/build/reports/detekt/. "$STAGE/detekt/" 2>/dev/null || true
+          cp app/build/reports/lint-results-debug.* "$STAGE/lint/" 2>/dev/null || true
+          cp "$RUNNER_TEMP/detekt.log" "$RUNNER_TEMP/lint.log" "$STAGE/log/" 2>/dev/null || true
+
+          DETEKT_TXT="tools/static-analysis/build/reports/detekt/detekt.txt"
+          if [ -f "$DETEKT_TXT" ]; then
+            DETEKT_LINE="$(grep -c -E ' - \[.*\] at .*:[0-9]+:[0-9]+' "$DETEKT_TXT" || true) temuan"
+          else
+            DETEKT_LINE="laporan tidak terbentuk — lihat log/detekt.log"
+          fi
+          LINT_XML="app/build/reports/lint-results-debug.xml"
+          if [ -f "$LINT_XML" ]; then
+            LINT_LINE="$(grep -c 'severity="Error"' "$LINT_XML" || true) error, $(grep -c 'severity="Warning"' "$LINT_XML" || true) warning, $(grep -c 'severity="Fatal"' "$LINT_XML" || true) fatal"
+          else
+            LINT_LINE="laporan tidak terbentuk — lihat log/lint.log"
+          fi
+
           {
-            echo "## 🔎 Analisis statis (non-blocking) — run #${GITHUB_RUN_NUMBER}"
+            echo "PROYEK    : Snaply"
+            echo "JENIS     : Laporan analisis statis (detekt + lintDebug), NON-BLOCKING"
+            echo "REPO      : ${GITHUB_REPOSITORY} (nama repositori bukan nama aplikasi)"
+            echo "RUN       : #${GITHUB_RUN_NUMBER} (attempt ${GITHUB_RUN_ATTEMPT})"
+            echo "BRANCH    : ${GITHUB_REF_NAME}"
+            echo "COMMIT    : ${GITHUB_SHA}"
+            echo "WAKTU     : $(date -u '+%Y-%m-%d %H:%M:%S') UTC"
+            echo "detekt    : ${DETEKT_LINE}"
+            echo "lintDebug : ${LINT_LINE}"
+          } > "$STAGE/SNAPLY.txt"
+
+          {
+            echo "## 🔎 Snaply — analisis statis (non-blocking) — run #${GITHUB_RUN_NUMBER}"
             echo ""
-            DETEKT_TXT="tools/static-analysis/build/reports/detekt/detekt.txt"
-            if [ -f "$DETEKT_TXT" ]; then
-              echo "- **detekt**: $(grep -c -E ' - \[.*\] at .*:[0-9]+:[0-9]+' "$DETEKT_TXT" || true) temuan"
-            else
-              echo "- **detekt**: laporan tidak terbentuk — lihat \`detekt.log\` di artifact"
-            fi
-            LINT_XML="app/build/reports/lint-results-debug.xml"
-            if [ -f "$LINT_XML" ]; then
-              echo "- **lintDebug**: $(grep -c 'severity="Error"' "$LINT_XML" || true) error, $(grep -c 'severity="Warning"' "$LINT_XML" || true) warning, $(grep -c 'severity="Fatal"' "$LINT_XML" || true) fatal"
-            else
-              echo "- **lintDebug**: laporan tidak terbentuk — lihat \`lint.log\` di artifact"
-            fi
+            echo "- **detekt**: ${DETEKT_LINE}"
+            echo "- **lintDebug**: ${LINT_LINE}"
+            echo "- **Artifact**: \`Snaply_static-analysis-reports_run${GITHUB_RUN_NUMBER}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload laporan analisis statis
+      - name: Upload laporan analisis statis (Snaply)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: static-analysis-reports
-          path: |
-            tools/static-analysis/build/reports/detekt/
-            app/build/reports/lint-results-debug.html
-            app/build/reports/lint-results-debug.xml
-            app/build/reports/lint-results-debug.sarif
-            ${{ runner.temp }}/detekt.log
-            ${{ runner.temp }}/lint.log
+          name: Snaply_static-analysis-reports_run${{ github.run_number }}
+          path: ${{ runner.temp }}/Snaply_static-analysis_run${{ github.run_number }}
           if-no-files-found: warn
